@@ -284,7 +284,7 @@ if(c.fault==='no-light')e={crc:'0',fcs:'0',col:'0',flap:'1x (lalu down)',last:'5
 document.getElementById('err').innerHTML=`<div class="kv"><span>CRC error</span><b>${e.crc}</b></div><div class="kv"><span>FCS / Align</span><b>${e.fcs}</b></div><div class="kv"><span>Collision</span><b>${e.col}</b></div><div class="kv"><span>Link flap</span><b>${e.flap}</b></div><div class="kv"><span>Last link change</span><b>${e.last}</b></div>`;
 }
 const ctx=document.getElementById('chart');
-const chart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}});
+const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
 function tick(){const c=cur();const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){let d=down?0:20+Math.random()*60,u=down?0:5+Math.random()*20;if(c.fault==='kabel-jelek'||c.fault==='redaman-tinggi'){if(Math.random()>0.8)d*=0.25;}dl.push(d);dl.shift();ul.push(u);ul.shift();chart.update();document.getElementById('dl').textContent=d.toFixed(1)+' Mbps';document.getElementById('ul').textContent=u.toFixed(1)+' Mbps';document.getElementById('ping').textContent=down?'—':(8+Math.random()*20).toFixed(0)+' ms';const loss=down?100:(d<8?8+Math.random()*8:Math.random()*1);document.getElementById('loss').textContent=loss.toFixed(1)+' %';try{if(!down&&loss>5)maybeAlarm(curR+'/'+c.n,'warn','Loss tinggi '+loss.toFixed(1)+'%');}catch(e){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio DL:UL — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio DL:UL ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
@@ -427,15 +427,6 @@ async function acTick(){
   }catch(e){log('> Auto-Care tick err: '+String(e.message||e).slice(0,80));}
   if(AC.on)AC.timer=setTimeout(acTick,10000);
 }
-restoreLive();
-// pastikan device yang dibuka valid (navigator sekarang ikut topologi)
-if(!DB[curR]||!DB[curR].length){const td=topoDevs();if(td.length){curR=td[0].db;}else if(DB['Router Ictel']){curR='Router Ictel';}else{const ks=Object.keys(DB);if(ks.length)curR=ks[0];}}
-if(DB[curR]&&DB[curR].length&&!DB[curR].find(x=>x.n===curI))curI=DB[curR][0].n;
-renderRouters();
-// catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
-for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
-renderIfaces();setInterval(tick,1000);
-setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderDowntime();}catch(e){}},5000);
 // ---- SIMULASI REALISTIS: perangkat kadang down sendiri lalu pulih (kayak device asli) ----
 setInterval(()=>{if(!window.chaosOn)return;for(const r in DB){for(const p of DB[r]){
 if(p.admin==='down'||p._chaosHold)continue;
@@ -536,6 +527,16 @@ let LINKS=LAYERS[curLayer].links;
 const TOPO_HOME={};for(const l in DEFAULT_LAYERS){TOPO_HOME[l]={};DEFAULT_LAYERS[l].nodes.forEach(n=>{TOPO_HOME[l][n.id]={x:n.x,y:n.y};});}
 if(!LAYERS.gleaf&&GNS3_PRESET.gleaf){let skip=false;try{skip=localStorage.getItem('netmon-nogleaf')==='1';}catch(e){}if(!skip){LAYERS.gleaf=JSON.parse(JSON.stringify(GNS3_PRESET.gleaf));TOPO_HOME.gleaf={};LAYERS.gleaf.nodes.forEach(n=>{TOPO_HOME.gleaf[n.id]={x:n.x,y:n.y};});try{if(!localStorage.getItem('netmon-gleaf-seen')){curLayer='gleaf';TOPO=LAYERS.gleaf.nodes;LINKS=LAYERS.gleaf.links;localStorage.setItem('netmon-gleaf-seen','1');}}catch(e){}try{log('> layer GNS3: LEAF + SPINE dimuat otomatis');}catch(e){}}}
 function saveTopo(manual){snapTopo();persistTopo(manual);try{renderLayerBtns();}catch(e){}}
+// ---- INIT (di sini karena butuh LAYERS/TOPO yang dideklarasi di atas) ----
+restoreLive();
+// pastikan device yang dibuka valid (navigator sekarang ikut topologi)
+if(!DB[curR]||!DB[curR].length){const td=topoDevs();if(td.length){curR=td[0].db;}else if(DB['Router Ictel']){curR='Router Ictel';}else{const ks=Object.keys(DB);if(ks.length)curR=ks[0];}}
+if(DB[curR]&&DB[curR].length&&!DB[curR].find(x=>x.n===curI))curI=DB[curR][0].n;
+renderRouters();
+// catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
+for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
+renderIfaces();setInterval(tick,1000);
+setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderDowntime();}catch(e){}},5000);
 function persistTopo(manual){try{const at=new Date().toLocaleString('id-ID',{hour12:false});localStorage.setItem('netmon-topo-v1',JSON.stringify({at,cur:curLayer,layers:LAYERS}));const st=document.getElementById('saveStat');if(st)st.textContent=(manual?'💾 Tersimpan ':'Autosave ')+at;if(manual){log('> projek topologi di-SAVE ('+at+')');pushAlarm('info','topologi','Projek topologi di-save');}}catch(e){if(manual)log('> SAVE gagal: '+e.message);}}
 let HIST=[],HI=-1;
 function snapTopo(){try{HIST=HIST.slice(0,HI+1);HIST.push(JSON.stringify({cur:curLayer,layers:LAYERS}));if(HIST.length>60)HIST.shift();HI=HIST.length-1;}catch(e){}updateUR();}
