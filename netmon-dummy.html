@@ -99,7 +99,8 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button id="btnUndo" onclick="undoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Z">↩ Undo</button>
 <button id="btnRedo" onclick="redoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Y">⟳ Redo</button>
 <button onclick="exportPNG()" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer">🖼 Export PNG</button>
-<button onclick="exportArchify()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Lihat layer ini sebagai diagram archify (screenshot sendiri buat dokumen)">👁 View</button>
+<button onclick="exportArchify()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Lihat layer ini sebagai diagram archify (screenshot sendiri buat dokumen)">👁 Archify</button>
+<button onclick="viewOriginal()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Lihat layer ini gaya pastel asli, bersih tanpa toolbar (screenshot buat dokumen)">👁 Original</button>
 <button onclick="document.getElementById('importTopo').click()" class="ai-btn ghost" style="width:auto;padding:7px 12px">⬆ Import</button>
 <button onclick="exportTopoJSON()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Backup seluruh layer ke file JSON">⬇ JSON</button>
 <input type="file" id="importTopo" accept=".json" style="display:none" onchange="importTopo(this)">
@@ -509,6 +510,15 @@ log('✔ view archify ('+(j.profile||'showcase')+'): '+j.file);
 try{pushAlarm('info','topologi','Export Archify '+j.file);}catch(e){}
 window.open(COLL()+j.url,'_blank');
 }).catch(e=>{log('> view archify gagal: '+String(e.message||e).slice(0,150));});
+}
+function viewOriginal(){
+const svg=document.getElementById('topoSvg');if(!svg)return;
+const label=(LAYERS[curLayer]||{}).label||curLayer;
+const at=new Date().toLocaleString('id-ID',{hour12:false});
+const downs=TOPO.filter(n=>topoSt(n)==='bad').length;
+const doc=`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>${label} — NetMonitor</title><style>body{margin:0;background:#f0f9ff;font-family:'Segoe UI',system-ui,sans-serif;padding:28px}h1{color:#0369a1;margin:0 0 4px;font-size:22px}p{color:#64748b;margin:0 0 14px;font-size:13px}.legend{display:flex;gap:16px;font-size:12px;color:#475569;margin-top:12px;font-weight:700}svg{width:100%;height:auto;background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px}</style></head><body><h1>🗺 ${label}</h1><p>${TOPO.length} perangkat • ${LINKS.length} link${downs?' • '+downs+' DOWN':''} • ${at} • NetMonitor</p>${svg.outerHTML}<div class="legend"><span><span style="color:#fb923c">━</span> FO</span><span><span style="color:#38bdf8">━</span> LAN</span><span><span style="color:#ef4444">✕</span> DOWN</span></div></body></html>`;
+window.open(URL.createObjectURL(new Blob([doc],{type:'text/html'})),'_blank');
+log('> view original dibuka ('+TOPO.length+' node) — tinggal screenshot');
 }
 function importTopo(inp){const f=inp.files&&inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);const ls=d.layers||d;if(typeof ls!=='object'||!Object.keys(ls).length)throw new Error('format bukan projek netmon');let n=0;Object.keys(ls).forEach(k=>{const L=ls[k];if(!L||!Array.isArray(L.nodes)||!Array.isArray(L.links))return;let key=k;while(LAYERS[key])key=key+'-2';LAYERS[key]={label:L.label||key,vb:L.vb||'0 0 900 400',areas:L.areas||[],nodes:L.nodes,links:L.links};TOPO_HOME[key]={};L.nodes.forEach(nn=>{TOPO_HOME[key][nn.id]={x:nn.x,y:nn.y};});n++;});if(!n)throw new Error('tidak ada layer valid di file');setLayer(curLayer);saveTopo(true);log('> '+n+' layer di-import dari '+f.name);}catch(e){log('> import gagal: '+e.message);alert('Import gagal: '+e.message);}};rd.readAsText(f);inp.value='';}
 renderLayerBtns();
