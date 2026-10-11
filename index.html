@@ -128,6 +128,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="detectPubIp()">🌐 Deteksi IP-ku</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="addTopoNode()">＋ Tambah perangkat</button>
 <button onclick="addNodeByIp()" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:8px 14px;font-weight:800;cursor:pointer" title="Simulasi auto-detect by IP (dummy)">＋ IP & Detect</button>
+<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="gns3Modal()" title="Tarik topologi dari GNS3 server">⬇ GNS3</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="resetTopo()">↩ Reset posisi</button>
 <span style="color:#64748b">drag node • klik kanan node/kanvas = menu • <b>2x klik = edit teks</b> • <span style="color:#fb923c;font-weight:800">━ FO</span> • <span style="color:#38bdf8;font-weight:800">━ LAN</span> • <span style="color:#ef4444;font-weight:800">✕ merah = DOWN</span> • live tiap 3 dtk</span>
 </div>
@@ -569,6 +570,86 @@ document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(
 snapTopo();
 document.addEventListener('keydown',ev=>{const t=(ev.target&&ev.target.tagName)||'';if(t==='INPUT'||t==='TEXTAREA')return;const k=(ev.key||'').toLowerCase();if((ev.ctrlKey||ev.metaKey)&&k==='z'&&!ev.shiftKey){ev.preventDefault();undoTopo();}else if((ev.ctrlKey||ev.metaKey)&&(k==='y'||(k==='z'&&ev.shiftKey))){ev.preventDefault();redoTopo();}});
 function resetTopo(){for(const l in LAYERS){LAYERS[l].nodes.forEach(n=>{const h=(TOPO_HOME[l]||{})[n.id];if(h){n.x=h.x;n.y=h.y;}});}drawTopo();saveTopo();log('> topologi dikembalikan ke posisi semula');try{pushAlarm('info','topologi','Posisi node dikembalikan ke semula');}catch(e){}}
+// ---- IMPORT TOPOLOGI DARI GNS3 (via collector proxy, browser kena CORS kalau langsung) ----
+function gns3Srv(){return ((document.getElementById('gns3srv')||{}).value||localStorage.getItem('netmon-gns3')||'http://localhost:3080').replace(/\/$/,'');}
+function gns3Modal(){
+let ov=document.getElementById('dmodal');if(ov)ov.remove();
+ov=document.createElement('div');ov.id='dmodal';
+ov.style.cssText='position:fixed;inset:0;background:rgba(12,74,110,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px';
+ov.innerHTML=`<div style="background:#fff;border:3px solid #bae6fd;border-radius:18px;padding:18px;max-width:560px;width:100%;max-height:80vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;color:#0369a1">⬇ Import dari GNS3</h3><button onclick="document.getElementById('dmodal').remove()" style="border:0;background:#fee2e2;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">✕</button></div>
+<div style="display:flex;gap:6px;margin-top:10px"><input id="gns3srv" placeholder="http://IP-GNS3:3080" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:13px"><button onclick="gns3Projects()" style="border:0;background:#0284c7;color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer">Ambil</button></div>
+<div style="display:flex;gap:6px;margin-top:6px"><input id="gns3user" placeholder="user (kosongkan kalau tanpa auth)" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"><input id="gns3pass" type="password" placeholder="password" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"></div>
+<div id="dmodalBody" style="font-size:13px;margin-top:10px;color:#64748b">Isi server GNS3 → Ambil → pilih project → Import jadi layer baru.</div></div>`;
+ov.addEventListener('click',ev=>{if(ev.target===ov)ov.remove();});
+document.body.appendChild(ov);
+try{document.getElementById('gns3srv').value=localStorage.getItem('netmon-gns3')||'http://localhost:3080';}catch(e){}
+}
+async function gns3Projects(){
+const body=document.getElementById('dmodalBody');if(body)body.textContent='⏳ menghubungi GNS3...';
+try{localStorage.setItem('netmon-gns3',gns3Srv());}catch(e){}
+try{
+const u=(document.getElementById('gns3user')||{}).value||'',p=(document.getElementById('gns3pass')||{}).value||'';
+const j=await collGet(`/api/gns3?server=${encodeURIComponent(gns3Srv())}&path=${encodeURIComponent('/v2/projects')}&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`,25000);
+const rows=j.data||[];
+if(!body)return;
+if(!rows.length){body.innerHTML='Tidak ada project di server ini.';return;}
+body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">${rows.length} project • klik Import buat jadi layer</div>`+rows.map(r=>`<div style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px"><span style="flex:1;font-weight:700;color:#0c4a6e">${r.name}</span><span style="font-size:11px;color:#64748b">${(r.status||'')}</span><button onclick="gns3Import('${r.project_id}','${String(r.name||'').replace(/'/g,'')}')" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">Import</button></div>`).join('');
+}catch(e){if(body)body.innerHTML='Gagal: '+String(e.message||e).slice(0,120)+'<br><span style="font-size:12px">Pastikan GNS3 server jalan + reachable dari mesin collector.</span>';}
+}
+function gns3Icon(t,nm){
+t=String(t||'').toLowerCase();const n=String(nm||'');
+if(/switch|hub/.test(t)||/^sw[\d\-_\s]/i.test(n))return 'switch';
+if(/cloud|nat/.test(t))return 'internet';
+if(/vpcs/.test(t))return 'pc';
+if(/docker|qemu|vmware|virtualbox/.test(t)){if(/srv|server/i.test(n))return 'server';if(/^r[\d\-_\s]/i.test(n))return 'router';return 'server';}
+if(/^r\d|^router/i.test(n))return 'router';
+if(/olt/i.test(n))return 'olt';if(/ont/i.test(n))return 'ont';
+if(/\bap[\d\-_\s]/i.test(n))return 'ap';if(/srv|server|noc/i.test(n))return 'server';
+if(/dynamips|iou/.test(t))return 'router';
+return 'router';
+}
+async function gns3Import(pid,name){
+const body=document.getElementById('dmodalBody');if(body)body.textContent='⏳ narik node + link...';
+try{
+const u=(document.getElementById('gns3user')||{}).value||'',p=(document.getElementById('gns3pass')||{}).value||'';
+const auth=`&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`;
+const srv=gns3Srv();
+const nj=await collGet(`/api/gns3?server=${encodeURIComponent(srv)}&path=${encodeURIComponent('/v2/projects/'+pid+'/nodes')}${auth}`,30000);
+const lj=await collGet(`/api/gns3?server=${encodeURIComponent(srv)}&path=${encodeURIComponent('/v2/projects/'+pid+'/links')}${auth}`,30000);
+const nodes=nj.data||[],links=lj.data||[];
+if(!nodes.length)throw new Error('project kosong (0 node)');
+// normalisasi koordinat GNS3 ke viewBox 900x400
+let xs=nodes.map(n=>Number(n.x||0)),ys=nodes.map(n=>Number(n.y||0));
+let minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+const W=900,H=400,pad=90;
+const sc=Math.min((W-pad*2)/Math.max(1,maxX-minX),(H-pad*2)/Math.max(1,maxY-minY),1.2);
+const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+const key='g'+Date.now()%100000;
+const idMap={};let i=0;
+const tnodes=nodes.map(n=>{
+const id='g'+(++i)+'-'+key;
+idMap[n.node_id]=id;
+const icon=gns3Icon(n.node_type,n.name);
+return {id,icon,label:String(n.name||('node-'+i)).slice(0,28),sub:String(n.node_type||'')+(n.status==='stopped'?' • stopped':''),x:Math.round(W/2+(Number(n.x||0)-cx)*sc),y:Math.round(H/2+(Number(n.y||0)-cy)*sc),st:n.status==='stopped'?'bad':'ok',gns:n.node_id};
+});
+const tlinks=[];
+links.forEach(l=>{
+const eps=(l.nodes||[]).filter(e=>idMap[e.node_id]);
+if(eps.length<2)return;
+const [a,b]=eps;
+const pl=e=>((e.label&&e.label.text)||('eth'+(e.adapter_number||0)+'/'+(e.port_number||0)));
+const A=tnodes.find(t=>t.id===idMap[a.node_id]),B=tnodes.find(t=>t.id===idMap[b.node_id]);
+const core=['router','switch','firewall','olt'];
+tlinks.push([idMap[a.node_id],idMap[b.node_id],(A&&B&&core.includes(A.icon)&&core.includes(B.icon))?'fo':'lan',pl(a),pl(b)]);
+});
+LAYERS[key]={label:'GNS3: '+name,vb:'0 0 900 400',areas:[],nodes:tnodes,links:tlinks};
+TOPO_HOME[key]={};tnodes.forEach(n=>{TOPO_HOME[key][n.id]={x:n.x,y:n.y};});
+snapTopo();setLayer(key);saveTopo(true);
+log(`> import GNS3 "${name}": ${tnodes.length} node + ${tlinks.length} link`);
+try{pushAlarm('info','gns3',`Import "${name}" (${tnodes.length} node)`);}catch(e){}
+document.getElementById('dmodal')?.remove();
+}catch(e){if(body)body.innerHTML='Gagal import: '+String(e.message||e).slice(0,150);}
+}
 function setLayer(l){if(!LAYERS[l])l='pu';curLayer=l;TOPO=LAYERS[l].nodes;LINKS=LAYERS[l].links;renderLayerBtns();log('> layer topologi: '+LAYERS[l].label);drawTopo();}
 function topoNode(id){return TOPO.find(n=>n.id===id);}
 const VECICON=['router','ap','ont','olt','switch','swpoe'];
