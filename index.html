@@ -52,7 +52,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="label">Interface <span style="font-weight:400;text-transform:none">(klik kanan = disable/enable)</span></div><div id="ifaces" style="display:flex;flex-direction:column;gap:8px"></div>
 <div class="label">Legenda</div>
 <div style="font-size:12px;color:#64748b">🟢 up &nbsp; 🔴 gangguan &nbsp; ⚪ down / disable</div>
-<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-top:4px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" checked onchange="window.chaosOn=this.checked" style="width:15px;height:15px;margin-top:1px"> <span>Simulasi realistis — device kadang down sendiri lalu pulih</span></label>
+<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-top:4px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" onchange="window.chaosOn=this.checked" style="width:15px;height:15px;margin-top:1px"> <span>Simulasi realistis — device kadang down sendiri lalu pulih</span></label>
 <div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
 <input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
 <div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
@@ -229,7 +229,7 @@ if(rName===curR)renderIfaces();try{renderRouters();}catch(e){}}
 function renderDowntime(){const tb=document.getElementById('downBody');if(!tb)return;if(!DOWNTIME.length){tb.innerHTML='<tr><td colspan="5" style="padding:10px;text-align:center;color:#64748b">Belum ada downtime. Device DOWN akan tercatat di sini.</td></tr>';return;}
 tb.innerHTML=DOWNTIME.slice(0,30).map(e=>{const live=!e.upAt;const tot=live?fmtDur(Date.now()-e.downAt)+' ⏳':fmtDur(e.totalMs||0);return `<tr style="border-top:1px solid #e0f2fe"><td style="padding:6px 10px;font-weight:700">${e.dev}</td><td style="padding:6px 10px">${e.downStr}</td><td style="padding:6px 10px">${live?'<span style="color:#b91c1c;font-weight:700">masih DOWN</span>':e.upStr}</td><td style="padding:6px 10px;font-weight:700">${tot}</td><td style="padding:6px 10px">${e.reason}</td></tr>`;}).join('');}
 function refreshDurations(){document.querySelectorAll('[data-dur]').forEach(el=>{const key=el.getAttribute('data-dur');const sep=key.indexOf('|');const r=key.slice(0,sep),n=key.slice(sep+1);const p=(DB[r]||[]).find(x=>x.n===n);if(!p)return;if(p.oper==='down'&&p.downSince){el.textContent='DOWN '+fmtDur(Date.now()-p.downSince);}else{el.textContent=p.admin+'/'+p.oper;}});}
-let chaosOn=true; window.chaosOn=true;
+let chaosOn=false; window.chaosOn=false;
 function renderIfaces(){const el=document.getElementById('ifaces');el.innerHTML='';const L=LIVE[curR];const stat=(L&&L.stat&&L.stat.ifaces)||null;const rate=n=>{if(!stat)return '';const f=stat.find(x=>x.name===n);return f?` <span style="font-size:11px;color:#0369a1">↓${f.dlMbps} ↑${f.ulMbps}</span>`:'';};DB[curR].forEach(i=>{const d=document.createElement('div');d.className='iface'+(i.n===curI?' active':'');let dot='green';if(i.admin==='down')dot='grey';else if(i.oper==='down')dot='grey';else if(i.fault!=='sehat'&&i.fault!=='sehat-sfp')dot='red';const st=(i.oper==='down'&&i.downSince)?('DOWN '+fmtDur(Date.now()-i.downSince)):(i.admin+'/'+i.oper);d.innerHTML=`<span><span class="dot ${dot}"></span>${i.n}${rate(i.n)}</span><span data-dur="${curR}|${i.n}">${st}</span>`;d.onclick=()=>{curI=i.n;renderIfaces();};d.oncontextmenu=(ev)=>{ev.preventDefault();curI=i.n;showCtx(ev.clientX,ev.clientY);};el.appendChild(d);});if(L&&L.stat&&(L.stat.cpu!=null||L.stat.memPct!=null))el.innerHTML+=`<div style="font-size:11px;color:#64748b;padding:4px 2px">CPU ${L.stat.cpu!=null?L.stat.cpu+'%':'?'} • RAM ${L.stat.memPct!=null?L.stat.memPct+'%':'?'}</div>`;refresh();}
 // ala PRTG: semua device SNMP dipoll background tiap 20 dtk (rate semua port + alarm down)
 setInterval(async()=>{
@@ -300,7 +300,7 @@ document.getElementById('err').innerHTML=`<div class="kv"><span>CRC error</span>
 }
 const ctx=document.getElementById('chart');
 const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
-function tick(){const c=cur();const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){let d=down?0:20+Math.random()*60,u=down?0:5+Math.random()*20;if(c.fault==='kabel-jelek'||c.fault==='redaman-tinggi'){if(Math.random()>0.8)d*=0.25;}dl.push(d);dl.shift();ul.push(u);ul.shift();chart.update();document.getElementById('dl').textContent=d.toFixed(1)+' Mbps';document.getElementById('ul').textContent=u.toFixed(1)+' Mbps';document.getElementById('ping').textContent=down?'—':(8+Math.random()*20).toFixed(0)+' ms';const loss=down?100:(d<8?8+Math.random()*8:Math.random()*1);document.getElementById('loss').textContent=loss.toFixed(1)+' %';try{if(!down&&loss>5)maybeAlarm(curR+'/'+c.n,'warn','Loss tinggi '+loss.toFixed(1)+'%');}catch(e){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chart.update();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio DL:UL — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio DL:UL ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- LIVE: perangkat asli via collector ----
@@ -813,24 +813,19 @@ if(manualFb)manualNode(clean,px,py);else simAdd(clean);
 }
 function simAdd(clean){
 const lo=parseInt(clean.split('.').pop(),10);
-let type='PC',icon='pc',ifs=1;
-if(lo===1||lo===254){type='Router';icon='router';ifs=4;}
-else if(lo>=2&&lo<=9){type='Switch';icon='switch';ifs=6;}
-else if(lo>=10&&lo<=19){type='Server';icon='server';ifs=2;}
-else if(lo>=20&&lo<=49){type='ONT/Modem';icon='ont';ifs=2;}
-else if(lo>=50&&lo<=99){type='Access Point';icon='ap';ifs=1;}
-const key='IP '+clean;
-DB[key]=[];for(let i=0;i<ifs;i++)DB[key].push({n:'if'+(i+1),type:'copper',admin:'up',oper:'up',fault:'sehat',poe:'-',speed:'1G'});
-let g=SIDEBAR.find(g=>g.layer==='Hasil Auto-Detect');if(!g){g={layer:'Hasil Auto-Detect',devs:[]};SIDEBAR.push(g);}
-if(!g.devs.includes(key))g.devs.push(key);
+let type='PC',icon='pc';
+if(lo===1||lo===254){type='Router';icon='router';}
+else if(lo>=2&&lo<=9){type='Switch';icon='switch';}
+else if(lo>=10&&lo<=19){type='Server';icon='server';}
+else if(lo>=20&&lo<=49){type='ONT/Modem';icon='ont';}
+else if(lo>=50&&lo<=99){type='Access Point';icon='ap';}
 let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
 const id='ip'+Date.now()%100000;
-TOPO.push({id,icon,label:key,sub:clean+' • '+type,x:Math.round(200+Math.random()*400),y:Math.round(120+Math.random()*160),db:key});
-if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan','','if1']);
-curR=key;curI=DB[key][0].n;
-renderRouters();renderIfaces();drawTopo();saveTopo();showTab('dash');
-log('✔ detect '+clean+': '+type+' • '+ifs+' interface → "'+key+'" (simulasi, label peta bisa diedit 2x klik)');
-try{pushAlarm('info','detect/'+clean,'Terdeteksi '+type+' • '+ifs+' interface (simulasi)');}catch(e){}
+TOPO.push({id,icon,label:clean,sub:clean+' • '+type+' • belum live',x:Math.round(200+Math.random()*400),y:Math.round(120+Math.random()*160)});
+if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan']);
+drawTopo();saveTopo();
+log('> '+clean+': '+type+' masuk peta (belum live — tidak ada data karangan)');
+try{pushAlarm('info','detect/'+clean,'Masuk peta sebagai '+type+' (belum live)');}catch(e){}
 }
 function cableFrom(id){
 document.getElementById('tmenu')?.remove();
