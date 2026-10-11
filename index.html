@@ -505,7 +505,7 @@ log('> export archify "'+label+'" ('+TOPO.length+' node) ...');
 fetch(COLL()+'/api/archify-export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Topologi '+label+' — NetMonitor',layer:label,nodes:TOPO.map(n=>({id:n.id,label:n.label,sub:n.sub,icon:n.icon,x:n.x,y:n.y})),links:LINKS})})
 .then(r=>r.json()).then(j=>{
 if(!j.ok)throw new Error((j.error||'gagal')+(j.validation?': '+JSON.stringify(j.validation).slice(0,200):''));
-log('✔ archify jadi: '+j.file);
+log('✔ archify jadi ('+(j.profile||'showcase')+'): '+j.file);
 try{pushAlarm('info','topologi','Export Archify '+j.file);}catch(e){}
 window.open(COLL()+j.url,'_blank');
 }).catch(e=>{log('> export archify gagal: '+String(e.message||e).slice(0,150));});
