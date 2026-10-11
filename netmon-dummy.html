@@ -48,7 +48,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="app">
 <div class="sidebar">
 <div class="logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><span style="display:inline-flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M13 1 L4 14 h6 l-1 9 9-13 h-6 z" fill="#fde047" stroke="#b45309" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>NetMonitor</span></div>
-<div class="label">Pilih Perangkat (ikut topologi)</div><div id="routers"></div>
+<div class="label">Device terpantau</div><div id="routers"></div>
 <div class="label">Interface <span style="font-weight:400;text-transform:none">(klik kanan = disable/enable)</span></div><div id="ifaces" style="display:flex;flex-direction:column;gap:8px"></div>
 <div class="label">Legenda</div>
 <div style="font-size:12px;color:#64748b">🟢 up &nbsp; 🔴 gangguan &nbsp; ⚪ down / disable</div>
@@ -223,7 +223,7 @@ let dl=Array(30).fill(0), ul=Array(30).fill(0), labels=Array(30).fill('');
 function devDot(r){const ps=DB[r]||[];if(ps.some(p=>p.oper==='down'))return 'grey';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'red';return 'green';}
 function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,db:n.db});});});return out;}
 function pickDev(db){if(!DB[db]||!DB[db].length)return;curR=db;curI=DB[db][0].n;try{renderRouters();renderIfaces();}catch(e){}try{showTab('dash');}catch(e){}try{log('> pantau '+db);}catch(e){}}
-function renderRouters(){const el=document.getElementById('routers');el.innerHTML='';const devs=topoDevs();if(!devs.length){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada device di topologi — buka tab Topologi → ＋ IP & Detect.</div>';return;}let lastLayer=null;devs.forEach(d=>{if(d.layer!==lastLayer){lastLayer=d.layer;const t=document.createElement('div');t.className='label';t.textContent=d.layer;el.appendChild(t);}const b=document.createElement('button');b.className='router-btn'+(d.db===curR?' active':'');b.innerHTML=`<span class="dot ${devDot(d.db)}"></span>${d.db}${LIVE[d.db]?' 🟢':''}`;b.onclick=()=>pickDev(d.db);el.appendChild(b);});}
+function renderRouters(){const el=document.getElementById('routers');if(!el)return;const ps=DB[curR]||[];const downs=ps.filter(p=>p.oper==='down').length;el.innerHTML=`<div class="router-btn active" style="cursor:default;display:flex;gap:8px;align-items:flex-start"><span class="dot ${devDot(curR)}" style="margin-top:4px"></span><span style="flex:1"><b>${curR}</b>${LIVE[curR]?' 🟢':''}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}</span></span></div>`;}
 function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
 function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
 function setLink(rName,p,oper,reason){reason=reason||'otomatis';
