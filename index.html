@@ -56,12 +56,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
 <input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
 <div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
-<div class="label">AI agent <span id="aiStatus" style="font-weight:400;color:#64748b">belum dicek</span></div>
-<input id="aiKey" type="password" placeholder="API key (9Router / Gemini / dll)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-ai-key',this.value);}catch(e){}">
-<div style="display:flex;gap:4px;margin-top:4px"><button onclick="testAiKey()" style="flex:1;border:0;background:#e0f2fe;color:#0369a1;border-radius:8px;padding:7px;font-weight:800;cursor:pointer;font-size:12px">Cek API</button><button onclick="document.getElementById('aiKey').value='';localStorage.removeItem('netmon-ai-key');setAiStatus('dihapus','#64748b')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer;font-size:12px">Hapus</button></div>
-<input id="aiBase" placeholder="Base URL (kosongkan = 9Router)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="try{localStorage.setItem('netmon-ai-base',this.value);}catch(e){}">
-<input id="aiModel" placeholder="Model (kosongkan = auto-failover)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="try{localStorage.setItem('netmon-ai-model',this.value);}catch(e){}">
-<div style="font-size:11px;color:#64748b;margin-top:2px">key cuma di mesin ini • jangan bagikan dashboard ke sembarang orang</div>
 <div style="display:flex;gap:6px;margin-top:8px">
 <button onclick="setAutoCare()" id="autoCareBtn" style="flex:1;border:2px solid #bae6fd;background:#fff;color:#0369a1;border-radius:10px;padding:8px;font-weight:800;cursor:pointer;font-size:12px">🤖 Auto-Care</button>
 <span id="autoCareState" style="align-self:center;font-size:11px;color:#64748b">OFF</span>
@@ -88,21 +82,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik DL/UL (port LAN)</button>
 <div style="margin-top:12px"><h3>🔌 Layer 1 — Copper / Cable Test (TDR)</h3><div id="tdr"></div></div>
 </div>
-<div class="panel"><h3>🤖 Router AI — Full Diagnosa</h3>
-<div class="ai-box" id="aiText">Pilih interface, lalu klik Diagnosa.</div>
-<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" id="autoFix" checked style="width:16px;height:16px"> Auto-resolve ON — aksi aman jalan sendiri atas arahan AI</label>
-<button class="ai-btn" onclick="aiDiagnose()">🔍 AI Diagnosa Sekarang</button>
-<button class="ai-btn" style="background:#059669" onclick="runAiPlan()">▶ Jalankan Arahan AI</button>
-<div style="display:flex;gap:8px;margin-top:8px">
-<button class="ai-btn ghost" onclick="log('> hint: semua aksi hanya via Diagnosa → Jalankan Arahan AI')">Semua aksi via AI</button>
-</div>
-<div style="margin-top:10px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:12px;padding:10px">
-<div class="label" style="margin-top:0">Komplain wifi → AI Solver</div>
-<div style="display:flex;gap:6px;margin-top:6px"><input id="cmplain" class="mock-input" placeholder="cth: A4.1 ga bisa internet" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:13px" onkeydown="if(event.key==='Enter')aiComplaint()"><button class="ai-btn" style="width:auto;padding:8px 14px;margin:0" onclick="aiComplaint()">🚨 Cek</button></div>
-<div class="ai-box" id="cmplainOut" style="margin-top:8px">Tulis lokasi komplain (cth: A4.1 / Pavilion 2 / NBH 1), AI telusuri rantainya: AP → switch → ONT → VLAN/DHCP → NAT → uplink.</div>
-</div>
-<div class="log" id="log">> AI standby...\n</div>
-</div>
+<div class="log" id="log">> NetMonitor siap. Klik node di topologi buat pantau.\n</div>
 </div>
 <div class="grid2">
 <div class="panel"><h3>🔦 Layer 1 — SFP / Fiber DDM</h3><div id="sfp"></div></div>
@@ -275,10 +255,8 @@ function showCtx(x,y){hideCtx();const c=cur();const m=document.createElement('di
 +`<button onclick="simUnplug()" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:8px;cursor:pointer;margin-top:4px">🔌 Simulasi cabut kabel</button>`;
 document.body.appendChild(m);setTimeout(()=>document.addEventListener('click',hideCtx,{once:true}),50);}
 function hideCtx(){document.getElementById('ctx')?.remove();}
-function setAdmin(s){hideCtx();const c=cur();c.admin=s;if(s==='down'){c.prevFault=c.fault;c.fault='disabled-human';setLink(curR,c,'down','disable manual');log('> kamu DISABLE '+c.n+' (klik kanan)');document.getElementById('aiText').textContent=`⚠️ ${c.n} di-disable manual.\nAI siap hidupin lagi — jalankan Diagnosa lalu Jalankan Arahan AI, atau nyalakan Auto-resolve.`;}else{c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';setLink(curR,c,'up','enable manual');log('> kamu ENABLE '+c.n+' manual');}renderIfaces();}
+function setAdmin(s){hideCtx();const c=cur();c.admin=s;if(s==='down'){c.prevFault=c.fault;c.fault='disabled-human';setLink(curR,c,'down','disable manual');log('> kamu DISABLE '+c.n+' (klik kanan)');}else{c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';setLink(curR,c,'up','enable manual');log('> kamu ENABLE '+c.n+' manual');}renderIfaces();}
 function simUnplug(){hideCtx();const c=cur();c.admin='up';if(c.type==='sfp'){c.fault='no-light';}else{c.fault='putus-23m';c.poe='0W';}setLink(curR,c,'down','kabel dicabut (simulasi)');log('> simulasi kabel '+c.n+' DICABUT');renderIfaces();}
-function aiAutoEnable(){const c=cur();if(c.admin==='down'){log('> AI menghidupkan '+c.n+' ...');document.getElementById('aiText').textContent='🤖 AI: enable port '+c.n+' ...';setTimeout(()=>{c.admin='up';c.oper='up';if(c.fault==='disabled-human')c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';log('✔ AI: '+c.n+' sudah UP lagi ✅');document.getElementById('aiText').textContent='✅ AI berhasil hidupin '+c.n+'.\nDicatat di log: auto-enable oleh AI (approval kamu via tombol).';renderIfaces();},900);}else{log('> AI: '+c.n+' sudah UP, nggak perlu dihidupin');}}
-setInterval(()=>{const on=document.getElementById('autoFix')?.checked;if(!on)return;for(const r in DB){for(const p of DB[r]){if(p.admin==='down'&&p.fault==='disabled-human'&&!p._aiFix){p._aiFix=true;const where=`${r}/${p.n}`;log(`> AUTO-RESOLVE: AI deteksi ${where} disabled → hidupin sendiri...`);setTimeout(()=>{p.admin='up';if(p.fault==='disabled-human')p.fault=p.prevFault&&p.prevFault!=='disabled-human'?p.prevFault:'sehat';p._aiFix=false;setLink(r,p,'up','auto-resolve AI');log(`✔ AUTO-RESOLVE: ${where} UP ✅`);if(r===curR)renderIfaces();},2500);}}}},1500);
 function badge(t,c){return `<span class="badge ${c}">${t}</span>`;}
 function refresh(){
 const c=cur();document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`;
@@ -322,82 +300,12 @@ const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels
 function tick(){const c=cur();const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){let d=down?0:20+Math.random()*60,u=down?0:5+Math.random()*20;if(c.fault==='kabel-jelek'||c.fault==='redaman-tinggi'){if(Math.random()>0.8)d*=0.25;}dl.push(d);dl.shift();ul.push(u);ul.shift();chart.update();document.getElementById('dl').textContent=d.toFixed(1)+' Mbps';document.getElementById('ul').textContent=u.toFixed(1)+' Mbps';document.getElementById('ping').textContent=down?'—':(8+Math.random()*20).toFixed(0)+' ms';const loss=down?100:(d<8?8+Math.random()*8:Math.random()*1);document.getElementById('loss').textContent=loss.toFixed(1)+' %';try{if(!down&&loss>5)maybeAlarm(curR+'/'+c.n,'warn','Loss tinggi '+loss.toFixed(1)+'%');}catch(e){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio DL:UL — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio DL:UL ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
-function aiDiagnose(){
-const c=cur();log('> AI diagnosa '+c.n+' ...');
-let txt='', plan=null;
-if(c.fault==='putus-23m'){txt=`HASIL AI — Layer 1 OPEN (confidence 92%)\n• Admin up / Oper down, TDR OPEN @ ~23m, PoE 0W, error counter 0.\n• Artinya: kabel putus / ujung tidak nyolok.\n• Arahan AI: PoE cycle 1x untuk bukti → lalu buat tiket teknisi + titik 23m.`;plan={aksi:'poe-lalu-tiket',label:'PoE cycle + buat tiket teknisi'};}
-else if(c.fault==='kabel-jelek'){txt=`HASIL AI — Kabel jelek (87%)\n• CRC/FCS naik + flap 17x/hari + TDR SHORT 41m.\n• Arahan AI: turunkan ke 100M-Full sementara + jadwalkan recabling.`;plan={aksi:'downgrade-100m',label:'Turun ke 100M + jadwal recabling'};}
-else if(c.fault==='disabled-human'){txt=`HASIL AI — Human error (99%)\n• Admin DOWN manual.\n• Arahan AI: enable port kembali + catat aktor.`;plan={aksi:'enable',label:'Enable port kembali'};}
-else if(c.fault==='redaman-tinggi'){txt=`HASIL AI — SFP redaman gede (90%)\n• RX -24.6 dBm, redaman ~21.7 dB, CRC naik.\n• Arahan AI: instruksi bersih konektor + cek bending + ganti patchcord, workaround turun speed.`;plan={aksi:'sfp-workaround',label:'Workaround SFP + instruksi teknisi'};}
-else if(c.fault==='no-light'){txt=`HASIL AI — SFP NO LIGHT (96%)\n• RX -40 dBm + LOS. Fiber putus / tidak nyolok.\n• Arahan AI: buat tiket fiber + cek patchcord/ODP. Jangan flap.`;plan={aksi:'tiket-fiber',label:'Buat tiket fiber'};}
-else if(c.fault==='live-down'){txt=`HASIL AI — DOWN di device asli (live)\n• ${curR}/${c.n} oper DOWN menurut ${ (LIVE[curR]||{}).via||'collector' }.\n• Collector read-only: AI tidak bisa utak-atik device, hanya vonis + tiket.\n• Arahan AI: cek fisik kabel/port di lokasi + tiket teknisi.`;plan={aksi:'tiket-live',label:'Buat tiket cek fisik'};}
-else{txt=`HASIL AI — Sehat (98%)\n• TDR OK, SFP normal, error counter bersih.`;plan=null;}
-// ---- CEK KETIMPANGAN BANDWIDTH (berlaku di device mana pun yang UP) ----
-try{
-if(c.oper!=='down'){
-const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;
-const r=au>0.05?(ad/au):99;
-if((au<2&&ad>15)||r>8){
-txt+=`\n\n⚠ KETIMPANGAN TERDETEKSI (bagian AI diagnosa)\n• Rata-rata DL ${ad.toFixed(1)} Mbps vs UL ${au.toFixed(1)} Mbps → rasio ${r.toFixed(1)}:1.\n• Pola "download lancar, upload ~0": tersangka QoS/policer uplink, NAT conntrack penuh, atau airtime AP habis.\n• Berlaku untuk ${curR}/${c.n} — pindah device buat cek yang lain.`;
-if(!plan)plan={aksi:'imbalance-check',label:'Telusuri sumber timpang + tiket NOC'};
-log('> AI: ketimpangan DL:UL '+r.toFixed(1)+':1 @ '+c.n);
-pushAlarm('warn',curR+'/'+c.n,'Timpang DL '+ad.toFixed(0)+'M vs UL '+au.toFixed(1)+'M ('+r.toFixed(1)+':1)');
-}else{txt+=`\n\n• Rasio DL:UL ${r.toFixed(1)}:1 — seimbang.`;}
-}}catch(e){}
-window._aiPlan=plan;
-document.getElementById('aiText').textContent=txt+(plan?`\n\n➡ ARAHAN AI: ${plan.label}\nKlik "Jalankan Arahan AI".`:`\n\n➡ Tidak ada aksi.`);
-log('> AI selesai: '+c.fault+(plan?' → arahan: '+plan.label:''));try{pushAlarm(plan?'warn':'info',curR+'/'+c.n,'AI diagnosa: '+c.fault+(plan?' → '+plan.label:' (sehat)'));}catch(e){}
-}
-function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
-function aiComplaint(){
-const loc=(document.getElementById('cmplain').value||'').trim()||'A4.1';
-const out=document.getElementById('cmplainOut');
-const h=hashStr(loc.toLowerCase());
-const vlan=31+(h%10);
-const scen=['dhcp-full','ssid-overload','conntrack','channel-sesak','ont-rx','sehat'][h%6];
-log('> KOMPLAIN: wifi "'+loc+'" ga bisa internet → AI telusuri rantai...');
-pushAlarm('warn','komplain/'+loc,'Komplain wifi "'+loc+'" — AI mulai telusuri rantai');
-out.textContent='🔍 AI telusuri rantai "'+loc+'" (VLAN '+vlan+')...\n• AP → switch → ONT → VLAN/DHCP → NAT → uplink';
-const steps=[
-['AP '+loc,'client '+(38+h%60)+', SSID/radio '+(scen==='ssid-overload'?(12+h%6):(3+h%3))+', ch-util '+(scen==='channel-sesak'?(78+h%15):(35+h%25))+'%',scen==='ssid-overload'?'PROBLEM':(scen==='channel-sesak'?'PROBLEM':'OK')],
-['SW Ruijie PoE','PoE '+(scen==='ont-rx'?'normal':'normal')+', err 0',scen==='ont-rx'?'OK':'OK'],
-['ONT lokasi','RX '+(scen==='ont-rx'?('-'+(26+h%3))+'.'+(h%9):('-'+(17+h%4))+'.'+(h%9))+' dBm',scen==='ont-rx'?'PROBLEM':'OK'],
-['VLAN '+vlan+' DHCP','pool '+(scen==='dhcp-full'?(94+h%5):(40+h%30))+'% terpakai',scen==='dhcp-full'?'PROBLEM':'OK'],
-['Router Ictel NAT','conntrack '+(scen==='conntrack'?(93+h%5):(45+h%20))+'%',scen==='conntrack'?'PROBLEM':'OK'],
-['Uplink 500M','down 412M / up 96M',scen==='conntrack'?'WARN':'OK'],
-];
-steps.forEach((s,i)=>setTimeout(()=>{out.textContent+='\n'+(s[2]==='OK'?'✅':(s[2]==='WARN'?'⚠':'❌'))+' '+s[0]+': '+s[1]+' → '+s[2];},500*(i+1)));
-setTimeout(()=>{
-const fix={'dhcp-full':['DHCP VLAN '+vlan+' penuh ('+((94+h%5))+'%) — HP baru gagal lease.','Perluas pool /23 + lease-time 4 jam + tiket NOC.','tiket-dhcp'],
-'ssid-overload':['AP '+loc+' megang '+(12+h%6)+' SSID — airtime habis buat beacon, upload 0.','Gabung SSID per gedung + VLAN via RADIUS + tiket NOC.','tiket-ssid'],
-'conntrack':['NAT Router Ictel '+(93+h%5)+'% — session upload baru gagal duluan.','Naikkan conntrack-max + fair-queue upload + pantau 1 jam.','conntrack-fix'],
-'channel-sesak':['Channel AP '+loc+' '+(78+h%15)+'% — tabrakan antar AP asrama.','Retune channel + turunkan TX power + tiket survei.','tiket-rf'],
-'ont-rx':['RX ONT lokasi -'+(26+h%3)+' dBm — redaman gede, link putus-nyambung.','Cek konektor/bending/patchcord + tiket fiber.','tiket-fiber'],
-'sehat':['Rantai "'+loc+'" sehat semua — kemungkinan device user / password salah.','Minta user restart wifi + cek portal login.','info-user']}[scen];
-out.textContent+='\n\n🎯 VONIS: '+fix[0]+'\n➡ ARAHAN AI: '+fix[1];
-log('> AI vonis "'+loc+'": '+fix[0]);
-pushAlarm(scen==='sehat'?'info':'crit','komplain/'+loc,'Vonis: '+fix[0]);
-pushAlarm('info','komplain/'+loc,'Tiket dibuat → '+fix[1]);
-},500*(steps.length+1));
-}
-function runAiPlan(){
-const c=cur();const plan=window._aiPlan;
-if(!plan){log('> tidak ada arahan AI. Diagnosa dulu.');return;}
-log(`> jalankan arahan AI: ${plan.label} @ ${c.n} ...`);
-if(plan.aksi==='enable'){setTimeout(()=>{c.admin='up';if(c.fault==='disabled-human')c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';setLink(curR,c,'up','arahan AI (enable)');log('✔ AI: port UP ✅ + aktor dicatat');try{pushAlarm('info',curR+'/'+c.n,'AI resolve: port di-enable kembali ✅');}catch(e){}renderIfaces();},900);}
-else if(plan.aksi==='downgrade-100m'){setTimeout(()=>{c.speed='100M-Full';log('✔ AI: speed → 100M-Full (stabil sementara) + tiket recabling dibuat');try{pushAlarm('warn',curR+'/'+c.n,'AI workaround: speed → 100M-Full + tiket recabling');}catch(e){}renderIfaces();},900);}
-else if(plan.aksi==='poe-lalu-tiket'){setTimeout(()=>{log('✔ AI: PoE cycle 10 dtk... ujung tetap mati → tiket teknisi dibuat (titik 23m)');try{pushAlarm('crit',curR+'/'+c.n,'Layer 1 OPEN → tiket teknisi (titik 23m)');}catch(e){}},1200);}
-else if(plan.aksi==='sfp-workaround'){setTimeout(()=>{log('✔ AI: instruksi ke teknisi terkirim + speed workaround diterapkan (dummy)');try{pushAlarm('warn',curR+'/'+c.n,'SFP redaman gede → instruksi teknisi terkirim');}catch(e){}},900);}
-else if(plan.aksi==='tiket-fiber'){setTimeout(()=>{log('✔ AI: tiket fiber dibuat → cek patchcord/ODP/bending');try{pushAlarm('crit',curR+'/'+c.n,'SFP NO LIGHT → tiket fiber');}catch(e){}},700);}
-else if(plan.aksi==='imbalance-check'){setTimeout(()=>{log('✔ AI: cek QoS uplink + conntrack + airtime AP... tiket NOC dibuat (dummy)');try{pushAlarm('warn',curR+'/'+c.n,'Tiket NOC: telusuri ketimpangan DL:UL');}catch(e){}},900);}
-else if(plan.aksi==='tiket-live'){setTimeout(()=>{log('✔ AI: tiket cek fisik dibuat untuk '+c.n+' (device live, tanpa ubah config)');try{pushAlarm('warn',curR+'/'+c.n,'Tiket cek fisik (live)');}catch(e){}},700);}
-}
 // ---- LIVE: perangkat asli via collector ----
 function COLL(){const el=document.getElementById('collUrl');return ((el&&el.value)||localStorage.getItem('netmon-coll')||'http://localhost:8932').replace(/\/$/,'');}
 let LIVE={};try{LIVE=JSON.parse(localStorage.getItem('netmon-live-v1')||'{}');}catch(e){LIVE={};}
 function persistLive(){try{localStorage.setItem('netmon-live-v1',JSON.stringify(LIVE));}catch(e){}}
 function ensureDetectGroup(){let g=SIDEBAR.find(g=>g.layer==='Hasil Auto-Detect');if(!g){g={layer:'Hasil Auto-Detect',devs:[]};SIDEBAR.push(g);}return g;}
-function restoreLive(){for(const key in LIVE){const L=LIVE[key];if(!L||!L.ifaces)continue;if(!DB[key])DB[key]=JSON.parse(JSON.stringify(L.ifaces));const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);}try{document.getElementById('collUrl').value=localStorage.getItem('netmon-coll')||'http://localhost:8932';}catch(e){}restoreAiFields();}
+function restoreLive(){for(const key in LIVE){const L=LIVE[key];if(!L||!L.ifaces)continue;if(!DB[key])DB[key]=JSON.parse(JSON.stringify(L.ifaces));const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);}try{document.getElementById('collUrl').value=localStorage.getItem('netmon-coll')||'http://localhost:8932';}catch(e){}}
 async function collGet(path,timeoutMs){const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeoutMs||20000);try{const r=await fetch(COLL()+path,{signal:ctl.signal});return await r.json();}finally{clearTimeout(to);}}
 setInterval(async()=>{try{await collGet('/health',5000);const d=document.getElementById('collDot');if(d){d.textContent='🟢';d.title='collector nyambung';}}catch(e){const d=document.getElementById('collDot');if(d){d.textContent='🔴';d.title='collector MATI — jalankan node server.js di netmon-collector';}}},15000);
 function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> DL/UL '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=DL':'Rx=DL')+')');}
@@ -492,21 +400,6 @@ let lastAlarmAt={};
 function maybeAlarm(dev,sev,msg){const k=dev+sev;const now=Date.now();if(now-(lastAlarmAt[k]||0)<20000)return;lastAlarmAt[k]=now;pushAlarm(sev,dev,msg);}
 const _tick=tick;
 // ---- TABS ----
-function restoreAiFields(){try{const k=localStorage.getItem('netmon-ai-key');if(k&&document.getElementById('aiKey'))document.getElementById('aiKey').value=k;const b=localStorage.getItem('netmon-ai-base');if(b&&document.getElementById('aiBase'))document.getElementById('aiBase').value=b;const m=localStorage.getItem('netmon-ai-model');if(m&&document.getElementById('aiModel'))document.getElementById('aiModel').value=m;}catch(e){}}
-function setAiStatus(t,c){const s=document.getElementById('aiStatus');if(s){s.textContent=t;s.style.color=c||'#64748b';}}
-async function testAiKey(){
-const key=(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim();
-if(!key){setAiStatus('key kosong','#b91c1c');return;}
-setAiStatus('mengecek...','#64748b');
-try{
-const base=(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim();
-const model=(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim();
-const r=await fetch(COLL()+'/api/ai-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aiKey:key,aiBase:base,aiModel:model})});
-const j=await r.json();
-if(j.ok){setAiStatus('valid — '+(j.model||''),'#15803d');log('> API key valid');}
-else{setAiStatus('invalid: '+String(j.error||'').slice(0,60),'#b91c1c');log('> API key TIDAK valid: '+String(j.error||'').slice(0,80));}
-}catch(e){setAiStatus('gagal: '+String(e.message||e).slice(0,60),'#b91c1c');}
-}
 function showTab(w){const tabs={dash:'tab-dash',topo:'tab-topo',log:'tab-log'};for(const k in tabs){document.getElementById(tabs[k]).style.display=(k===w)?'flex':'none';}const btns={dash:'tabBtnDash',topo:'tabBtnTopo',log:'tabBtnLog'};for(const k in btns){const on=(k===w);document.getElementById(btns[k]).style.background=on?'#0284c7':'#fff';document.getElementById(btns[k]).style.color=on?'#fff':'#0369a1';}if(w==='topo'){renderLayerBtns();drawTopo();}if(w==='log'){renderAlarms();renderDowntime();markAlarmsRead();}}
 // ---- TOPOLOGI DUMMY (archify-style pastel) ----
 const ICONS={router:'Router',switch:'🔀',swpoe:'🔀⚡',ont:'📟',olt:'🖧',ap:'📶',pc:'🖥',server:'🗄',firewall:'🧱',internet:'🌐'};
