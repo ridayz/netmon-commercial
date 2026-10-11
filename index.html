@@ -384,7 +384,7 @@ function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swa
 setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
 setInterval(async()=>{try{
 const L=LIVE[curR];if(!L)return;const c=cur();if(!c||!c.live)return;
-const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}`,9000);
+const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&via=${encodeURIComponent(L.via||'')}&community=${encodeURIComponent(L.community||'')}`,9000);
 if(!j.ok)throw new Error(j.error||'traffic gagal');
 const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!(L.swap||{})[c.n];
 const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
@@ -784,7 +784,7 @@ const s=((identity||'')+' '+(descr||'')).toLowerCase();
 if(/olt|gepon|gpon/.test(s))return 'olt';
 if(/ont|modem|tplink|hg\d|f6\d/.test(s))return 'ont';
 if(/switch|crs|css/.test(s))return 'switch';
-if(/cap|wap|wireless|wifi/.test(s))return 'ap';
+if(/cap|wap|wireless|wifi|ruijie|rg-/.test(s))return 'ap';
 if(/server/.test(s))return 'server';
 return 'router';
 }
@@ -794,10 +794,12 @@ let ov=document.getElementById('dmodal');if(ov)ov.remove();
 ov=document.createElement('div');ov.id='dmodal';
 ov.style.cssText='position:fixed;inset:0;background:rgba(12,74,110,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px';
 ov.innerHTML=`<div style="background:#fff;border:3px solid #bae6fd;border-radius:18px;padding:18px;max-width:600px;width:100%;max-height:80vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;color:#0369a1">🔍 Discover jaringan lokal</h3><button onclick="document.getElementById('dmodal').remove()" style="border:0;background:#fee2e2;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">✕</button></div>
-<div style="display:flex;gap:6px;margin-top:10px"><select id="dnet" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:13px;background:#f0f9ff"></select><button onclick="discoverScan()" style="border:0;background:#0284c7;color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer">Scan</button></div>
+<div style="display:flex;gap:6px;margin-top:6px"><select id="dnet" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:13px;background:#f0f9ff"></select><button onclick="discoverScan()" style="border:0;background:#0284c7;color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer">Scan</button></div>
+<div style="display:flex;gap:6px;margin-top:6px"><input id="duser" placeholder="API user (cth: netmon)" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"><input id="dpass" type="password" placeholder="API pass" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"><input id="dcomm" placeholder="SNMP community" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"></div>
 <div id="dmodalBody" style="font-size:13px;margin-top:10px;color:#64748b">Pilih subnet → Scan (±15 detik untuk /24) → centang → tambah ke layer ini.</div></div>`;
 ov.addEventListener('click',ev=>{if(ev.target===ov)ov.remove();});
 document.body.appendChild(ov);
+try{fillCreds();}catch(e){}
 collGet('/api/localnets',10000).then(j=>{
 const s=document.getElementById('dnet');if(!s)return;
 const nets=(j.nets||[]).filter(n=>!/^127\.|^169\.254\./.test(n.ip));
@@ -805,9 +807,20 @@ if(!nets.length){s.innerHTML='<option value="">(tidak ada interface lokal)</opti
 s.innerHTML=nets.map((n,i)=>`<option value="${n.cidr}"${/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(n.ip)&&i===nets.findIndex(x=>/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(x.ip))?' selected':''}>${n.cidr} (via ${n.ip})</option>`).join('');
 }).catch(e=>{const b=document.getElementById('dmodalBody');if(b)b.innerHTML='Collector tidak nyambung: '+String(e.message||e).slice(0,80);});
 }
+function readCreds(){
+let c={user:'netmon',pass:'netmon123',community:'netmon'};
+try{const s=JSON.parse(localStorage.getItem('netmon-creds')||'null');if(s)c={...c,...s};}catch(e){}
+const g=id=>{const el=document.getElementById(id);return el&&el.value!==undefined?el.value:undefined;};
+const u=g('duser'),p=g('dpass'),cm=g('dcomm');
+if(u!==undefined&&u!=='')c.user=u; if(p!==undefined&&p!=='')c.pass=p; if(cm!==undefined&&cm!=='')c.community=cm;
+try{localStorage.setItem('netmon-creds',JSON.stringify(c));}catch(e){}
+return c;
+}
+function fillCreds(){try{const s=JSON.parse(localStorage.getItem('netmon-creds')||'null');if(!s)return;if(document.getElementById('duser'))document.getElementById('duser').value=s.user||'';if(document.getElementById('dcomm'))document.getElementById('dcomm').value=s.community||'';}catch(e){}}
 async function discoverScan(){
 const body=document.getElementById('dmodalBody');const net=(document.getElementById('dnet')||{}).value||'';
 if(!net){if(body)body.textContent='Pilih subnet dulu.';return;}
+readCreds();
 if(body)body.innerHTML='⏳ scan '+net+' ... (ping sweep + cek port 8728/8291/22/80)';
 try{
 const j=await collGet(`/api/netscan?net=${encodeURIComponent(net)}`,120000);
@@ -835,14 +848,15 @@ addNodeByIpGo(clean,px,py,manualFb);
 }
 function addNodeByIpGo(clean,px,py,manualFb){
 const key='IP '+clean;
+const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
 log('> detect '+clean+' via collector '+COLL()+' ...');try{pushAlarm('info','detect/'+clean,'Auto-detect '+clean+' (coba LIVE dulu)');}catch(e){}
-collGet(`/api/discover?ip=${clean}`,25000).then(j=>{
+collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,25000).then(j=>{
 if(!j.ok)throw new Error(j.error||'discover gagal');
 const ident=j.identity||j.sysName||clean;
 const icon=guessIcon(ident,j.sysDescr||'');
 const ifs=(j.interfaces||[]).map(x=>({n:x.name,type:(x.name||'').toLowerCase().includes('sfp')?'sfp':'copper',admin:x.admin||'up',oper:x.oper||'up',fault:(x.oper==='down')?'live-down':'sehat',live:true,poe:'-',speed:'-'}));
 if(!ifs.length)throw new Error('tidak ada interface terbaca');
-DB[key]=ifs;LIVE[key]={ip:clean,user:'netmon',pass:'netmon123',community:'netmon',ifaces:JSON.parse(JSON.stringify(ifs)),via:j.via,identity:ident};persistLive();
+DB[key]=ifs;LIVE[key]={ip:clean,user:creds.user,pass:creds.pass,community:creds.community,via:j.via,ifaces:JSON.parse(JSON.stringify(ifs)),identity:ident};persistLive();
 const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);
 let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
 const id='ip'+Date.now()%100000;
