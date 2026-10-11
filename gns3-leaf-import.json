@@ -1,42 +1,105 @@
 {
  "layers": {
   "gleaf": {
-   "label": "GNS3: LEAF (spine-leaf)",
+   "label": "GNS3: LEAF + SPINE",
    "vb": "0 0 900 400",
    "areas": [],
    "nodes": [
     {
-     "id": "leaf-1-gleaf",
+     "id": "spine-1-gleaf",
      "icon": "switch",
-     "label": "LEAF1-HO",
-     "sub": "e1 172.16.11.0/31 • e2 172.16.11.2/31",
-     "x": 140,
-     "y": 188,
+     "label": "SPINE1",
+     "sub": "e4 172.16.254.1/31 • e1 172.16.11.1/31",
+     "x": 297,
+     "y": 159,
      "st": "ok",
-     "gns": "20c42cb4-4dc7-46e3-8403-bf0a7b1518a2"
+     "gns": "ae282bee-12ee-453f-a687-d6e4b31505f5"
     },
     {
-     "id": "leaf-2-gleaf",
+     "id": "spine-2-gleaf",
      "icon": "switch",
-     "label": "LEAF2-CYBER1",
-     "sub": "e1 172.16.12.0/31 • e2 172.16.12.2/31",
-     "x": 464,
-     "y": 210,
+     "label": "SPINE2",
+     "sub": "e4 172.16.254.3/31 • e1 172.16.11.3/31",
+     "x": 608,
+     "y": 140,
      "st": "ok",
-     "gns": "9834af22-4c8c-46d0-a160-85cb6ef2b25f"
+     "gns": "eae93fdc-603b-4307-8044-22d9f76163e0"
     },
     {
      "id": "leaf-3-gleaf",
      "icon": "switch",
+     "label": "LEAF1-HO",
+     "sub": "e1 172.16.11.0/31 • e2 172.16.11.2/31",
+     "x": 292,
+     "y": 249,
+     "st": "ok",
+     "gns": "20c42cb4-4dc7-46e3-8403-bf0a7b1518a2"
+    },
+    {
+     "id": "leaf-4-gleaf",
+     "icon": "switch",
+     "label": "LEAF2-CYBER1",
+     "sub": "e1 172.16.12.0/31 • e2 172.16.12.2/31",
+     "x": 440,
+     "y": 259,
+     "st": "ok",
+     "gns": "9834af22-4c8c-46d0-a160-85cb6ef2b25f"
+    },
+    {
+     "id": "leaf-5-gleaf",
+     "icon": "switch",
      "label": "LEAF3-DRC",
      "sub": "e1 172.16.13.0/31 • e2 172.16.13.2/31",
-     "x": 760,
-     "y": 212,
+     "x": 575,
+     "y": 260,
      "st": "ok",
      "gns": "0c3d59e3-2538-43ab-93f3-0c3d090739e9"
     }
    ],
-   "links": []
+   "links": [
+    [
+     "leaf-3-gleaf",
+     "spine-1-gleaf",
+     "fo",
+     "e1 172.16.11.0/31",
+     "e1 172.16.11.1/31"
+    ],
+    [
+     "leaf-3-gleaf",
+     "spine-2-gleaf",
+     "fo",
+     "e2 172.16.11.2/31",
+     "e1 172.16.11.3/31"
+    ],
+    [
+     "leaf-4-gleaf",
+     "spine-1-gleaf",
+     "fo",
+     "e1 172.16.12.0/31",
+     "e2 172.16.12.1/31"
+    ],
+    [
+     "leaf-4-gleaf",
+     "spine-2-gleaf",
+     "fo",
+     "e2 172.16.12.2/31",
+     "e2 172.16.12.3/31"
+    ],
+    [
+     "leaf-5-gleaf",
+     "spine-1-gleaf",
+     "fo",
+     "e1 172.16.13.0/31",
+     "e3 172.16.13.1/31"
+    ],
+    [
+     "leaf-5-gleaf",
+     "spine-2-gleaf",
+     "fo",
+     "e2 172.16.13.2/31",
+     "e3 172.16.13.3/31"
+    ]
+   ]
   }
  }
 }
