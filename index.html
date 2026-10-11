@@ -127,6 +127,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <span>IP Publik: <b id="pubIp">203.0.113.10 (dummy)</b></span>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="discoverModal()" title="Scan perangkat satu jaringan dengan laptop ini">🔍 Discover</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="addTopoNode()">＋ Tambah perangkat</button>
+<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="autoLayout()" title="Susun node otomatis biar rapi (undo tersedia)">✨ Rapikan</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="gns3Modal()" title="Tarik topologi dari GNS3 server">⬇ GNS3</button>
 <span style="color:#64748b">drag node • klik kanan node/kanvas = menu • <b>2x klik = edit teks</b> • <span style="color:#fb923c;font-weight:800">━ FO</span> • <span style="color:#38bdf8;font-weight:800">━ LAN</span> • <span style="color:#ef4444;font-weight:800">✕ merah = DOWN</span> • live tiap 3 dtk</span>
 </div>
@@ -666,6 +667,32 @@ try{pushAlarm('info','gns3',`Import "${name}" (${tnodes.length} node)`);}catch(e
 document.getElementById('dmodal')?.remove();
 }catch(e){if(body)body.innerHTML='Gagal import: '+String(e.message||e).slice(0,150);}
 }
+function autoLayout(){
+if(TOPO.length<2){log('> rapikan: butuh minimal 2 node');return;}
+snapTopo();
+const W=900,H=400,L=200;
+const adj={};TOPO.forEach(n=>adj[n.id]=[]);
+LINKS.forEach(([a,b])=>{if(topoNode(a)&&topoNode(b)){adj[a].push(b);adj[b].push(a);}});
+for(let it=0;it<300;it++){
+const F={};TOPO.forEach(n=>F[n.id]={x:0,y:0});
+for(let i=0;i<TOPO.length;i++)for(let j=i+1;j<TOPO.length;j++){
+const A=TOPO[i],B=TOPO[j];let dx=A.x-B.x,dy=A.y-B.y;let d2=dx*dx+dy*dy;
+if(d2<1){dx=Math.random()-.5;dy=Math.random()-.5;d2=1;}
+const d=Math.sqrt(d2),f=Math.min(14400/d,50);
+F[A.id].x+=dx/d*f;F[A.id].y+=dy/d*f;F[B.id].x-=dx/d*f;F[B.id].y-=dy/d*f;
+}
+LINKS.forEach(([a,b])=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;
+const dx=B.x-A.x,dy=B.y-A.y,d=Math.max(1,Math.hypot(dx,dy)),f=(d-L)*0.06;
+F[a].x+=dx/d*f;F[a].y+=dy/d*f;F[b].x-=dx/d*f;F[b].y-=dy/d*f;});
+TOPO.forEach(n=>{F[n.id].x+=(W/2-n.x)*0.01;F[n.id].y+=(H/2-n.y)*0.01;});
+TOPO.forEach(n=>{const m=Math.hypot(F[n.id].x,F[n.id].y)||1,s=Math.min(m,18);
+n.x=Math.round(Math.min(W-70,Math.max(70,n.x+F[n.id].x/m*s)));
+n.y=Math.round(Math.min(H-40,Math.max(40,n.y+F[n.id].y/m*s)));});
+}
+drawTopo();saveTopo(true);
+log(`> topologi dirapikan otomatis (${TOPO.length} node, undo tersedia)`);
+try{pushAlarm('info','topologi','Auto-rapikan '+TOPO.length+' node');}catch(e){}
+}
 function setLayer(l){if(!LAYERS[l])l='pu';curLayer=l;TOPO=LAYERS[l].nodes;LINKS=LAYERS[l].links;renderLayerBtns();log('> layer topologi: '+LAYERS[l].label);drawTopo();}
 function topoNode(id){return TOPO.find(n=>n.id===id);}
 const VECICON=['router','ap','ont','olt','switch','swpoe'];
@@ -820,7 +847,7 @@ const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);
 let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
 const id='ip'+Date.now()%100000;
 TOPO.push({id,icon,label:ident,sub:clean+' • LIVE '+j.via,x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py,db:key});
-if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan']);
+if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan','',(ifs[0]||{}).n||'']);
 curR=key;curI=DB[key][0].n;
 DB[key].forEach(p=>{if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();});
 renderRouters();renderIfaces();drawTopo();saveTopo();showTab('dash');
@@ -846,7 +873,7 @@ if(!g.devs.includes(key))g.devs.push(key);
 let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
 const id='ip'+Date.now()%100000;
 TOPO.push({id,icon,label:key,sub:clean+' • '+type,x:Math.round(200+Math.random()*400),y:Math.round(120+Math.random()*160),db:key});
-if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan']);
+if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan','','if1']);
 curR=key;curI=DB[key][0].n;
 renderRouters();renderIfaces();drawTopo();saveTopo();showTab('dash');
 log('✔ detect '+clean+': '+type+' • '+ifs+' interface → "'+key+'" (simulasi, label peta bisa diedit 2x klik)');
