@@ -88,9 +88,11 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik DL/UL (port LAN)</button>
 <div style="margin-top:12px"><h3>🔌 Layer 1 — Copper / Cable Test (TDR)</h3><div id="tdr"></div></div>
 </div>
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
 <div class="log" id="log">> NetMonitor siap. Klik node di topologi buat pantau.\n</div>
-<div id="aiActions" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>
-<div id="aiResult" style="display:none;margin-top:8px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
+<div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
+<div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
+</div>
 </div>
 <div class="grid2">
 <div class="panel"><h3>🔦 Layer 1 — SFP / Fiber DDM</h3><div id="sfp"></div></div>
