@@ -90,6 +90,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 <div class="log" id="log">> NetMonitor siap. Klik node di topologi buat pantau.\n</div>
 <div id="aiActions" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>
+<div id="aiResult" style="display:none;margin-top:8px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
 </div>
 <div class="grid2">
 <div class="panel"><h3>🔦 Layer 1 — SFP / Fiber DDM</h3><div id="sfp"></div></div>
@@ -344,6 +345,37 @@ alarms:devAlarms.map(a=>({t:a.t,sev:a.sev,dev:a.dev,msg:a.msg})),
 downtime:devDown.map(d=>({dev:d.dev,downStr:d.downStr,upStr:d.upAt?d.upStr:null,totalMs:d.totalMs||null}))
 };
 }
+function fmtAiReply(t){
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const lines=String(t||'').split('\n');
+let h='',inList=false,first=true;
+const closeList=()=>{if(inList){h+='</ul>';inList=false;}};
+for(let raw of lines){
+let l=esc(raw.trim());
+if(!l){closeList();continue;}
+l=l.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const bul=l.match(/^(?:•|-|\*)\s+(.*)$/);
+const num=l.match(/^\d+[.)]\s+(.*)$/);
+if(bul||num){
+if(!inList){h+='<ul style="margin:6px 0;padding-left:22px">';inList=true;}
+h+='<li style="margin:3px 0">'+(bul?bul[1]:num[1])+'</li>';
+}else{
+closeList();
+if(first){const ok=/sehat|done|aman|tidak ada|beres/i.test(l);h+=`<div style="font-weight:800;font-size:15px;margin-bottom:6px">${ok?'🟢':'🔴'} ${l}</div>`;}
+else if(/^bukti/i.test(l.replace(/<[^>]+>/g,'')))h+=`<div style="font-weight:800;margin:8px 0 2px">📋 ${l}</div>`;
+else if(/^saran|arahan/i.test(l.replace(/<[^>]+>/g,'')))h+=`<div style="font-weight:800;margin:8px 0 2px">💡 ${l}</div>`;
+else h+=`<div style="margin:3px 0">${l}</div>`;
+}
+first=false;
+}
+closeList();
+return h;
+}
+function aiProgress(show,text,secs){
+const box=document.getElementById('aiResult');if(!box)return;
+if(!show){return;}
+box.style.display='block';
+box.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><div style="font-size:20px">🔍</div><div style="flex:1"><div style="font-weight:800;color:#0369a1">${text||'AI sedang diagnosa...'}</div><div style="font-size:12px;color:#64748b">berjalan ${secs||0} dtk • biasanya 30-60 dtk • jangan tutup halaman</div><div class="bar" style="margin-top:6px"><i style="width:100%;background:linear-gradient(90deg,#0284c7,#38bdf8,#0284c7);background-size:200% 100%;animation:aibar 1.2s linear infinite"></i></div></div></div><style>@keyframes aibar{to{background-position:-200% 0}}</style>`;
 function aiCreds(){return {key:(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim(),base:(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim(),model:(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim()};}
 function renderAiActions(actions){
 const box=document.getElementById('aiActions');if(!box)return;box.innerHTML='';
@@ -397,27 +429,36 @@ if(!key){log('> ⚠️ API key belum diisi — isi di sidebar → Cek API dulu.'
 const b=document.getElementById('aiFixBtn');if(b&&!isVerify){b.disabled=true;b.textContent='⏳ AI kerja...';}
 if(!isVerify)log('> ⚡ AI troubleshoot '+curR+' ... (analisa + minta akses kalau perlu benerin)');
 const reqId='ai-'+Date.now().toString(36)+Math.floor(Math.random()*99);
-let progIdx=0,progStop=false;
+const t0=Date.now();
+let progIdx=0,progStop=false,lastStage=isVerify?'Verifikasi ulang...':'AI mulai...';
+aiProgress(true,lastStage,0);
 const progTimer=setInterval(async()=>{
+const secs=Math.round((Date.now()-t0)/1000);
 try{
 const pj=await (await fetch(COLL()+'/api/ai-progress?id='+reqId)).json();
-(pj.stages||[]).slice(progIdx).forEach(s=>log('> '+s.stage));
+const fresh=(pj.stages||[]).slice(progIdx);
+fresh.forEach(s=>{log('> '+s.stage);lastStage=s.stage;});
 progIdx=(pj.stages||[]).length;
+aiProgress(true,lastStage+(progIdx?` (tahap ${progIdx})`:''),secs);
 if(pj.done){clearInterval(progTimer);progStop=true;}
-}catch(e){}
+}catch(e){aiProgress(true,lastStage+' (jalan...)',secs);}
 },2000);
 try{
 const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model,reqId})});
 const j=await r.json();
 if(!j.ok)throw new Error(j.error||('server '+r.status));
+clearInterval(progTimer);
+const secs=Math.round((Date.now()-t0)/1000);
 if(j.accessed)log('> 🔍 akses: '+j.accessed);
-log(j.reply.split('\n').map(l=>'> '+l).join('\n'));
+const box=document.getElementById('aiResult');
+if(box){box.style.display='block';box.innerHTML=fmtAiReply(j.reply)+`<div style="margin-top:8px;font-size:12px;color:#64748b">⏱ selesai dalam ${secs} dtk • ${j.accessed||'tanpa akses device'}</div>`;}
+log('> ✔ hasil keluar ('+secs+' dtk) — baca panel di bawah log.');
 if(j.files&&j.files.length)j.files.forEach(f=>log('> ⬇ backup: '+COLL()+f.url));
 if(j.actions&&j.actions.length&&!isVerify){renderAiActions(j.actions);log('> ☝️ AI minta persetujuan + login buat '+j.actions.length+' aksi di atas.');}
 else if(j.actions&&j.actions.length&&isVerify){renderAiActions(j.actions);log('> ⚠️ masih ada PR — setujui lagi kalau mau lanjut.');}
 else if(isVerify&&/done/i.test(j.reply)){log('> ✅ Done — AI verifikasi beres.');try{pushAlarm('info',curR,'AI troubleshoot: Done ✅');}catch(e){}}
 try{pushAlarm('info',curR,isVerify?'AI verifikasi selesai':'AI troubleshoot selesai');}catch(e){}
-}catch(e){log('> AI troubleshoot gagal: '+String(e.message||e).slice(0,150));}
+}catch(e){log('> AI troubleshoot gagal: '+String(e.message||e).slice(0,150));const box2=document.getElementById('aiResult');if(box2){box2.style.display='block';box2.innerHTML=`<div style="font-weight:800">🔴 Gagal</div><div>${String(e.message||e).slice(0,200)}</div>`;}}
 clearInterval(progTimer);
 if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
 }
