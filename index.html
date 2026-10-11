@@ -563,7 +563,7 @@ cv.toBlob(b=>{if(!b){log('> export PNG gagal');return;}const a=document.createEl
 img.onerror=()=>log('> export PNG gagal render');
 img.src=url;
 }catch(e){log('> export PNG gagal: '+e.message);}}
-function importTopo(inp){const f=inp.files&&inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);const ls=d.layers||d;if(!ls.pu||!ls.kij)throw new Error('format bukan projek netmon');LAYERS=ls;if(!LAYERS[curLayer])curLayer='pu';TOPO=LAYERS[curLayer].nodes;LINKS=LAYERS[curLayer].links;setLayer(curLayer);saveTopo(true);log('> projek di-import dari '+f.name);}catch(e){log('> import gagal: '+e.message);alert('Import gagal: '+e.message);}};rd.readAsText(f);inp.value='';}
+function importTopo(inp){const f=inp.files&&inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);const ls=d.layers||d;if(typeof ls!=='object'||!Object.keys(ls).length)throw new Error('format bukan projek netmon');let n=0;Object.keys(ls).forEach(k=>{const L=ls[k];if(!L||!Array.isArray(L.nodes)||!Array.isArray(L.links))return;let key=k;while(LAYERS[key])key=key+'-2';LAYERS[key]={label:L.label||key,vb:L.vb||'0 0 900 400',areas:L.areas||[],nodes:L.nodes,links:L.links};TOPO_HOME[key]={};L.nodes.forEach(nn=>{TOPO_HOME[key][nn.id]={x:nn.x,y:nn.y};});n++;});if(!n)throw new Error('tidak ada layer valid di file');setLayer(curLayer);saveTopo(true);log('> '+n+' layer di-import dari '+f.name);}catch(e){log('> import gagal: '+e.message);alert('Import gagal: '+e.message);}};rd.readAsText(f);inp.value='';}
 renderLayerBtns();
 document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.defaultPrevented)return;ev.preventDefault();topoCanvasMenu(ev);});
 document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(ev);});
@@ -598,7 +598,7 @@ body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">${rows.length} pro
 }
 function gns3Icon(t,nm){
 t=String(t||'').toLowerCase();const n=String(nm||'');
-if(/switch|hub/.test(t)||/^sw[\d\-_\s]/i.test(n))return 'switch';
+if(/switch|hub|spine|leaf/.test(t)||/^sw[\d\-_\s]/i.test(n))return 'switch';
 if(/cloud|nat/.test(t))return 'internet';
 if(/vpcs/.test(t))return 'pc';
 if(/docker|qemu|vmware|virtualbox/.test(t)){if(/srv|server/i.test(n))return 'server';if(/^r[\d\-_\s]/i.test(n))return 'router';return 'server';}
