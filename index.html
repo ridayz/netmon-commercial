@@ -247,7 +247,28 @@ function renderDowntime(){const tb=document.getElementById('downBody');if(!tb)re
 tb.innerHTML=DOWNTIME.slice(0,30).map(e=>{const live=!e.upAt;const tot=live?fmtDur(Date.now()-e.downAt)+' ⏳':fmtDur(e.totalMs||0);return `<tr style="border-top:1px solid #e0f2fe"><td style="padding:6px 10px;font-weight:700">${e.dev}</td><td style="padding:6px 10px">${e.downStr}</td><td style="padding:6px 10px">${live?'<span style="color:#b91c1c;font-weight:700">masih DOWN</span>':e.upStr}</td><td style="padding:6px 10px;font-weight:700">${tot}</td><td style="padding:6px 10px">${e.reason}</td></tr>`;}).join('');}
 function refreshDurations(){document.querySelectorAll('[data-dur]').forEach(el=>{const key=el.getAttribute('data-dur');const sep=key.indexOf('|');const r=key.slice(0,sep),n=key.slice(sep+1);const p=(DB[r]||[]).find(x=>x.n===n);if(!p)return;if(p.oper==='down'&&p.downSince){el.textContent='DOWN '+fmtDur(Date.now()-p.downSince);}else{el.textContent=p.admin+'/'+p.oper;}});}
 let chaosOn=true; window.chaosOn=true;
-function renderIfaces(){const el=document.getElementById('ifaces');el.innerHTML='';DB[curR].forEach(i=>{const d=document.createElement('div');d.className='iface'+(i.n===curI?' active':'');let dot='green';if(i.admin==='down')dot='grey';else if(i.oper==='down')dot='grey';else if(i.fault!=='sehat'&&i.fault!=='sehat-sfp')dot='red';const st=(i.oper==='down'&&i.downSince)?('DOWN '+fmtDur(Date.now()-i.downSince)):(i.admin+'/'+i.oper);d.innerHTML=`<span><span class="dot ${dot}"></span>${i.n}</span><span data-dur="${curR}|${i.n}">${st}</span>`;d.onclick=()=>{curI=i.n;renderIfaces();};d.oncontextmenu=(ev)=>{ev.preventDefault();curI=i.n;showCtx(ev.clientX,ev.clientY);};el.appendChild(d);});refresh();}
+function renderIfaces(){const el=document.getElementById('ifaces');el.innerHTML='';const L=LIVE[curR];const stat=(L&&L.stat&&L.stat.ifaces)||null;const rate=n=>{if(!stat)return '';const f=stat.find(x=>x.name===n);return f?` <span style="font-size:11px;color:#0369a1">↓${f.dlMbps} ↑${f.ulMbps}</span>`:'';};DB[curR].forEach(i=>{const d=document.createElement('div');d.className='iface'+(i.n===curI?' active':'');let dot='green';if(i.admin==='down')dot='grey';else if(i.oper==='down')dot='grey';else if(i.fault!=='sehat'&&i.fault!=='sehat-sfp')dot='red';const st=(i.oper==='down'&&i.downSince)?('DOWN '+fmtDur(Date.now()-i.downSince)):(i.admin+'/'+i.oper);d.innerHTML=`<span><span class="dot ${dot}"></span>${i.n}${rate(i.n)}</span><span data-dur="${curR}|${i.n}">${st}</span>`;d.onclick=()=>{curI=i.n;renderIfaces();};d.oncontextmenu=(ev)=>{ev.preventDefault();curI=i.n;showCtx(ev.clientX,ev.clientY);};el.appendChild(d);});if(L&&L.stat&&(L.stat.cpu!=null||L.stat.memPct!=null))el.innerHTML+=`<div style="font-size:11px;color:#64748b;padding:4px 2px">CPU ${L.stat.cpu!=null?L.stat.cpu+'%':'?'} • RAM ${L.stat.memPct!=null?L.stat.memPct+'%':'?'}</div>`;refresh();}
+// ala PRTG: semua device SNMP dipoll background tiap 20 dtk (rate semua port + alarm down)
+setInterval(async()=>{
+for(const key in LIVE){
+const L=LIVE[key];if(!L||!L.ip||L.via!=='snmp')continue;
+try{
+const j=await collGet(`/api/snmpstat?ip=${L.ip}&community=${encodeURIComponent(L.community||'')}`,30000);
+if(!j.ok)continue;
+const prev={};((L.stat&&L.stat.ifaces)||[]).forEach(x=>prev[x.name]=x.oper);
+L.stat={at:Date.now(),ifaces:j.ifaces,cpu:j.cpu,memPct:j.memPct};
+// sinkron status DB + alarm port yang baru down
+let changed=false;
+(j.ifaces||[]).forEach(x=>{
+let p=(DB[key]||[]).find(y=>y.n===x.name);
+if(!p){(DB[key]=DB[key]||[]).push({n:x.name,type:'copper',admin:x.admin,oper:x.oper,fault:x.oper==='down'?'live-down':'sehat',live:true,poe:'-',speed:'-'});changed=true;return;}
+if(p.admin!==x.admin||p.oper!==x.oper){p.admin=x.admin;p.oper=x.oper;if(x.oper==='down')p.fault='live-down';changed=true;
+if(prev[x.name]==='up'){try{pushAlarm('crit',key+'/'+x.name,'DOWN (SNMP) — '+clockStr(new Date()));}catch(e){}log('> '+key+'/'+x.name+' DOWN (SNMP)');}}
+});
+if(changed&&key===curR)renderIfaces();
+}catch(e){/* diam, coba lagi next ronde */}
+}
+},20000);
 function showCtx(x,y){hideCtx();const c=cur();const m=document.createElement('div');m.id='ctx';m.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:6px;z-index:99;box-shadow:0 8px 24px rgba(2,132,199,.2);min-width:190px`;m.innerHTML=(c.admin==='up'
 ?`<button onclick="setAdmin('down')" style="width:100%;text-align:left;border:0;background:#fee2e2;border-radius:8px;padding:8px;cursor:pointer;font-weight:700">⛔ Disable port</button>`
 :`<button onclick="setAdmin('up')" style="width:100%;text-align:left;border:0;background:#dcfce7;border-radius:8px;padding:8px;cursor:pointer;font-weight:700">✅ Enable port</button>`)
@@ -796,6 +817,7 @@ ov.style.cssText='position:fixed;inset:0;background:rgba(12,74,110,.45);z-index:
 ov.innerHTML=`<div style="background:#fff;border:3px solid #bae6fd;border-radius:18px;padding:18px;max-width:600px;width:100%;max-height:80vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;color:#0369a1">🔍 Discover jaringan lokal</h3><button onclick="document.getElementById('dmodal').remove()" style="border:0;background:#fee2e2;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">✕</button></div>
 <div style="display:flex;gap:6px;margin-top:6px"><select id="dnet" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:13px;background:#f0f9ff"></select><button onclick="discoverScan()" style="border:0;background:#0284c7;color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer">Scan</button></div>
 <div style="display:flex;gap:6px;margin-top:6px"><input id="duser" placeholder="API user (cth: netmon)" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"><input id="dpass" type="password" placeholder="API pass" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"><input id="dcomm" placeholder="SNMP community" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"></div>
+<div style="display:flex;gap:6px;margin-top:6px"><input id="dcomms" placeholder="Coba community (koma, cth: public,kantor123)" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:12px"></div>
 <div id="dmodalBody" style="font-size:13px;margin-top:10px;color:#64748b">Pilih subnet → Scan (±15 detik untuk /24) → centang → tambah ke layer ini.</div></div>`;
 ov.addEventListener('click',ev=>{if(ev.target===ov)ov.remove();});
 document.body.appendChild(ov);
@@ -811,24 +833,27 @@ function readCreds(){
 let c={user:'netmon',pass:'netmon123',community:'netmon'};
 try{const s=JSON.parse(localStorage.getItem('netmon-creds')||'null');if(s)c={...c,...s};}catch(e){}
 const g=id=>{const el=document.getElementById(id);return el&&el.value!==undefined?el.value:undefined;};
-const u=g('duser'),p=g('dpass'),cm=g('dcomm');
-if(u!==undefined&&u!=='')c.user=u; if(p!==undefined&&p!=='')c.pass=p; if(cm!==undefined&&cm!=='')c.community=cm;
+const u=g('duser'),p=g('dpass'),cm=g('dcomm'),cs=g('dcomms');
+if(u!==undefined&&u!=='')c.user=u; if(p!==undefined&&p!=='')c.pass=p; if(cm!==undefined&&cm!=='')c.community=cm; if(cs!==undefined)c.comms=cs;
 try{localStorage.setItem('netmon-creds',JSON.stringify(c));}catch(e){}
 return c;
 }
-function fillCreds(){try{const s=JSON.parse(localStorage.getItem('netmon-creds')||'null');if(!s)return;if(document.getElementById('duser'))document.getElementById('duser').value=s.user||'';if(document.getElementById('dcomm'))document.getElementById('dcomm').value=s.community||'';}catch(e){}}
+let DSCAN_SNMP={};
+function fillCreds(){try{const s=JSON.parse(localStorage.getItem('netmon-creds')||'null');if(!s)return;if(document.getElementById('duser'))document.getElementById('duser').value=s.user||'';if(document.getElementById('dcomm'))document.getElementById('dcomm').value=s.community||'';if(document.getElementById('dcomms'))document.getElementById('dcomms').value=s.comms||'';}catch(e){}}
 async function discoverScan(){
 const body=document.getElementById('dmodalBody');const net=(document.getElementById('dnet')||{}).value||'';
 if(!net){if(body)body.textContent='Pilih subnet dulu.';return;}
 readCreds();
-if(body)body.innerHTML='⏳ scan '+net+' ... (ping sweep + cek port 8728/8291/22/80)';
+if(body)body.innerHTML='⏳ scan '+net+' ... (ping sweep + cek port + coba SNMP)';
 try{
-const j=await collGet(`/api/netscan?net=${encodeURIComponent(net)}`,120000);
+const comms=(((document.getElementById('dcomms')||{}).value)||'').trim();
+const j=await collGet(`/api/netscan?net=${encodeURIComponent(net)}&communities=${encodeURIComponent(comms)}`,180000);
 const rows=j.hosts||[];
 if(!body)return;
 if(!rows.length){body.innerHTML='Tidak ada host hidup di '+net+'.';return;}
+DSCAN_SNMP={};rows.forEach(h=>{if(h.snmp&&h.snmp.community)DSCAN_SNMP[h.ip]=h.snmp.community;});
 body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">${rows.length} host hidup • centang → <button onclick="discoverAdd()" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">＋ Tambah ke layer</button></div>`
-+rows.map((h,i)=>{const tag=(h.ports||[]).join(' ');const router=/8728|8291/.test(tag);return `<label style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px;cursor:pointer"><input type="checkbox" class="dhost" value="${h.ip}"${router?' checked':''} style="width:15px;height:15px"><span style="font-weight:700;color:#0c4a6e">${h.ip}</span>${router?'<span style="font-size:11px;background:#dcfce7;color:#15803d;border-radius:6px;padding:1px 7px;font-weight:800">router?</span>':''}<span style="font-size:11px;color:#64748b">${tag||'tidak ada port umum'}</span></label>`;}).join('');
++rows.map((h,i)=>{const tag=(h.ports||[]).join(' ');const router=/8728|8291/.test(tag);const sn=h.snmp;return `<label style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px;cursor:pointer"><input type="checkbox" class="dhost" value="${h.ip}"${(router||sn)?' checked':''} style="width:15px;height:15px"><span style="font-weight:700;color:#0c4a6e">${h.ip}</span>${router?'<span style="font-size:11px;background:#dcfce7;color:#15803d;border-radius:6px;padding:1px 7px;font-weight:800">router?</span>':''}${sn?`<span style="font-size:11px;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:1px 7px;font-weight:800" title="${String(sn.sysDescr||'').slice(0,80)}">SNMP ✓ ${sn.community}</span>`:''}<span style="font-size:11px;color:#64748b">${sn&&sn.sysName?sn.sysName+' • ':''}${tag||'tidak ada port umum'}</span></label>`;}).join('');
 log(`> discover ${net}: ${rows.length} host hidup`);
 }catch(e){if(body)body.innerHTML='Scan gagal: '+String(e.message||e).slice(0,120);}
 }
@@ -837,7 +862,7 @@ const ips=[...document.querySelectorAll('.dhost:checked')].map(c=>c.value);
 document.getElementById('dmodal')?.remove();
 if(!ips.length){log('> discover: tidak ada yang dipilih');return;}
 log(`> tambah ${ips.length} hasil discover ke layer...`);
-let i=0;const step=()=>{if(i>=ips.length){log('✔ discover selesai');return;}addNodeByIpGo(ips[i++]);setTimeout(step,1200);};step();
+let i=0;const step=()=>{if(i>=ips.length){log('✔ discover selesai');return;}const ip=ips[i++];const sn=(typeof DSCAN_SNMP!=='undefined'&&DSCAN_SNMP[ip])||null;addNodeByIpGo(ip,undefined,undefined,undefined,sn?{community:sn}:null);setTimeout(step,1200);};step();
 }
 function addNodeByIp(presetIp,px,py,manualFb){
 if(presetIp){addNodeByIpGo(presetIp.trim(),px,py,manualFb);return;}
@@ -846,9 +871,10 @@ if(!ip)return;const clean=ip.trim();
 if(!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(clean)){alert('Format IP salah, cth: 192.168.18.6');return;}
 addNodeByIpGo(clean,px,py,manualFb);
 }
-function addNodeByIpGo(clean,px,py,manualFb){
+function addNodeByIpGo(clean,px,py,manualFb,ov){
 const key='IP '+clean;
 const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
+if(ov&&ov.community)creds.community=ov.community;
 log('> detect '+clean+' via collector '+COLL()+' ...');try{pushAlarm('info','detect/'+clean,'Auto-detect '+clean+' (coba LIVE dulu)');}catch(e){}
 collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,25000).then(j=>{
 if(!j.ok)throw new Error(j.error||'discover gagal');
