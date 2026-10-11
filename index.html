@@ -730,7 +730,7 @@ async function discoverScan(){
 const body=document.getElementById('dmodalBody');const net=(document.getElementById('dnet')||{}).value||'';
 if(!net){if(body)body.textContent='Pilih subnet dulu.';return;}
 readCreds();
-if(body)body.innerHTML='⏳ scan '+net+' ... (ping sweep + cek port + coba SNMP)';
+if(body)body.innerHTML='⏳ scan '+net+' ... (ping + ARP + reverse DNS + cek port/SNMP)';
 try{
 const j=await collGet(`/api/netscan?net=${encodeURIComponent(net)}`,180000);
 const rows=j.hosts||[];
@@ -738,7 +738,7 @@ if(!body)return;
 if(!rows.length){body.innerHTML='Tidak ada host hidup di '+net+'.';return;}
 DSCAN_SNMP={};rows.forEach(h=>{if(h.snmp&&h.snmp.community)DSCAN_SNMP[h.ip]=h.snmp.community;});
 body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">${rows.length} host hidup • centang → <button onclick="discoverAdd()" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">＋ Tambah ke layer</button></div>`
-+rows.map((h,i)=>{const tag=(h.ports||[]).join(' ');const router=/8728|8291/.test(tag);const sn=h.snmp;return `<label style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px;cursor:pointer"><input type="checkbox" class="dhost" value="${h.ip}"${(router||sn)?' checked':''} style="width:15px;height:15px"><span style="font-weight:700;color:#0c4a6e">${h.ip}</span>${router?'<span style="font-size:11px;background:#dcfce7;color:#15803d;border-radius:6px;padding:1px 7px;font-weight:800">router?</span>':''}${sn?`<span style="font-size:11px;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:1px 7px;font-weight:800" title="${String(sn.sysDescr||'').slice(0,80)}">SNMP ✓ ${sn.community}</span>`:''}<span style="font-size:11px;color:#64748b">${sn&&sn.sysName?sn.sysName+' • ':''}${tag||'tidak ada port umum'}</span></label>`;}).join('');
++rows.map((h,i)=>{const tag=(h.ports||[]).join(' ');const router=/8728|8291/.test(tag);const sn=h.snmp;return `<label style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px;cursor:pointer"><input type="checkbox" class="dhost" value="${h.ip}"${(router||sn)?' checked':''} style="width:15px;height:15px"><span style="font-weight:700;color:#0c4a6e">${h.ip}</span>${!h.ping?'<span style="font-size:11px;background:#fef9c3;color:#a16207;border-radius:6px;padding:1px 7px;font-weight:800" title="Tidak jawab ping, ketahuan dari ARP">via ARP</span>':''}${router?'<span style="font-size:11px;background:#dcfce7;color:#15803d;border-radius:6px;padding:1px 7px;font-weight:800">router?</span>':''}${sn?`<span style="font-size:11px;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:1px 7px;font-weight:800" title="${String(sn.sysDescr||'').slice(0,80)}">SNMP ✓ ${sn.community}</span>`:''}<span style="font-size:11px;color:#64748b">${h.name||''}${h.mac?' • '+h.mac:''}${sn&&sn.sysName?' • '+sn.sysName:''} ${tag||''}</span></label>`;}).join('');
 log(`> discover ${net}: ${rows.length} host hidup`);
 }catch(e){if(body)body.innerHTML='Scan gagal: '+String(e.message||e).slice(0,120);}
 }
