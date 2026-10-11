@@ -236,7 +236,7 @@ if(!DB[key].length)DB[key].push({n:'mgmt',type:'copper',admin:'up',oper:'up',fau
 n.db=key;return key;
 }
 function pickDev(db){if(!DB[db]||!DB[db].length)return;curR=db;curI=DB[db][0].n;try{renderRouters();renderIfaces();}catch(e){}try{showTab('dash');}catch(e){}try{log('> pantau '+db);}catch(e){}}
-function renderRouters(){const el=document.getElementById('routers');if(!el)return;const ps=DB[curR]||[];const downs=ps.filter(p=>p.oper==='down').length;el.innerHTML=`<div class="router-btn active" style="cursor:default;display:flex;gap:8px;align-items:flex-start"><span class="dot ${devDot(curR)}" style="margin-top:4px"></span><span style="flex:1"><b>${curR}</b>${LIVE[curR]?' 🟢':''}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}</span></span></div>`;}
+function renderRouters(){const el=document.getElementById('routers');if(!el)return;const ps=DB[curR]||[];const downs=ps.filter(p=>p.oper==='down').length;const live=!!LIVE[curR];el.innerHTML=`<div class="router-btn active" style="cursor:default;display:flex;gap:8px;align-items:flex-start;${live?'':'background:#f1f5f9;border-color:#cbd5e1;color:#475569'}"><span class="dot ${devDot(curR)}" style="margin-top:4px"></span><span style="flex:1"><b>${curR}</b> ${live?'🟢':'⚪ DUMMY'}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}${live?'':' • simulasi'}</span></span></div>`;}
 function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
 function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
 function setLink(rName,p,oper,reason){reason=reason||'otomatis';
@@ -281,7 +281,7 @@ function aiAutoEnable(){const c=cur();if(c.admin==='down'){log('> AI menghidupka
 setInterval(()=>{const on=document.getElementById('autoFix')?.checked;if(!on)return;for(const r in DB){for(const p of DB[r]){if(p.admin==='down'&&p.fault==='disabled-human'&&!p._aiFix){p._aiFix=true;const where=`${r}/${p.n}`;log(`> AUTO-RESOLVE: AI deteksi ${where} disabled → hidupin sendiri...`);setTimeout(()=>{p.admin='up';if(p.fault==='disabled-human')p.fault=p.prevFault&&p.prevFault!=='disabled-human'?p.prevFault:'sehat';p._aiFix=false;setLink(r,p,'up','auto-resolve AI');log(`✔ AUTO-RESOLVE: ${where} UP ✅`);if(r===curR)renderIfaces();},2500);}}}},1500);
 function badge(t,c){return `<span class="badge ${c}">${t}</span>`;}
 function refresh(){
-const c=cur();document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢LIVE':''}`;
+const c=cur();document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`;
 const down=c.oper==='down';
 document.getElementById('statusPill').textContent=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');
 document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.startsWith('sehat')?'#e0f2fe':'#fef9c3');
