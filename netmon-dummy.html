@@ -534,7 +534,7 @@ try{const sv=JSON.parse(localStorage.getItem('netmon-topo-v1')||'null');if(sv&&s
 let TOPO=LAYERS[curLayer].nodes;
 let LINKS=LAYERS[curLayer].links;
 const TOPO_HOME={};for(const l in DEFAULT_LAYERS){TOPO_HOME[l]={};DEFAULT_LAYERS[l].nodes.forEach(n=>{TOPO_HOME[l][n.id]={x:n.x,y:n.y};});}
-if(!LAYERS.gleaf&&GNS3_PRESET.gleaf){let skip=false;try{skip=localStorage.getItem('netmon-nogleaf')==='1';}catch(e){}if(!skip){LAYERS.gleaf=JSON.parse(JSON.stringify(GNS3_PRESET.gleaf));TOPO_HOME.gleaf={};LAYERS.gleaf.nodes.forEach(n=>{TOPO_HOME.gleaf[n.id]={x:n.x,y:n.y};});try{log('> layer GNS3: LEAF + SPINE dimuat otomatis');}catch(e){}}}
+if(!LAYERS.gleaf&&GNS3_PRESET.gleaf){let skip=false;try{skip=localStorage.getItem('netmon-nogleaf')==='1';}catch(e){}if(!skip){LAYERS.gleaf=JSON.parse(JSON.stringify(GNS3_PRESET.gleaf));TOPO_HOME.gleaf={};LAYERS.gleaf.nodes.forEach(n=>{TOPO_HOME.gleaf[n.id]={x:n.x,y:n.y};});try{if(!localStorage.getItem('netmon-gleaf-seen')){curLayer='gleaf';TOPO=LAYERS.gleaf.nodes;LINKS=LAYERS.gleaf.links;localStorage.setItem('netmon-gleaf-seen','1');}}catch(e){}try{log('> layer GNS3: LEAF + SPINE dimuat otomatis');}catch(e){}}}
 function saveTopo(manual){snapTopo();persistTopo(manual);try{renderLayerBtns();}catch(e){}}
 function persistTopo(manual){try{const at=new Date().toLocaleString('id-ID',{hour12:false});localStorage.setItem('netmon-topo-v1',JSON.stringify({at,cur:curLayer,layers:LAYERS}));const st=document.getElementById('saveStat');if(st)st.textContent=(manual?'💾 Tersimpan ':'Autosave ')+at;if(manual){log('> projek topologi di-SAVE ('+at+')');pushAlarm('info','topologi','Projek topologi di-save');}}catch(e){if(manual)log('> SAVE gagal: '+e.message);}}
 let HIST=[],HI=-1;
