@@ -227,10 +227,12 @@ const SIDEBAR=[
 {layer:'ICTEL KIJ',devs:['Switch ICTel','OLT KIJ','ONT-01','ONT-02']},
 ];
 let curR='Router Ictel', curI='vlan34-asrama';
-function cur(){return DB[curR].find(x=>x.n===curI);}
+function cur(){return ((DB[curR]||[]).find(x=>x.n===curI))||((DB[curR]||[])[0]);}
 let dl=Array(30).fill(0), ul=Array(30).fill(0), labels=Array(30).fill('');
 function devDot(r){const ps=DB[r]||[];if(ps.some(p=>p.oper==='down'))return 'grey';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'red';return 'green';}
-function renderRouters(){const el=document.getElementById('routers');el.innerHTML='';SIDEBAR.forEach(g=>{const t=document.createElement('div');t.className='label';t.textContent=g.layer;el.appendChild(t);g.devs.forEach(r=>{const b=document.createElement('button');b.className='router-btn'+(r===curR?' active':'');b.innerHTML=`<span class="dot ${devDot(r)}"></span>${r}${LIVE[r]?' 🟢':''}`;b.onclick=()=>{curR=r;curI=DB[r][0].n;renderRouters();renderIfaces();};el.appendChild(b);});});}
+function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,db:n.db});});});return out;}
+function pickDev(db){if(!DB[db]||!DB[db].length)return;curR=db;curI=DB[db][0].n;try{renderRouters();renderIfaces();}catch(e){}try{showTab('dash');}catch(e){}try{log('> pantau '+db);}catch(e){}}
+function renderRouters(){const el=document.getElementById('routers');el.innerHTML='';const devs=topoDevs();if(!devs.length){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada device di topologi — buka tab Topologi → ＋ IP & Detect.</div>';return;}let lastLayer=null;devs.forEach(d=>{if(d.layer!==lastLayer){lastLayer=d.layer;const t=document.createElement('div');t.className='label';t.textContent=d.layer;el.appendChild(t);}const b=document.createElement('button');b.className='router-btn'+(d.db===curR?' active':'');b.innerHTML=`<span class="dot ${devDot(d.db)}"></span>${d.db}${LIVE[d.db]?' 🟢':''}`;b.onclick=()=>pickDev(d.db);el.appendChild(b);});}
 function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
 function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
 function setLink(rName,p,oper,reason){reason=reason||'otomatis';
@@ -435,6 +437,9 @@ async function acTick(){
   if(AC.on)AC.timer=setTimeout(acTick,10000);
 }
 restoreLive();
+// pastikan device yang dibuka valid (navigator sekarang ikut topologi)
+if(!DB[curR]||!DB[curR].length){const td=topoDevs();if(td.length){curR=td[0].db;}else if(DB['Router Ictel']){curR='Router Ictel';}else{const ks=Object.keys(DB);if(ks.length)curR=ks[0];}}
+if(DB[curR]&&DB[curR].length&&!DB[curR].find(x=>x.n===curI))curI=DB[curR][0].n;
 renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
@@ -625,11 +630,11 @@ const nw=Math.min(240,Math.max(112,Math.round(26+7.6*maxlen*nfs)));n._w=nw;
 const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='grab';
 const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');
 g.innerHTML=`<rect x="${-n._w/2}" y="-30" width="${n._w}" height="60" rx="16" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/>${VECICON.includes(n.icon)?iconSvg(n.icon):`<text y="0" text-anchor="middle" font-size="22">${ICONS[n.icon]||'📦'}</text>`}<text y="16" text-anchor="middle" font-size="${Math.round(11*(n.fs||1))}" font-weight="800" fill="#0369a1">${n.label}</text><text y="26" text-anchor="middle" font-size="${Math.round(9*(n.fs||1))}" fill="#64748b">${n.sub||''}</text>`;
-g.addEventListener('pointerdown',ev=>{window._topoDrag=true;g.setPointerCapture(ev.pointerId);const move=e2=>{const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;const vx=vb.width/r.width;n.x=Math.round((e2.clientX-r.left)*vx);n.y=Math.round((e2.clientY-r.top)*(vb.height/r.height));g.setAttribute('transform',`translate(${n.x},${n.y})`);};const up=()=>{g.removeEventListener('pointermove',move);window._topoDrag=false;drawTopo();saveTopo();};g.addEventListener('pointermove',move);g.addEventListener('pointerup',up,{once:true});});
+g.addEventListener('pointerdown',ev=>{window._topoDrag=true;g.setPointerCapture(ev.pointerId);const move=e2=>{const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;const vx=vb.width/r.width;n.x=Math.round((e2.clientX-r.left)*vx);n.y=Math.round((e2.clientY-r.top)*(vb.height/r.height));g.setAttribute('transform',`translate(${n.x},${n.y})`);};const up=()=>{g.removeEventListener('pointermove',move);window._topoDrag=false;window._topoDropAt=Date.now();drawTopo();saveTopo();};g.addEventListener('pointermove',move);g.addEventListener('pointerup',up,{once:true});});
 g.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();topoMenu(ev.clientX,ev.clientY,n.id);});
-g.addEventListener('click',()=>{if(n.db&&DB[n.db]){curR=n.db;curI=DB[n.db][0].n;try{renderRouters();renderIfaces();log('> pantau '+n.db);}catch(e){}}});
+g.addEventListener('click',()=>{if(Date.now()-(window._topoDropAt||0)<250)return;if(n.db&&DB[n.db]){pickDev(n.db);}else{try{log('> "'+n.label+'" di luar monitoring — tambah via ＋ IP & Detect');}catch(e){}}});
 svg.appendChild(g);});
-document.getElementById('topoList').textContent=`${TOPO.length} perangkat dummy • ${LINKS.length} link • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
+document.getElementById('topoList').textContent=`${TOPO.length} perangkat • ${LINKS.length} link • klik node = monitoring • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
 }
 // refresh topologi otomatis (realtime) — skip saat user lagi drag / menu terbuka
 setInterval(()=>{try{if(document.getElementById('tab-topo')?.style.display==='flex'&&!window._topoDrag&&!document.getElementById('tmenu'))drawTopo();}catch(e){}},3000);
