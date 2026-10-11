@@ -7,8 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
-#chatBox,#chatIn{font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.6;letter-spacing:.1px}
-#chatBox>div{font-feature-settings:'liga' 1,'kern' 1}
 body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .app{display:flex;min-height:100vh}
 .sidebar{width:270px;background:#fff;border-right:2px solid #bae6fd;padding:20px;display:flex;flex-direction:column;gap:12px}
@@ -137,15 +135,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div id="topoList" style="font-size:12px;color:#475569;margin-top:8px"></div>
 <div style="font-size:12px;margin-top:6px">Lihat juga diagram archify statis: <a href="../../archify-output/topologi-netmon.html" target="_blank">archify-output/topologi-netmon.html</a> (9/9 showcase pass)</div>
 </div>
-<div class="panel"><h3>💬 Chat NetMon AI — ngobrol kayak sama teknisi</h3>
-<div id="chatBox" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto;background:#f0f9ff;border:2px solid #bae6fd;border-radius:12px;padding:10px;font-size:13px"><div style="color:#64748b">Halo men, gua ngerti topologimu + status live-nya. Tanya aja, misal: <i>"cek router gua, ada error engga?"</i></div></div>
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-<button class="ai-btn ghost" style="width:auto;padding:6px 10px;font-size:12px" onclick="chatAsk('cek router gua, ada error engga?')">cek ada error engga?</button>
-<button class="ai-btn ghost" style="width:auto;padding:6px 10px;font-size:12px" onclick="chatAsk('yang DOWN apa aja sekarang?')">yang DOWN apa aja?</button>
-<button class="ai-btn ghost" style="width:auto;padding:6px 10px;font-size:12px" onclick="chatAsk('traffic paling gede di mana?')">traffic gede di mana?</button>
-</div>
-<div style="display:flex;gap:6px;margin-top:8px"><input id="chatIn" placeholder="Tanya apa aja soal jaringanmu..." style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:9px 12px;font-size:13px" onkeydown="if(event.key==='Enter')chatSend()"><button class="ai-btn" style="width:auto;padding:9px 18px;margin:0" onclick="chatSend()">Kirim</button></div>
-</div>
+
 </div>
 <div id="tab-log" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🔔 System Log & Alarm</h3>
@@ -476,38 +466,6 @@ let lastAlarmAt={};
 function maybeAlarm(dev,sev,msg){const k=dev+sev;const now=Date.now();if(now-(lastAlarmAt[k]||0)<20000)return;lastAlarmAt[k]=now;pushAlarm(sev,dev,msg);}
 const _tick=tick;
 // ---- TABS ----
-function aiCtx(){
-  const dev=curR+'/'+((cur()||{}).n||'');
-  const L=(typeof LIVE!=='undefined'&&LIVE)?LIVE[curR]:null;
-  const devAlarms=(typeof ALARMS!=='undefined'?ALARMS:[]).filter(a=>a.dev===curR||a.dev===dev).slice(0,8);
-  const devDown=(typeof DOWNTIME!=='undefined'?DOWNTIME:[]).filter(d=>d.dev===curR||d.dev===dev).slice(0,6);
-  return {
-    selected:dev,
-    device:(typeof DB!=='undefined'&&DB[curR]||[]).map(x=>({n:x.n,type:x.type,admin:x.admin,oper:x.oper,fault:x.fault||'sehat',speed:x.speed||'-',dl:x.dl||null,ul:x.ul||null})),
-    live:(L&&L.ip)?{ip:L.ip,identity:L.identity||'',ifaces:(L.ifaces||[]).map(i=>({n:i.n,admin:i.admin,oper:i.oper,dl:i.dl||null,ul:i.ul||null}))}:null,
-    alarms:devAlarms.map(a=>({t:a.t,sev:a.sev,dev:a.dev,msg:a.msg})),
-    downtime:devDown.map(d=>({dev:d.dev,downStr:d.downStr,upStr:d.upAt?d.upStr:null,totalMs:d.totalMs||null}))
-  };
-}
-function chatBubble(who,text){const box=document.getElementById('chatBox');if(!box)return;const d=document.createElement('div');d.style.cssText=who==='user'?'align-self:flex-end;background:#0284c7;color:#fff;border-radius:12px 12px 4px 12px;padding:8px 12px;max-width:85%;white-space:pre-wrap':'align-self:flex-start;background:#fff;border:2px solid #bae6fd;border-radius:12px 12px 12px 4px;padding:8px 12px;max-width:85%;white-space:pre-wrap;color:#0c4a6e';d.textContent=(who==='user'?'🧑 ':'🤖 ')+text;box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
-function chatAsk(t){document.getElementById('chatIn').value=t;chatSend();}
-async function chatSend(){
-const inp=document.getElementById('chatIn');const msg=(inp.value||'').trim();if(!msg)return;inp.value='';
-const key=(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim();
-if(!key){chatBubble('ai','⚠️ API key belum diisi — ketik di kolom "API key" di sidebar bawah (9Router/Gemini/dll).');return;}
-chatBubble('user',msg);
-const wait=chatBubble('ai','⏳ ngecek...');
-try{
-const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,ctx:aiCtx(),aiKey:key,aiBase:(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim(),aiModel:(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim()})});
-const j=await r.json();
-if(!j.ok)throw new Error(j.error||('server '+r.status));
-wait.textContent='🤖 '+j.reply;
-if(j.files&&j.files.length){j.files.forEach(f=>{const b=document.createElement('button');b.style.cssText='align-self:flex-start;border:0;background:#059669;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:800;margin-top:2px';b.textContent='⬇ Download '+f.name;const box2=document.getElementById('chatBox');b.onclick=()=>window.open(COLL()+f.url,'_blank');if(box2){box2.appendChild(b);box2.scrollTop=box2.scrollHeight;}});}
-if(j.actions&&j.actions.length){j.actions.forEach(a=>{const b=document.createElement('button');b.style.cssText='align-self:flex-start;border:0;background:#b45309;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:800;margin-top:2px';b.textContent=a.label;const box2=document.getElementById('chatBox');b.onclick=async()=>{b.disabled=true;b.textContent='⏳ jalan...';try{const r2=await fetch(COLL()+'/api/ai-act',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket:a.ticket})});const j2=await r2.json();if(!j2.ok)throw new Error(j2.error||'gagal');chatBubble('ai',j2.reply);}catch(e){chatBubble('ai','gagal: '+String(e.message||e).slice(0,120));}};if(box2){box2.appendChild(b);box2.scrollTop=box2.scrollHeight;}});}
-try{pushAlarm('info','chat-ai','Q: '+msg.slice(0,60));}catch(e){}
-}catch(e){wait.textContent='🤖 waduh, AI-nya nggak nyambung: '+String(e.message||e).slice(0,120)+'\n(cek key di sidebar + collector 🟢)';}
-const box=document.getElementById('chatBox');if(box)box.scrollTop=box.scrollHeight;
-}
 function restoreAiFields(){try{const k=localStorage.getItem('netmon-ai-key');if(k&&document.getElementById('aiKey'))document.getElementById('aiKey').value=k;const b=localStorage.getItem('netmon-ai-base');if(b&&document.getElementById('aiBase'))document.getElementById('aiBase').value=b;const m=localStorage.getItem('netmon-ai-model');if(m&&document.getElementById('aiModel'))document.getElementById('aiModel').value=m;}catch(e){}}
 function setAiStatus(t,c){const s=document.getElementById('aiStatus');if(s){s.textContent=t;s.style.color=c||'#64748b';}}
 async function testAiKey(){
