@@ -376,6 +376,7 @@ const box=document.getElementById('aiResult');if(!box)return;
 if(!show){return;}
 box.style.display='block';
 box.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><div style="font-size:20px">🔍</div><div style="flex:1"><div style="font-weight:800;color:#0369a1">${text||'AI sedang diagnosa...'}</div><div style="font-size:12px;color:#64748b">berjalan ${secs||0} dtk • biasanya 30-60 dtk • jangan tutup halaman</div><div class="bar" style="margin-top:6px"><i style="width:100%;background:linear-gradient(90deg,#0284c7,#38bdf8,#0284c7);background-size:200% 100%;animation:aibar 1.2s linear infinite"></i></div></div></div><style>@keyframes aibar{to{background-position:-200% 0}}</style>`;
+}
 function aiCreds(){return {key:(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim(),base:(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim(),model:(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim()};}
 function renderAiActions(actions){
 const box=document.getElementById('aiActions');if(!box)return;box.innerHTML='';
