@@ -503,13 +503,16 @@ function exportArchify(){
 if(!TOPO.length){log('> layer kosong, tidak ada yang dibuka');return;}
 const label=(LAYERS[curLayer]||{}).label||curLayer;
 log('> buka view archify "'+label+'" ('+TOPO.length+' node) ...');
+const w=window.open('about:blank','_blank');
+if(w){try{w.document.write('<p style="font-family:sans-serif;color:#0369a1">⏳ nyiapin view archify "'+label+'"...</p>');}catch(e){}}
 fetch(COLL()+'/api/archify-export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Topologi '+label+' — NetMonitor',layer:label,nodes:TOPO.map(n=>({id:n.id,label:n.label,sub:n.sub,icon:n.icon,x:n.x,y:n.y})),links:LINKS})})
 .then(r=>r.json()).then(j=>{
 if(!j.ok)throw new Error((j.error||'gagal')+(j.validation?': '+JSON.stringify(j.validation).slice(0,200):''));
 log('✔ view archify ('+(j.profile||'showcase')+'): '+j.file);
-try{pushAlarm('info','topologi','Export Archify '+j.file);}catch(e){}
-window.open(COLL()+j.url,'_blank');
-}).catch(e=>{log('> view archify gagal: '+String(e.message||e).slice(0,150));});
+try{pushAlarm('info','topologi','View Archify '+j.file);}catch(e){}
+const url=COLL()+j.url;
+if(w)w.location.href=url; else window.open(url,'_blank');
+}).catch(e=>{log('> view archify gagal: '+String(e.message||e).slice(0,150));if(w)try{w.document.write('<p style="font-family:sans-serif;color:#b91c1c">Gagal: '+String(e.message||e).slice(0,120)+'</p>');}catch(_){}});
 }
 function viewOriginal(){
 const svg=document.getElementById('topoSvg');if(!svg)return;
