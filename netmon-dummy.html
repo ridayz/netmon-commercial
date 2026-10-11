@@ -396,8 +396,18 @@ const {key,base,model}=aiCreds();
 if(!key){log('> ⚠️ API key belum diisi — isi di sidebar → Cek API dulu.');return;}
 const b=document.getElementById('aiFixBtn');if(b&&!isVerify){b.disabled=true;b.textContent='⏳ AI kerja...';}
 if(!isVerify)log('> ⚡ AI troubleshoot '+curR+' ... (analisa + minta akses kalau perlu benerin)');
+const reqId='ai-'+Date.now().toString(36)+Math.floor(Math.random()*99);
+let progIdx=0,progStop=false;
+const progTimer=setInterval(async()=>{
 try{
-const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model})});
+const pj=await (await fetch(COLL()+'/api/ai-progress?id='+reqId)).json();
+(pj.stages||[]).slice(progIdx).forEach(s=>log('> '+s.stage));
+progIdx=(pj.stages||[]).length;
+if(pj.done){clearInterval(progTimer);progStop=true;}
+}catch(e){}
+},2000);
+try{
+const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model,reqId})});
 const j=await r.json();
 if(!j.ok)throw new Error(j.error||('server '+r.status));
 if(j.accessed)log('> 🔍 akses: '+j.accessed);
@@ -408,6 +418,7 @@ else if(j.actions&&j.actions.length&&isVerify){renderAiActions(j.actions);log('>
 else if(isVerify&&/done/i.test(j.reply)){log('> ✅ Done — AI verifikasi beres.');try{pushAlarm('info',curR,'AI troubleshoot: Done ✅');}catch(e){}}
 try{pushAlarm('info',curR,isVerify?'AI verifikasi selesai':'AI troubleshoot selesai');}catch(e){}
 }catch(e){log('> AI troubleshoot gagal: '+String(e.message||e).slice(0,150));}
+clearInterval(progTimer);
 if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
 }
 async function collGet(path,timeoutMs){const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeoutMs||20000);try{const r=await fetch(COLL()+path,{signal:ctl.signal});return await r.json();}finally{clearTimeout(to);}}
@@ -771,7 +782,7 @@ try{if(n&&!n.db)ensureNodeDb(n,LINKS);}catch(e){}
 const m=document.createElement('div');m.id='tmenu';
 m.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:8px;z-index:99;box-shadow:0 8px 24px rgba(2,132,199,.25);min-width:210px`;
 m.innerHTML=`<div style="font-size:12px;font-weight:800;color:#0369a1;margin-bottom:6px">Node → ${id}</div>`
-+(n&&n.db&&DB[n.db]?`<button onclick="topoCheck('${id}')" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#0369a1">🔍 Cek device</button><button onclick="topoAi('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#fff">⚡ AI Troubleshoot</button><button onclick="cableFrom('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔌 Pasang kabel (pilih port)</button>${LIVE[n.db]?`<button onclick="topoDiscover('${id}')" style="width:100%;text-align:left;border:0;background:#fef9c3;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#a16207">📡 Discovery port</button>`:''}`:`<div style="font-size:12px;color:#64748b">node di luar monitoring</div>`)
++(n&&n.db&&DB[n.db]?`<button onclick="topoCheck('${id}')" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#0369a1">🔍 Cek device</button><button onclick="topoAi('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#fff">⚡ AI Troubleshoot</button><button onclick="cableFrom('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔌 Pasang kabel (pilih port)</button>${LIVE[n.db]?`<button onclick="topoDiscover('${id}')" style="width:100%;text-align:left;border:0;background:#fef9c3;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#a16207">📡 Discovery port</button>`:''}`:`<div style="font-size:12px;color:#64748b;margin-bottom:6px">node di luar monitoring (belum live)</div><button onclick="topoUpgrade('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#fff">⬆ Jadikan live</button>`)
 +`<div style="font-size:12px;font-weight:800;color:#0369a1;margin:6px 0 2px">Teks</div><button onclick="editTopoText('${id}')" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:3px;cursor:pointer">✎ Edit nama & sub-teks</button><div style="display:flex;gap:4px;margin-top:4px"><button onclick="setTopoFont('${id}',0.85)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:11px">A-</button><button onclick="setTopoFont('${id}',1)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:13px">A</button><button onclick="setTopoFont('${id}',1.25)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:15px">A+</button></div>`
 +`<div style="font-size:12px;font-weight:800;color:#0369a1;margin:6px 0 2px">Ganti icon</div><div style="display:flex;gap:4px"><select id="iconSel" style="flex:1;border:2px solid #bae6fd;border-radius:8px;padding:7px;font-size:13px;background:#f0f9ff;color:#0c4a6e"><optgroup label="Jaringan">${['router','switch','swpoe','firewall','internet'].map(k=>`<option value="${k}"${n.icon===k?' selected':''}>${ICONS[k]} ${k}</option>`).join('')}</optgroup><optgroup label="Perangkat">${['ont','olt','ap','pc','server'].map(k=>`<option value="${k}"${n.icon===k?' selected':''}>${ICONS[k]} ${k}</option>`).join('')}</optgroup></select><button onclick="applyIconSel('${id}')" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:800">✔</button></div>`+`<button onclick="moveNode('${id}')" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">📦 Pindah layer</button>`+`<button onclick="delTopoNode('${id}')" style="width:100%;text-align:left;border:0;background:#fee2e2;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">🗑 hapus</button>`;
 document.body.appendChild(m);setTimeout(()=>document.addEventListener('click',()=>m.remove(),{once:true}),50);
@@ -896,7 +907,7 @@ const ident=j.identity||j.sysName||clean;
 const icon=guessIcon(ident,j.sysDescr||'');
 const ifs=(j.interfaces||[]).map(x=>({n:x.name,type:(x.name||'').toLowerCase().includes('sfp')?'sfp':'copper',admin:x.admin||'up',oper:x.oper||'up',fault:(x.oper==='down')?'live-down':'sehat',live:true,poe:'-',speed:'-'}));
 if(!ifs.length)throw new Error('tidak ada interface terbaca');
-DB[key]=ifs;LIVE[key]={ip:clean,user:creds.user,pass:creds.pass,community:creds.community,via:j.via,ifaces:JSON.parse(JSON.stringify(ifs)),identity:ident};persistLive();
+DB[key]=ifs;LIVE[key]={ip:clean,user:creds.user,pass:creds.pass,community:(j.via==='snmp'&&j.snmpCommunity)||creds.community,via:j.via,ifaces:JSON.parse(JSON.stringify(ifs)),identity:ident};persistLive();
 const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);
 let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
 const id='ip'+Date.now()%100000;
@@ -964,6 +975,29 @@ try{renderRouters();renderIfaces();}catch(e){}
 try{showTab('dash');}catch(e){}
 aiTroubleshoot();
 }
+function topoUpgrade(id){
+document.getElementById('tmenu')?.remove();
+const n=topoNode(id);if(!n)return;
+const guess=((n.label||'').match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)||[])[0]||'';
+const ip=prompt('Jadikan live — IP device:',guess);
+if(!ip)return;const clean=ip.trim();
+if(!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(clean)){alert('Format IP salah');return;}
+const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
+log('> upgrade live '+clean+' ...');
+collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,30000).then(j=>{
+if(!j.ok)throw new Error(j.error||'discover gagal');
+const key=n.db||('IP '+clean);
+const ifs=(j.interfaces||[]).map(x=>({n:x.name,type:(x.name||'').toLowerCase().includes('sfp')?'sfp':'copper',admin:x.admin||'up',oper:x.oper||'up',fault:(x.oper==='down')?'live-down':'sehat',live:true,poe:'-',speed:'-'}));
+if(!ifs.length)throw new Error('tidak ada interface terbaca');
+DB[key]=ifs;LIVE[key]={ip:clean,user:creds.user,pass:creds.pass,community:(j.via==='snmp'&&j.snmpCommunity)||creds.community,via:j.via,ifaces:JSON.parse(JSON.stringify(ifs)),identity:j.identity||j.sysName||clean};persistLive();
+n.db=key;if(!n.sub||/belum live/i.test(n.sub))n.sub=clean+' • LIVE '+j.via;
+curR=key;curI=DB[key][0].n;
+DB[key].forEach(p=>{if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();});
+renderRouters();renderIfaces();drawTopo();saveTopo();
+log('✔ '+clean+' sekarang LIVE ('+j.via+') — AI troubleshoot sudah bisa jalan');
+try{pushAlarm('info','upgrade/'+clean,'LIVE via '+j.via);}catch(e){}
+}).catch(e=>{log('> upgrade gagal: '+String(e.message||e).slice(0,120)+'\n(cek IP nyala + API user / SNMP community di device)');});
+}
 function topoCheck(id){
 document.getElementById('tmenu')?.remove();
 const n=topoNode(id);
@@ -977,6 +1011,18 @@ try{renderRouters();renderIfaces();}catch(e){}
 const downs=ps.filter(p=>p.oper==='down'),bad=ps.filter(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp');
 log(`> CEK ${db}: ${ps.length-downs.length}/${ps.length} port UP${downs.length?' • DOWN: '+downs.map(p=>p.n).join(','):''}${bad.length?' • gangguan: '+bad.map(p=>p.n+'('+p.fault+')').join(','):''}`);
 try{pushAlarm('info',db,`Cek device: ${downs.length?downs.length+' DOWN':'semua UP'}`);}catch(e){}
+const L=LIVE[db];
+if(L&&L.ip){
+log('> 🔍 analyzer lokal (tanpa AI key) baca '+L.ip+' ...');
+collGet(`/api/diag?ip=${L.ip}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}`,25000).then(j=>{
+if(!j.ok)throw new Error(j.error||'gagal');
+log('> VONIS: '+j.vonis);
+(j.masalah||[]).forEach(m=>log('> • '+m));
+(j.saran||[]).forEach(s=>log('> ➡ '+s));
+if(!(j.masalah||[]).length)log('> ✅ Done — tidak ada temuan.');
+try{pushAlarm((j.masalah||[]).length?'warn':'info',db,'Analyzer lokal: '+j.vonis);}catch(e){}
+}).catch(e=>log('> analyzer lokal gagal: '+String(e.message||e).slice(0,120)));
+}
 }
 function moveNode(id){
 document.getElementById('tmenu')?.remove();

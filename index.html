@@ -396,8 +396,18 @@ const {key,base,model}=aiCreds();
 if(!key){log('> ⚠️ API key belum diisi — isi di sidebar → Cek API dulu.');return;}
 const b=document.getElementById('aiFixBtn');if(b&&!isVerify){b.disabled=true;b.textContent='⏳ AI kerja...';}
 if(!isVerify)log('> ⚡ AI troubleshoot '+curR+' ... (analisa + minta akses kalau perlu benerin)');
+const reqId='ai-'+Date.now().toString(36)+Math.floor(Math.random()*99);
+let progIdx=0,progStop=false;
+const progTimer=setInterval(async()=>{
 try{
-const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model})});
+const pj=await (await fetch(COLL()+'/api/ai-progress?id='+reqId)).json();
+(pj.stages||[]).slice(progIdx).forEach(s=>log('> '+s.stage));
+progIdx=(pj.stages||[]).length;
+if(pj.done){clearInterval(progTimer);progStop=true;}
+}catch(e){}
+},2000);
+try{
+const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model,reqId})});
 const j=await r.json();
 if(!j.ok)throw new Error(j.error||('server '+r.status));
 if(j.accessed)log('> 🔍 akses: '+j.accessed);
@@ -408,6 +418,7 @@ else if(j.actions&&j.actions.length&&isVerify){renderAiActions(j.actions);log('>
 else if(isVerify&&/done/i.test(j.reply)){log('> ✅ Done — AI verifikasi beres.');try{pushAlarm('info',curR,'AI troubleshoot: Done ✅');}catch(e){}}
 try{pushAlarm('info',curR,isVerify?'AI verifikasi selesai':'AI troubleshoot selesai');}catch(e){}
 }catch(e){log('> AI troubleshoot gagal: '+String(e.message||e).slice(0,150));}
+clearInterval(progTimer);
 if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
 }
 async function collGet(path,timeoutMs){const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeoutMs||20000);try{const r=await fetch(COLL()+path,{signal:ctl.signal});return await r.json();}finally{clearTimeout(to);}}
@@ -1000,6 +1011,18 @@ try{renderRouters();renderIfaces();}catch(e){}
 const downs=ps.filter(p=>p.oper==='down'),bad=ps.filter(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp');
 log(`> CEK ${db}: ${ps.length-downs.length}/${ps.length} port UP${downs.length?' • DOWN: '+downs.map(p=>p.n).join(','):''}${bad.length?' • gangguan: '+bad.map(p=>p.n+'('+p.fault+')').join(','):''}`);
 try{pushAlarm('info',db,`Cek device: ${downs.length?downs.length+' DOWN':'semua UP'}`);}catch(e){}
+const L=LIVE[db];
+if(L&&L.ip){
+log('> 🔍 analyzer lokal (tanpa AI key) baca '+L.ip+' ...');
+collGet(`/api/diag?ip=${L.ip}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}`,25000).then(j=>{
+if(!j.ok)throw new Error(j.error||'gagal');
+log('> VONIS: '+j.vonis);
+(j.masalah||[]).forEach(m=>log('> • '+m));
+(j.saran||[]).forEach(s=>log('> ➡ '+s));
+if(!(j.masalah||[]).length)log('> ✅ Done — tidak ada temuan.');
+try{pushAlarm((j.masalah||[]).length?'warn':'info',db,'Analyzer lokal: '+j.vonis);}catch(e){}
+}).catch(e=>log('> analyzer lokal gagal: '+String(e.message||e).slice(0,120)));
+}
 }
 function moveNode(id){
 document.getElementById('tmenu')?.remove();
