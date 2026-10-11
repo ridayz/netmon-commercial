@@ -56,6 +56,12 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
 <input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
 <div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
+<div class="label">AI agent <span id="aiStatus" style="font-weight:400;color:#64748b">belum dicek</span></div>
+<input id="aiKey" type="password" placeholder="API key (9Router / Agnes / dll)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-ai-key',this.value);}catch(e){}">
+<div style="display:flex;gap:4px;margin-top:4px"><button onclick="testAiKey()" style="flex:1;border:0;background:#e0f2fe;color:#0369a1;border-radius:8px;padding:7px;font-weight:800;cursor:pointer;font-size:12px">Cek API</button><button onclick="document.getElementById('aiKey').value='';localStorage.removeItem('netmon-ai-key');setAiStatus('belum dicek','#64748b')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer;font-size:12px">Hapus</button></div>
+<input id="aiBase" placeholder="Base URL (kosongkan = 9Router lokal)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="try{localStorage.setItem('netmon-ai-base',this.value);}catch(e){}">
+<input id="aiModel" placeholder="Model (kosongkan = auto-failover)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="try{localStorage.setItem('netmon-ai-model',this.value);}catch(e){}">
+<div style="font-size:11px;color:#64748b;margin-top:2px">AI boleh baca + diagnosa device 🟢. Ubah config selalu minta klik Setujui.</div>
 <div style="display:flex;gap:6px;margin-top:8px">
 <button onclick="setAutoCare()" id="autoCareBtn" style="flex:1;border:2px solid #bae6fd;background:#fff;color:#0369a1;border-radius:10px;padding:8px;font-weight:800;cursor:pointer;font-size:12px">🤖 Auto-Care</button>
 <span id="autoCareState" style="align-self:center;font-size:11px;color:#64748b">OFF</span>
@@ -83,6 +89,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div style="margin-top:12px"><h3>🔌 Layer 1 — Copper / Cable Test (TDR)</h3><div id="tdr"></div></div>
 </div>
 <div class="log" id="log">> NetMonitor siap. Klik node di topologi buat pantau.\n</div>
+<div id="aiActions" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>
 </div>
 <div class="grid2">
 <div class="panel"><h3>🔦 Layer 1 — SFP / Fiber DDM</h3><div id="sfp"></div></div>
@@ -308,7 +315,101 @@ function COLL(){const el=document.getElementById('collUrl');return ((el&&el.valu
 let LIVE={};try{LIVE=JSON.parse(localStorage.getItem('netmon-live-v1')||'{}');}catch(e){LIVE={};}
 function persistLive(){try{localStorage.setItem('netmon-live-v1',JSON.stringify(LIVE));}catch(e){}}
 function ensureDetectGroup(){let g=SIDEBAR.find(g=>g.layer==='Hasil Auto-Detect');if(!g){g={layer:'Hasil Auto-Detect',devs:[]};SIDEBAR.push(g);}return g;}
-function restoreLive(){for(const key in LIVE){const L=LIVE[key];if(!L||!L.ifaces)continue;if(!DB[key])DB[key]=JSON.parse(JSON.stringify(L.ifaces));const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);}try{document.getElementById('collUrl').value=localStorage.getItem('netmon-coll')||'http://localhost:8932';}catch(e){}}
+function restoreLive(){for(const key in LIVE){const L=LIVE[key];if(!L||!L.ifaces)continue;if(!DB[key])DB[key]=JSON.parse(JSON.stringify(L.ifaces));const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);}try{document.getElementById('collUrl').value=localStorage.getItem('netmon-coll')||'http://localhost:8932';}catch(e){}restoreAiFields();}
+function restoreAiFields(){try{const k=localStorage.getItem('netmon-ai-key');if(k&&document.getElementById('aiKey'))document.getElementById('aiKey').value=k;const b=localStorage.getItem('netmon-ai-base');if(b&&document.getElementById('aiBase'))document.getElementById('aiBase').value=b;const m=localStorage.getItem('netmon-ai-model');if(m&&document.getElementById('aiModel'))document.getElementById('aiModel').value=m;}catch(e){}}
+function setAiStatus(t,c){const s=document.getElementById('aiStatus');if(s){s.textContent=t;s.style.color=c||'#64748b';}}
+async function testAiKey(){
+const key=(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim();
+if(!key){setAiStatus('key kosong','#b91c1c');return;}
+setAiStatus('mengecek...','#64748b');
+try{
+const base=(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim();
+const model=(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim();
+const r=await fetch(COLL()+'/api/ai-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aiKey:key,aiBase:base,aiModel:model})});
+const j=await r.json();
+if(j.ok){setAiStatus('valid — '+(j.model||''),'#15803d');log('> API key valid');}
+else{setAiStatus('invalid: '+String(j.error||'').slice(0,60),'#b91c1c');log('> API key TIDAK valid: '+String(j.error||'').slice(0,80));}
+}catch(e){setAiStatus('gagal: '+String(e.message||e).slice(0,60),'#b91c1c');}
+}
+function aiCtx(){
+const dev=curR+'/'+((cur()||{}).n||'');
+const L=(typeof LIVE!=='undefined'&&LIVE)?LIVE[curR]:null;
+const devAlarms=(typeof ALARMS!=='undefined'?ALARMS:[]).filter(a=>a.dev===curR||a.dev===dev).slice(0,8);
+const devDown=(typeof DOWNTIME!=='undefined'?DOWNTIME:[]).filter(d=>d.dev===curR||d.dev===dev).slice(0,6);
+return {
+selected:dev,
+device:(typeof DB!=='undefined'&&DB[curR]||[]).map(x=>({n:x.n,type:x.type,admin:x.admin,oper:x.oper,fault:x.fault||'sehat',speed:x.speed||'-'})),
+live:(L&&L.ip)?{ip:L.ip,identity:L.identity||'',ifaces:(L.ifaces||[]).map(i=>({n:i.n,admin:i.admin,oper:i.oper}))}:null,
+alarms:devAlarms.map(a=>({t:a.t,sev:a.sev,dev:a.dev,msg:a.msg})),
+downtime:devDown.map(d=>({dev:d.dev,downStr:d.downStr,upStr:d.upAt?d.upStr:null,totalMs:d.totalMs||null}))
+};
+}
+function aiCreds(){return {key:(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim(),base:(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim(),model:(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim()};}
+function renderAiActions(actions){
+const box=document.getElementById('aiActions');if(!box)return;box.innerHTML='';
+(actions||[]).forEach(a=>{
+const b=document.createElement('button');
+b.style.cssText='text-align:left;border:0;background:#b45309;color:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:800';
+b.textContent=a.label||'Setujui';
+b.onclick=()=>aiApprove(a.ticket,b);
+box.appendChild(b);
+});
+}
+async function aiApprove(ticket,btn){
+if(btn){btn.disabled=true;btn.textContent='⏳ jalan...';}
+try{
+let r=await fetch(COLL()+'/api/ai-act',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket})});
+let j=await r.json();
+if(!j.ok&&j.needLogin){j=await aiLoginAndRun(ticket,btn);if(!j)return;}
+if(!j.ok)throw new Error(j.error||'gagal');
+log('> '+j.reply);
+const box=document.getElementById('aiActions');if(box)box.innerHTML='';
+log('> 🔁 cek ulang hasil perbaikan...');
+setTimeout(()=>aiTroubleshoot('VERIFIKASI: cek apakah masalah sebelumnya sudah beres. Kalau beres tulis DONE, kalau belum tulis apa yang masih salah.',true),1200);
+}catch(e){log('> aksi gagal: '+String(e.message||e).slice(0,150));if(btn){btn.disabled=false;btn.textContent='coba lagi';}}
+}
+async function aiLoginAndRun(ticket,btn){
+const box=document.getElementById('aiActions');if(!box)return null;
+box.innerHTML='';
+const w=document.createElement('div');
+w.style.cssText='background:#fef9c3;border:2px solid #f59e0b;border-radius:10px;padding:10px;font-size:13px';
+w.innerHTML=`<b>🔑 AI minta akses login tulis ke device</b><div style="color:#64748b;font-size:12px;margin:2px 0 6px">Kredensial dipakai sekali buat aksi ini saja, tidak disimpan.</div><div style="display:flex;gap:6px"><input id="aiWU" placeholder="user tulis" style="flex:1;border:2px solid #bae6fd;border-radius:8px;padding:7px 10px"><input id="aiWP" type="password" placeholder="password" style="flex:1;border:2px solid #bae6fd;border-radius:8px;padding:7px 10px"><button id="aiWGo" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer">Jalankan</button><button id="aiWNo" style="border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:7px 12px;cursor:pointer">Batal</button></div>`;
+box.appendChild(w);
+return new Promise(resolve=>{
+document.getElementById('aiWNo').onclick=()=>{box.innerHTML='';log('> akses login dibatalkan.');resolve(null);};
+document.getElementById('aiWGo').onclick=async()=>{
+const u=document.getElementById('aiWU').value.trim(),p=document.getElementById('aiWP').value;
+if(!u||!p){log('> isi user + password dulu.');return;}
+document.getElementById('aiWGo').disabled=true;document.getElementById('aiWGo').textContent='⏳...';
+try{
+const r=await fetch(COLL()+'/api/ai-act',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket,user:u,pass:p})});
+const j=await r.json();
+document.getElementById('aiWP').value='';
+if(!j.ok)throw new Error(j.error||'gagal');
+resolve(j);
+}catch(e){log('> login/eksekusi gagal: '+String(e.message||e).slice(0,120));resolve(null);}
+};
+});
+}
+async function aiTroubleshoot(msg,isVerify){
+const {key,base,model}=aiCreds();
+if(!key){log('> ⚠️ API key belum diisi — isi di sidebar → Cek API dulu.');return;}
+const b=document.getElementById('aiFixBtn');if(b&&!isVerify){b.disabled=true;b.textContent='⏳ AI kerja...';}
+if(!isVerify)log('> ⚡ AI troubleshoot '+curR+' ... (analisa + minta akses kalau perlu benerin)');
+try{
+const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model})});
+const j=await r.json();
+if(!j.ok)throw new Error(j.error||('server '+r.status));
+if(j.accessed)log('> 🔍 akses: '+j.accessed);
+log(j.reply.split('\n').map(l=>'> '+l).join('\n'));
+if(j.files&&j.files.length)j.files.forEach(f=>log('> ⬇ backup: '+COLL()+f.url));
+if(j.actions&&j.actions.length&&!isVerify){renderAiActions(j.actions);log('> ☝️ AI minta persetujuan + login buat '+j.actions.length+' aksi di atas.');}
+else if(j.actions&&j.actions.length&&isVerify){renderAiActions(j.actions);log('> ⚠️ masih ada PR — setujui lagi kalau mau lanjut.');}
+else if(isVerify&&/done/i.test(j.reply)){log('> ✅ Done — AI verifikasi beres.');try{pushAlarm('info',curR,'AI troubleshoot: Done ✅');}catch(e){}}
+try{pushAlarm('info',curR,isVerify?'AI verifikasi selesai':'AI troubleshoot selesai');}catch(e){}
+}catch(e){log('> AI troubleshoot gagal: '+String(e.message||e).slice(0,150));}
+if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
+}
 async function collGet(path,timeoutMs){const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeoutMs||20000);try{const r=await fetch(COLL()+path,{signal:ctl.signal});return await r.json();}finally{clearTimeout(to);}}
 setInterval(async()=>{try{await collGet('/health',5000);const d=document.getElementById('collDot');if(d){d.textContent='🟢';d.title='collector nyambung';}}catch(e){const d=document.getElementById('collDot');if(d){d.textContent='🔴';d.title='collector MATI — jalankan node server.js di netmon-collector';}}},15000);
 function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> DL/UL '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=DL':'Rx=DL')+')');}
@@ -670,7 +771,7 @@ try{if(n&&!n.db)ensureNodeDb(n,LINKS);}catch(e){}
 const m=document.createElement('div');m.id='tmenu';
 m.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:8px;z-index:99;box-shadow:0 8px 24px rgba(2,132,199,.25);min-width:210px`;
 m.innerHTML=`<div style="font-size:12px;font-weight:800;color:#0369a1;margin-bottom:6px">Node → ${id}</div>`
-+(n&&n.db&&DB[n.db]?`<button onclick="topoCheck('${id}')" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#0369a1">🔍 Cek device</button><button onclick="cableFrom('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔌 Pasang kabel (pilih port)</button>${LIVE[n.db]?`<button onclick="topoDiscover('${id}')" style="width:100%;text-align:left;border:0;background:#fef9c3;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#a16207">📡 Discovery port</button>`:''}`:`<div style="font-size:12px;color:#64748b">node di luar monitoring</div>`)
++(n&&n.db&&DB[n.db]?`<button onclick="topoCheck('${id}')" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#0369a1">🔍 Cek device</button><button onclick="topoAi('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#fff">⚡ AI Troubleshoot</button><button onclick="cableFrom('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔌 Pasang kabel (pilih port)</button>${LIVE[n.db]?`<button onclick="topoDiscover('${id}')" style="width:100%;text-align:left;border:0;background:#fef9c3;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#a16207">📡 Discovery port</button>`:''}`:`<div style="font-size:12px;color:#64748b">node di luar monitoring</div>`)
 +`<div style="font-size:12px;font-weight:800;color:#0369a1;margin:6px 0 2px">Teks</div><button onclick="editTopoText('${id}')" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:3px;cursor:pointer">✎ Edit nama & sub-teks</button><div style="display:flex;gap:4px;margin-top:4px"><button onclick="setTopoFont('${id}',0.85)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:11px">A-</button><button onclick="setTopoFont('${id}',1)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:13px">A</button><button onclick="setTopoFont('${id}',1.25)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:15px">A+</button></div>`
 +`<div style="font-size:12px;font-weight:800;color:#0369a1;margin:6px 0 2px">Ganti icon</div><div style="display:flex;gap:4px"><select id="iconSel" style="flex:1;border:2px solid #bae6fd;border-radius:8px;padding:7px;font-size:13px;background:#f0f9ff;color:#0c4a6e"><optgroup label="Jaringan">${['router','switch','swpoe','firewall','internet'].map(k=>`<option value="${k}"${n.icon===k?' selected':''}>${ICONS[k]} ${k}</option>`).join('')}</optgroup><optgroup label="Perangkat">${['ont','olt','ap','pc','server'].map(k=>`<option value="${k}"${n.icon===k?' selected':''}>${ICONS[k]} ${k}</option>`).join('')}</optgroup></select><button onclick="applyIconSel('${id}')" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:800">✔</button></div>`+`<button onclick="moveNode('${id}')" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">📦 Pindah layer</button>`+`<button onclick="delTopoNode('${id}')" style="width:100%;text-align:left;border:0;background:#fee2e2;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">🗑 hapus</button>`;
 document.body.appendChild(m);setTimeout(()=>document.addEventListener('click',()=>m.remove(),{once:true}),50);
@@ -852,6 +953,16 @@ else{pb=prompt('Port tujuan di "'+t.label+'" (bebas, cth: WAN/LAN1):','')||'';}
 LINKS.push([id,t.id,mediaGuess(n,t),pa,pb]);
 drawTopo();saveTopo();
 log('✔ kabel: '+n.label+':'+pa+' ↔ '+t.label+(pb?':'+pb:''));
+}
+function topoAi(id){
+document.getElementById('tmenu')?.remove();
+const n=topoNode(id);if(!n)return;
+let db=null;try{db=ensureNodeDb(n,LINKS);}catch(e){}
+if(!db||!DB[db]){log('> "'+n.label+'" di luar monitoring');return;}
+curR=db;if(!DB[db].find(x=>x.n===curI))curI=DB[db][0].n;
+try{renderRouters();renderIfaces();}catch(e){}
+try{showTab('dash');}catch(e){}
+aiTroubleshoot();
 }
 function topoCheck(id){
 document.getElementById('tmenu')?.remove();
