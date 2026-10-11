@@ -100,6 +100,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button id="btnRedo" onclick="redoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Y">⟳ Redo</button>
 <button onclick="exportPNG()" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer">🖼 Export PNG</button>
 <button onclick="document.getElementById('importTopo').click()" class="ai-btn ghost" style="width:auto;padding:7px 12px">⬆ Import</button>
+<button onclick="exportTopoJSON()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Backup seluruh layer ke file JSON">⬇ JSON</button>
 <input type="file" id="importTopo" accept=".json" style="display:none" onchange="importTopo(this)">
 <span id="saveStat" style="font-size:12px;color:#64748b"></span>
 </div>
@@ -495,6 +496,7 @@ cv.toBlob(b=>{if(!b){log('> export PNG gagal');return;}const a=document.createEl
 img.onerror=()=>log('> export PNG gagal render');
 img.src=url;
 }catch(e){log('> export PNG gagal: '+e.message);}}
+function exportTopoJSON(){try{const at=new Date().toISOString().slice(0,10);const blob=new Blob([JSON.stringify({at,cur:curLayer,layers:LAYERS},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='netmon-topo-'+at+'.json';a.click();log('> backup JSON diunduh ('+a.download+')');}catch(e){log('> export JSON gagal: '+e.message);}}
 function importTopo(inp){const f=inp.files&&inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);const ls=d.layers||d;if(typeof ls!=='object'||!Object.keys(ls).length)throw new Error('format bukan projek netmon');let n=0;Object.keys(ls).forEach(k=>{const L=ls[k];if(!L||!Array.isArray(L.nodes)||!Array.isArray(L.links))return;let key=k;while(LAYERS[key])key=key+'-2';LAYERS[key]={label:L.label||key,vb:L.vb||'0 0 900 400',areas:L.areas||[],nodes:L.nodes,links:L.links};TOPO_HOME[key]={};L.nodes.forEach(nn=>{TOPO_HOME[key][nn.id]={x:nn.x,y:nn.y};});n++;});if(!n)throw new Error('tidak ada layer valid di file');setLayer(curLayer);saveTopo(true);log('> '+n+' layer di-import dari '+f.name);}catch(e){log('> import gagal: '+e.message);alert('Import gagal: '+e.message);}};rd.readAsText(f);inp.value='';}
 renderLayerBtns();
 document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.defaultPrevented)return;ev.preventDefault();topoCanvasMenu(ev);});
