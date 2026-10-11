@@ -125,9 +125,8 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px">
 <span>IP Publik: <b id="pubIp">203.0.113.10 (dummy)</b></span>
-<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="detectPubIp()">🌐 Deteksi IP-ku</button>
+<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="discoverModal()" title="Scan perangkat satu jaringan dengan laptop ini">🔍 Discover</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="addTopoNode()">＋ Tambah perangkat</button>
-<button onclick="addNodeByIp()" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:8px 14px;font-weight:800;cursor:pointer" title="Simulasi auto-detect by IP (dummy)">＋ IP & Detect</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="gns3Modal()" title="Tarik topologi dari GNS3 server">⬇ GNS3</button>
 <span style="color:#64748b">drag node • klik kanan node/kanvas = menu • <b>2x klik = edit teks</b> • <span style="color:#fb923c;font-weight:800">━ FO</span> • <span style="color:#38bdf8;font-weight:800">━ LAN</span> • <span style="color:#ef4444;font-weight:800">✕ merah = DOWN</span> • live tiap 3 dtk</span>
 </div>
@@ -676,7 +675,7 @@ if(!LAYERS[curLayer]||!Array.isArray(LAYERS[curLayer].nodes)){curLayer='pu';if(!
 const svg=document.getElementById('topoSvg');const W=svg.clientWidth||900;
 svg.setAttribute('viewBox',LAYERS[curLayer].vb);
 svg.innerHTML='';
-if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');const vb0=svg.viewBox.baseVal;const cx0=(vb0&&vb0.width)?vb0.width/2:450;t.setAttribute('x',cx0);t.setAttribute('y',150);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','15');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer kosong — klik ＋ IP & Detect buat baca device asli';svg.appendChild(t);const t2=document.createElementNS('http://www.w3.org/2000/svg','text');t2.setAttribute('x',cx0);t2.setAttribute('y',172);t2.setAttribute('text-anchor','middle');t2.setAttribute('font-size','12');t2.setAttribute('fill','#64748b');t2.textContent='cth: 192.168.18.6 → langsung kebaca + live';svg.appendChild(t2);}
+if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');const vb0=svg.viewBox.baseVal;const cx0=(vb0&&vb0.width)?vb0.width/2:450;t.setAttribute('x',cx0);t.setAttribute('y',150);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','15');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer kosong — klik 🔍 Discover buat scan perangkat satu jaringan';svg.appendChild(t);const t2=document.createElementNS('http://www.w3.org/2000/svg','text');t2.setAttribute('x',cx0);t2.setAttribute('y',172);t2.setAttribute('text-anchor','middle');t2.setAttribute('font-size','12');t2.setAttribute('fill','#64748b');t2.textContent='cth: 192.168.18.6 → langsung kebaca + live';svg.appendChild(t2);}
 (LAYERS[curLayer].areas||[]).forEach(a=>{const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',a.x);r.setAttribute('y',a.y);r.setAttribute('width',a.w);r.setAttribute('height',a.h);r.setAttribute('rx',16);r.setAttribute('fill','rgba(255,255,255,.45)');r.setAttribute('stroke','#0284c7');r.setAttribute('stroke-width','1.6');r.setAttribute('stroke-dasharray','8 5');svg.appendChild(r);const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',a.x+14);t.setAttribute('y',a.y+18);t.setAttribute('font-size',a.fs||11);t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent=a.label;svg.appendChild(t);});
 LINKS.forEach(([a,b,med,pa,pb])=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bad=topoSt(B)==='bad';const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',med==='fo'?'#fb923c':'#38bdf8');l.setAttribute('stroke-width','3');svg.appendChild(l);if(pa||pb){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const lt=document.createElementNS('http://www.w3.org/2000/svg','text');lt.setAttribute('x',mx);lt.setAttribute('y',my-8);lt.setAttribute('text-anchor','middle');lt.setAttribute('font-size','9');lt.setAttribute('font-weight','700');lt.setAttribute('fill','#475569');lt.setAttribute('stroke','#fff');lt.setAttribute('stroke-width','3');lt.setAttribute('paint-order','stroke');lt.textContent=(pa||'')+(pa||pb?'↔':'')+(pb||'');svg.appendChild(lt);}if(bad){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',mx);c.setAttribute('cy',my);c.setAttribute('r',9);c.setAttribute('fill','#fff');c.setAttribute('stroke','#ef4444');c.setAttribute('stroke-width',2);svg.appendChild(c);[[mx-5,my-5,mx+5,my+5],[mx+5,my-5,mx-5,my+5]].forEach(s=>{const x=document.createElementNS('http://www.w3.org/2000/svg','line');x.setAttribute('x1',s[0]);x.setAttribute('y1',s[1]);x.setAttribute('x2',s[2]);x.setAttribute('y2',s[3]);x.setAttribute('stroke','#ef4444');x.setAttribute('stroke-width',3);x.setAttribute('stroke-linecap','round');svg.appendChild(x);});}});
 TOPO.forEach(n=>{
@@ -761,6 +760,44 @@ if(/switch|crs|css/.test(s))return 'switch';
 if(/cap|wap|wireless|wifi/.test(s))return 'ap';
 if(/server/.test(s))return 'server';
 return 'router';
+}
+// ---- DISCOVER: scan perangkat satu jaringan dengan laptop ini ----
+function discoverModal(){
+let ov=document.getElementById('dmodal');if(ov)ov.remove();
+ov=document.createElement('div');ov.id='dmodal';
+ov.style.cssText='position:fixed;inset:0;background:rgba(12,74,110,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px';
+ov.innerHTML=`<div style="background:#fff;border:3px solid #bae6fd;border-radius:18px;padding:18px;max-width:600px;width:100%;max-height:80vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;color:#0369a1">🔍 Discover jaringan lokal</h3><button onclick="document.getElementById('dmodal').remove()" style="border:0;background:#fee2e2;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">✕</button></div>
+<div style="display:flex;gap:6px;margin-top:10px"><select id="dnet" style="flex:1;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;font-size:13px;background:#f0f9ff"></select><button onclick="discoverScan()" style="border:0;background:#0284c7;color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer">Scan</button></div>
+<div id="dmodalBody" style="font-size:13px;margin-top:10px;color:#64748b">Pilih subnet → Scan (±15 detik untuk /24) → centang → tambah ke layer ini.</div></div>`;
+ov.addEventListener('click',ev=>{if(ev.target===ov)ov.remove();});
+document.body.appendChild(ov);
+collGet('/api/localnets',10000).then(j=>{
+const s=document.getElementById('dnet');if(!s)return;
+const nets=(j.nets||[]).filter(n=>!/^127\.|^169\.254\./.test(n.ip));
+if(!nets.length){s.innerHTML='<option value="">(tidak ada interface lokal)</option>';return;}
+s.innerHTML=nets.map((n,i)=>`<option value="${n.cidr}"${/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(n.ip)&&i===nets.findIndex(x=>/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(x.ip))?' selected':''}>${n.cidr} (via ${n.ip})</option>`).join('');
+}).catch(e=>{const b=document.getElementById('dmodalBody');if(b)b.innerHTML='Collector tidak nyambung: '+String(e.message||e).slice(0,80);});
+}
+async function discoverScan(){
+const body=document.getElementById('dmodalBody');const net=(document.getElementById('dnet')||{}).value||'';
+if(!net){if(body)body.textContent='Pilih subnet dulu.';return;}
+if(body)body.innerHTML='⏳ scan '+net+' ... (ping sweep + cek port 8728/8291/22/80)';
+try{
+const j=await collGet(`/api/netscan?net=${encodeURIComponent(net)}`,120000);
+const rows=j.hosts||[];
+if(!body)return;
+if(!rows.length){body.innerHTML='Tidak ada host hidup di '+net+'.';return;}
+body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">${rows.length} host hidup • centang → <button onclick="discoverAdd()" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">＋ Tambah ke layer</button></div>`
++rows.map((h,i)=>{const tag=(h.ports||[]).join(' ');const router=/8728|8291/.test(tag);return `<label style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px;cursor:pointer"><input type="checkbox" class="dhost" value="${h.ip}"${router?' checked':''} style="width:15px;height:15px"><span style="font-weight:700;color:#0c4a6e">${h.ip}</span>${router?'<span style="font-size:11px;background:#dcfce7;color:#15803d;border-radius:6px;padding:1px 7px;font-weight:800">router?</span>':''}<span style="font-size:11px;color:#64748b">${tag||'tidak ada port umum'}</span></label>`;}).join('');
+log(`> discover ${net}: ${rows.length} host hidup`);
+}catch(e){if(body)body.innerHTML='Scan gagal: '+String(e.message||e).slice(0,120);}
+}
+function discoverAdd(){
+const ips=[...document.querySelectorAll('.dhost:checked')].map(c=>c.value);
+document.getElementById('dmodal')?.remove();
+if(!ips.length){log('> discover: tidak ada yang dipilih');return;}
+log(`> tambah ${ips.length} hasil discover ke layer...`);
+let i=0;const step=()=>{if(i>=ips.length){log('✔ discover selesai');return;}addNodeByIpGo(ips[i++]);setTimeout(step,1200);};step();
 }
 function addNodeByIp(presetIp,px,py,manualFb){
 if(presetIp){addNodeByIpGo(presetIp.trim(),px,py,manualFb);return;}
@@ -890,7 +927,7 @@ if(TOPO.length>1)LINKS.push([TOPO[0].id,id,'lan']);
 drawTopo();saveTopo();
 log('✔ '+clean+' ke-add (ping OK, tipenya belum kebaca — 2x klik buat rename)');
 }
-async function detectPubIp(){const el=document.getElementById('pubIp');el.textContent='mendeteksi...';try{const r=await fetch('https://api.ipify.org?format=json');const j=await r.json();el.textContent=j.ip+' (asli)';const inet=topoNode('inet');if(inet){inet.sub=j.ip;inet.label='IP Publik';}drawTopo();}catch(e){el.textContent='203.0.113.10 (dummy, offline)';}}
+
 </script>
 </body>
 </html>
