@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NetMonitor Pastel — Dummy + Layer 1 AI</title>
+<title>Netmon - Router AI</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
@@ -47,7 +47,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <body>
 <div class="app">
 <div class="sidebar">
-<div class="logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><span style="display:inline-flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M13 1 L4 14 h6 l-1 9 9-13 h-6 z" fill="#fde047" stroke="#b45309" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>NetMonitor</span></div>
+<div class="logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><span style="display:inline-flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M13 1 L4 14 h6 l-1 9 9-13 h-6 z" fill="#fde047" stroke="#b45309" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>Netmon - Router AI</span></div>
 <div class="label">Device terpantau</div><div id="routers"></div>
 <div class="label">Interface <span style="font-weight:400;text-transform:none">(klik kanan = disable/enable)</span></div><div id="ifaces" style="display:flex;flex-direction:column;gap:8px"></div>
 <div class="label">Legenda</div>
@@ -89,7 +89,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div style="margin-top:12px"><h3>🔌 Layer 1 — Copper / Cable Test (TDR)</h3><div id="tdr"></div></div>
 </div>
 <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
-<div class="log" id="log">> NetMonitor siap. Klik node di topologi buat pantau.\n</div>
+<div class="log" id="log">> Netmon - Router AI siap. Klik node di topologi buat pantau.\n</div>
 <div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
 <div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
 </div>
@@ -551,7 +551,7 @@ function clearAlarms(){ALARMS=[];unreadCrit=0;updateBadge();renderAlarms();log('
 function beep(){if(!document.getElementById('alarmSound')?.checked)return;try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=0.08;o.start();o.stop(c.currentTime+0.25);}catch(e){}}
 function renderAlarms(){const el=document.getElementById('alarmList');if(!el)return;const rows=ALARMS.filter(a=>logFilter==='all'||a.sev===logFilter);if(!rows.length){el.innerHTML='<div style="font-size:13px;color:#64748b;background:#f0f9ff;border:2px dashed #bae6fd;border-radius:12px;padding:14px;text-align:center">Belum ada event. Gangguan / DOWN / diagnosa AI akan tercatat di sini.</div>';return;}el.innerHTML=rows.map(a=>{const bg=a.sev==='crit'?'#fee2e2':(a.sev==='warn'?'#fef9c3':'#e0f2fe');const fg=a.sev==='crit'?'#b91c1c':(a.sev==='warn'?'#a16207':'#0369a1');const ic=a.sev==='crit'?'🚨':(a.sev==='warn'?'⚠':'ℹ');return `<div style="background:${bg};color:${fg};border-radius:10px;padding:8px 12px;font-size:13px"><b>${ic} [${a.t}] ${a.dev}</b> — ${a.msg}</div>`;}).join('');}
 // seed awal
-pushAlarm('info','sistem','NetMonitor dummy mulai. Menampilkan data simulasi.');
+pushAlarm('info','sistem','Netmon - Router AI mulai.');
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'){DOWNTIME.push({dev:r+'/'+p.n,downAt:p.downSince||Date.now(),downStr:clockStr(new Date(p.downSince||Date.now())),upAt:null,upStr:'—',reason:p.fault||'awal'});}}}
 renderDowntime();
 // sambung tick → alarm otomatis tiap ada DOWN/loss tinggi (throttle 20 dtk per device)
@@ -661,7 +661,7 @@ const label=(LAYERS[curLayer]||{}).label||curLayer;
 log('> buka view archify "'+label+'" ('+TOPO.length+' node) ...');
 const w=window.open('about:blank','_blank');
 if(w){try{w.document.write('<p style="font-family:sans-serif;color:#0369a1">⏳ nyiapin view archify "'+label+'"...</p>');}catch(e){}}
-fetch(COLL()+'/api/archify-export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Topologi '+label+' — NetMonitor',layer:label,nodes:TOPO.map(n=>({id:n.id,label:n.label,sub:n.sub,icon:n.icon,x:n.x,y:n.y})),links:LINKS})})
+fetch(COLL()+'/api/archify-export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Topologi '+label+' — Netmon - Router AI',layer:label,nodes:TOPO.map(n=>({id:n.id,label:n.label,sub:n.sub,icon:n.icon,x:n.x,y:n.y})),links:LINKS})})
 .then(r=>r.json()).then(j=>{
 if(!j.ok)throw new Error((j.error||'gagal')+(j.validation?': '+JSON.stringify(j.validation).slice(0,200):''));
 log('✔ view archify ('+(j.profile||'showcase')+'): '+j.file);
@@ -675,7 +675,7 @@ const svg=document.getElementById('topoSvg');if(!svg)return;
 const label=(LAYERS[curLayer]||{}).label||curLayer;
 const at=new Date().toLocaleString('id-ID',{hour12:false});
 const downs=TOPO.filter(n=>topoSt(n)==='bad').length;
-const doc=`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>${label} — NetMonitor</title><style>body{margin:0;background:#f0f9ff;font-family:'Segoe UI',system-ui,sans-serif;padding:28px}h1{color:#0369a1;margin:0 0 4px;font-size:22px}p{color:#64748b;margin:0 0 14px;font-size:13px}.legend{display:flex;gap:16px;font-size:12px;color:#475569;margin-top:12px;font-weight:700}svg{width:100%;height:auto;background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px}</style></head><body><h1>🗺 ${label}</h1><p>${TOPO.length} perangkat • ${LINKS.length} link${downs?' • '+downs+' DOWN':''} • ${at} • NetMonitor</p>${svg.outerHTML}<div class="legend"><span><span style="color:#fb923c">━</span> FO</span><span><span style="color:#38bdf8">━</span> LAN</span><span><span style="color:#ef4444">✕</span> DOWN</span></div></body></html>`;
+const doc=`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>${label} — Netmon - Router AI</title><style>body{margin:0;background:#f0f9ff;font-family:'Segoe UI',system-ui,sans-serif;padding:28px}h1{color:#0369a1;margin:0 0 4px;font-size:22px}p{color:#64748b;margin:0 0 14px;font-size:13px}.legend{display:flex;gap:16px;font-size:12px;color:#475569;margin-top:12px;font-weight:700}svg{width:100%;height:auto;background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px}</style></head><body><h1>🗺 ${label}</h1><p>${TOPO.length} perangkat • ${LINKS.length} link${downs?' • '+downs+' DOWN':''} • ${at} • Netmon - Router AI</p>${svg.outerHTML}<div class="legend"><span><span style="color:#fb923c">━</span> FO</span><span><span style="color:#38bdf8">━</span> LAN</span><span><span style="color:#ef4444">✕</span> DOWN</span></div></body></html>`;
 window.open(URL.createObjectURL(new Blob([doc],{type:'text/html'})),'_blank');
 log('> view original dibuka ('+TOPO.length+' node) — tinggal screenshot');
 }
