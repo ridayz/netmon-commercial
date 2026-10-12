@@ -7,7 +7,7 @@ if %errorlevel%==0 (
   echo [netmon] collector sudah jalan di :8932, skip start.
 ) else (
   echo [netmon] menyalakan collector...
-  start "netmon-collector" /min node "..\netmon-collector\server.js"
+  start "netmon-collector" /min node "collector\server.js"
   timeout /t 3 /nobreak >nul
 )
 REM 2) dashboard
