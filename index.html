@@ -265,7 +265,8 @@ h+=`<label style="font-size:12px;font-weight:800;color:#0369a1;display:block;mar
 h+=`<div data-f="choice-${i}" style="display:flex;gap:8px;flex-wrap:wrap">`;
 (f.choices||[]).forEach((c,j)=>{
 const on=(j===0);
-h+=`<label data-fc="${i}-${j}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;cursor:pointer;padding:7px 12px;border:2px solid ${on?'#0284c7':'#e0f2fe'};border-radius:10px;background:${on?'#e0f2fe':'#f8fafc'};color:${on?'#0369a1':'#475569'}">${c.label||c.v}</label>`;
+const ico=c.ico?`<span style="font-size:15px">${c.ico}</span>`:'';
+h+=`<label data-fc="${i}-${j}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:52px;padding:7px 4px;font-size:9.5px;font-weight:800;cursor:pointer;border:2px solid ${on?'#0284c7':'#e0f2fe'};border-radius:10px;background:${on?'#e0f2fe':'#f8fafc'};color:${on?'#0369a1':'#475569'}">${ico}<span>${(c.label||c.v).toUpperCase()}</span></label>`;
 });
 h+=`</div>`;
 }else{
@@ -287,7 +288,7 @@ document.addEventListener('keydown',esc);
 const inputs=[...bx.querySelectorAll('[data-fi]')];
 const ok=bx.querySelector('[data-act="ok"]'),cx=bx.querySelector('[data-act="cancel"]');
 if(cx)cx.onclick=()=>{close();res(null);};
-if(ok)ok.onclick=()=>{const vals={};inputs.forEach(inp=>{vals[inp.dataset.fi]={text:inp.value};});Object.keys(choiceState).forEach(k=>{vals[k]={choice:choiceState[k]};});close();res(vals);};
+if(ok)ok.onclick=()=>{const vals={};inputs.forEach(inp=>{const i=Number(inp.dataset.fi);vals[(F[i]&&F[i].name)||i]={text:inp.value};});Object.keys(choiceState).forEach(k=>{const i=Number(k);vals[(F[i]&&F[i].name)||i]={choice:choiceState[i]};});close();res(vals);};
 const fin=inputs[0];if(fin)setTimeout(()=>{fin.focus();fin.select&&fin.select();},60);
 });
 }
@@ -930,6 +931,7 @@ async function editTopoText(id){const n=topoNode(id);if(!n)return;document.getEl
 function setTopoFont(id,s){const n=topoNode(id);if(!n)return;n.fs=s;document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
 function topoSvgPos(ev){const svg=document.getElementById('topoSvg');const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return {x:Math.round((ev.clientX-r.left)*vb.width/r.width),y:Math.round((ev.clientY-r.top)*vb.height/r.height)};}
 // ---- ZOOM tombol +/- & PAN via slider horizontal/vertical (scroll dihapus) ----
+function topoVbArr(){const L=LAYERS[curLayer];if(!L||!L.vb)return[0,0,900,400];return String(L.vb).split(' ').map(Number);}
 function topoContentBounds(){
 const L=LAYERS[curLayer]||{};const ns=L.nodes||[];
 let x0=0,y0=0,x1=900,y1=400;
@@ -1300,22 +1302,28 @@ drawTopo();saveTopo();log('> node dihapus (Undo tersedia)');
 }
 function addTopoNode(){const t=curLayer&&LAYERS[curLayer]?LAYERS[curLayer].type:'live';if(t==='dummy')addDummyFree();else addLiveByType();}
 function addLiveByType(px,py){
-const kinds=['router','switch','swpoe','firewall','internet','ont','olt','ap','pc','server'];
-uiModal({title:'Jenis device (live)',msg:'Pilih jenis device, lalu nama',fields:[{label:'Jenis',type:'choice',choices:kinds.map(k=>({v:k,label:k.toUpperCase()}))},{name:'nama',type:'text',label:'Nama device',value:'Perangkat Baru'}]}).then(v=>{if(!v)return;
-const icon=v[0].choice;
-const nm=v.nama.text.trim();
+const kinds=[['router','Router'],['switch','Switch'],['swpoe','Switch PoE'],['firewall','Firewall'],['internet','Internet'],['ont','ONT'],['olt','OLT'],['ap','AP WiFi'],['pc','PC'],['server','Server']];
+uiModal({title:'Jenis device (live)',msg:'Pilih icon device, lalu isi nama',fields:[{label:'Jenis',type:'choice',choices:kinds.map(([v,l])=>({v,ico:ICONS[v]||'📦',label:l}))},{name:'nama',type:'text',label:'Nama device',value:'Perangkat Baru'}]}).then(v=>{if(!v)return;
+const icon=(v[0]&&v[0].choice)?v[0].choice:'router';
+const nm=(v.nama&&v.nama.text)?v.nama.text.trim():'Perangkat Baru';
+const [vx,vy,vw,vh]=topoVbArr();
+const cx=px!==undefined?px:Math.round(vx+vw/2)+(Math.round(Math.random()*60)-30);
+const cy=py!==undefined?py:Math.round(vy+vh/2)+(Math.round(Math.random()*40)-20);
 const id='n'+Date.now()%100000;
-TOPO.push({id,icon,label:nm||'Perangkat Baru',sub:'belum ada IP — klik kanan → isi IP',x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py});
-drawTopo();saveTopo();log('✔ '+(nm||'Perangkat Baru')+' ('+icon+') masuk kanvas — klik kanan → 🌐 isi IP biar live');});
+TOPO.push({id,icon,label:nm,sub:'belum ada IP — klik kanan → isi IP',x:cx,y:cy});
+drawTopo();saveTopo();log('✔ '+nm+' ('+icon+') masuk kanvas — klik kanan → 🌐 isi IP biar live');});
 }
 function addDummyFree(px,py){
-const kinds=['router','switch','swpoe','firewall','internet','ont','olt','ap','pc','server'];
-uiModal({title:'Jenis device (dummy)',msg:'Pilih jenis, lalu nama',fields:[{label:'Jenis',type:'choice',choices:kinds.map(k=>({v:k,label:k.toUpperCase()}))},{name:'nama',type:'text',label:'Nama device',value:'Dummy-1'}]}).then(v=>{if(!v)return;
-const icon=v[0].choice;
-const nm=v.nama.text.trim();
+const kinds=[['router','Router'],['switch','Switch'],['swpoe','Switch PoE'],['firewall','Firewall'],['internet','Internet'],['ont','ONT'],['olt','OLT'],['ap','AP WiFi'],['pc','PC'],['server','Server']];
+uiModal({title:'Jenis device (dummy)',msg:'Pilih icon, lalu nama',fields:[{label:'Jenis',type:'choice',choices:kinds.map(([v,l])=>({v,ico:ICONS[v]||'📦',label:l}))},{name:'nama',type:'text',label:'Nama device',value:'Dummy-1'}]}).then(v=>{if(!v)return;
+const icon=(v[0]&&v[0].choice)?v[0].choice:'switch';
+const nm=(v.nama&&v.nama.text)?v.nama.text.trim():'Dummy-1';
+const [vx,vy,vw,vh]=topoVbArr();
+const cx=px!==undefined?px:Math.round(vx+vw/2)+(Math.round(Math.random()*60)-30);
+const cy=py!==undefined?py:Math.round(vy+vh/2)+(Math.round(Math.random()*40)-20);
 const id='n'+Date.now()%100000;
-TOPO.push({id,icon,label:nm||'Dummy-1',sub:'dummy',x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py});
-drawTopo();saveTopo();log('✔ dummy '+(nm||'Dummy-1')+' ('+icon+') masuk kanvas');});
+TOPO.push({id,icon,label:nm,sub:'dummy',x:cx,y:cy});
+drawTopo();saveTopo();log('✔ dummy '+nm+' ('+icon+') masuk kanvas');});
 }
 function setNodeIp(id){
 const n=topoNode(id);if(!n)return;document.getElementById('tmenu')?.remove();
