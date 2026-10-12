@@ -51,24 +51,12 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="sidebar">
 <div class="logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><span style="display:inline-flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M13 1 L4 14 h6 l-1 9 9-13 h-6 z" fill="#fde047" stroke="#b45309" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>Netmon - Router AI</span></div>
 <div class="label">Device terpantau</div><div id="routers"></div>
-<div class="label">Interface <span style="font-weight:400;text-transform:none">(klik kanan = disable/enable)</span></div><div id="ifaces" style="display:flex;flex-direction:column;gap:8px"></div>
 <div class="label">Legenda</div>
 <div style="font-size:12px;color:#64748b">🟢 up &nbsp; 🔴 gangguan &nbsp; ⚪ down / disable</div>
 <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-top:4px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" onchange="window.chaosOn=this.checked" style="width:15px;height:15px;margin-top:1px"> <span>Simulasi realistis — device kadang down sendiri lalu pulih</span></label>
 <div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
 <input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
 <div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
-<div class="label">AI agent <span id="aiStatus" style="font-weight:400;color:#64748b">belum dicek</span></div>
-<input id="aiKey" type="password" placeholder="API key (9Router / Agnes / dll)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-ai-key',this.value);}catch(e){}">
-<div style="display:flex;gap:4px;margin-top:4px"><button onclick="testAiKey()" style="flex:1;border:0;background:#e0f2fe;color:#0369a1;border-radius:8px;padding:7px;font-weight:800;cursor:pointer;font-size:12px">Cek API</button><button onclick="document.getElementById('aiKey').value='';localStorage.removeItem('netmon-ai-key');setAiStatus('belum dicek','#64748b')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer;font-size:12px">Hapus</button></div>
-<input id="aiBase" placeholder="Base URL (kosongkan = 9Router lokal)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="try{localStorage.setItem('netmon-ai-base',this.value);}catch(e){}">
-<input id="aiModel" placeholder="Model (kosongkan = auto-failover)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="try{localStorage.setItem('netmon-ai-model',this.value);}catch(e){}">
-<div style="font-size:11px;color:#64748b;margin-top:2px">AI boleh baca + diagnosa device 🟢. Ubah config selalu minta klik Setujui.</div>
-<div style="display:flex;gap:6px;margin-top:8px">
-<button onclick="setAutoCare()" id="autoCareBtn" style="flex:1;border:2px solid #bae6fd;background:#fff;color:#0369a1;border-radius:10px;padding:8px;font-weight:800;cursor:pointer;font-size:12px">🤖 Auto-Care</button>
-<span id="autoCareState" style="align-self:center;font-size:11px;color:#64748b">OFF</span>
-</div>
-<div style="font-size:11px;color:#64748b">aman: enable access, flap, PoE cycle. kabel/SFP tetap tiket.</div>
 </div>
 <div class="main">
 <div class="topbar"><div><h1 id="title">-</h1><p>Dummy + Diagnosa Layer 1 (copper TDR + SFP DDM) • pastel biru awan</p></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="statusPill">●</div>
@@ -194,7 +182,7 @@ const nm=document.getElementById('portDevName');
 if(!curR||!DB[curR]||!DB[curR].length){if(nm)nm.textContent='belum ada device';box.style.color='#64748b';box.textContent='Pilih device live dulu (sidebar kiri / topologi bawah).';return;}
 if(nm)nm.textContent=curR+(LIVE[curR]?' 🟢':' ⚪');
 box.innerHTML='';box.style.color='';
-DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';const b=document.createElement('button');b.style.cssText='border:2px solid '+(p.n===curI?'#0284c7':'#bae6fd')+';background:'+(p.n===curI?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';b.innerHTML=`<span class="dot ${dot}"></span>${p.n}`;b.title=p.admin+'/'+p.oper;b.onclick=()=>{curI=p.n;renderIfaces();};box.appendChild(b);});
+DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';const b=document.createElement('button');b.style.cssText='border:2px solid '+(p.n===curI?'#0284c7':'#bae6fd')+';background:'+(p.n===curI?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';b.innerHTML=`<span class="dot ${dot}"></span>${p.n}`;b.title=p.admin+'/'+p.oper+' (klik kanan = disable/enable)';b.onclick=()=>{curI=p.n;renderIfaces();};b.oncontextmenu=(ev)=>{ev.preventDefault();curI=p.n;renderIfaces();showCtx(ev.clientX,ev.clientY);};box.appendChild(b);});
 }
 function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
 function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
@@ -206,7 +194,7 @@ function renderDowntime(){const tb=document.getElementById('downBody');if(!tb)re
 tb.innerHTML=DOWNTIME.slice(0,30).map(e=>{const live=!e.upAt;const tot=live?fmtDur(Date.now()-e.downAt)+' ⏳':fmtDur(e.totalMs||0);return `<tr style="border-top:1px solid #e0f2fe"><td style="padding:6px 10px;font-weight:700">${e.dev}</td><td style="padding:6px 10px">${e.downStr}</td><td style="padding:6px 10px">${live?'<span style="color:#b91c1c;font-weight:700">masih DOWN</span>':e.upStr}</td><td style="padding:6px 10px;font-weight:700">${tot}</td><td style="padding:6px 10px">${e.reason}</td></tr>`;}).join('');}
 function refreshDurations(){document.querySelectorAll('[data-dur]').forEach(el=>{const key=el.getAttribute('data-dur');const sep=key.indexOf('|');const r=key.slice(0,sep),n=key.slice(sep+1);const p=(DB[r]||[]).find(x=>x.n===n);if(!p)return;if(p.oper==='down'&&p.downSince){el.textContent='DOWN '+fmtDur(Date.now()-p.downSince);}else{el.textContent=p.admin+'/'+p.oper;}});}
 let chaosOn=false; window.chaosOn=false;
-function renderIfaces(){const el=document.getElementById('ifaces');if(!el)return;el.innerHTML='';if(!DB[curR]||!DB[curR].length){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada device — tambah dulu di tab Topologi.</div>';try{renderPortStrip();}catch(e){}return;}const L=LIVE[curR];const stat=(L&&L.stat&&L.stat.ifaces)||null;const rate=n=>{if(!stat)return '';const f=stat.find(x=>x.name===n);return f?` <span style="font-size:11px;color:#0369a1">↓${f.dlMbps} ↑${f.ulMbps}</span>`:'';};DB[curR].forEach(i=>{const d=document.createElement('div');d.className='iface'+(i.n===curI?' active':'');let dot='green';if(i.admin==='down')dot='grey';else if(i.oper==='down')dot='grey';else if(i.fault!=='sehat'&&i.fault!=='sehat-sfp')dot='red';const st=(i.oper==='down'&&i.downSince)?('DOWN '+fmtDur(Date.now()-i.downSince)):(i.admin+'/'+i.oper);d.innerHTML=`<span><span class="dot ${dot}"></span>${i.n}${rate(i.n)}</span><span data-dur="${curR}|${i.n}">${st}</span>`;d.onclick=()=>{curI=i.n;renderIfaces();};d.oncontextmenu=(ev)=>{ev.preventDefault();curI=i.n;showCtx(ev.clientX,ev.clientY);};el.appendChild(d);});if(L&&L.stat&&(L.stat.cpu!=null||L.stat.memPct!=null))el.innerHTML+=`<div style="font-size:11px;color:#64748b;padding:4px 2px">CPU ${L.stat.cpu!=null?L.stat.cpu+'%':'?'} • RAM ${L.stat.memPct!=null?L.stat.memPct+'%':'?'}</div>`;refresh();try{renderPortStrip();}catch(e){}}
+function renderIfaces(){try{renderPortStrip();}catch(e){}refresh();}
 // ala PRTG: semua device SNMP dipoll background tiap 20 dtk (rate semua port + alarm down)
 setInterval(async()=>{
 for(const key in LIVE){
