@@ -642,6 +642,32 @@ document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.def
 document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(ev);});
 // zoom via scroll
 document.getElementById('topoSvg').addEventListener('wheel',ev=>{ev.preventDefault();topoZoom(ev.deltaY<0?0.8:1.25);},{passive:false});
+// ---- PAN: geser canvas dengan drag area kosong (bukan di node/kabel) ----
+(()=>{const svg=document.getElementById('topoSvg');let panning=null;
+svg.addEventListener('pointerdown',ev=>{
+if(ev.button!==0)return;
+// mulai pan cuma kalau klik di area kosong (target = svg / background rect)
+if(ev.target!==svg && ev.target.tagName!=='rect')return;
+panning={cx:ev.clientX,cy:ev.clientY,vb:svg.viewBox.baseVal};
+try{svg.setPointerCapture(ev.pointerId);}catch(e){}
+svg.style.cursor='grabbing';
+});
+svg.addEventListener('pointermove',ev=>{
+if(!panning)return;
+const vb=svg.viewBox.baseVal;
+const r=svg.getBoundingClientRect();
+const dx=(ev.clientX-panning.cx)*vb.width/r.width;
+const dy=(ev.clientY-panning.cy)*vb.height/r.height;
+let L=LAYERS[curLayer];if(!L||!L.vb)return;
+const p=L.vb.split(' ').map(Number);
+p[0]=Math.round((panning.vb.x-dx)*10)/10;
+p[1]=Math.round((panning.vb.y-dy)*10)/10;
+L.vb=p.join(' ');
+svg.setAttribute('viewBox',L.vb);
+});
+const end=()=>{if(!panning)return;panning=null;svg.style.cursor='';saveTopo();};
+svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+})();
 snapTopo();
 document.addEventListener('keydown',ev=>{const t=(ev.target&&ev.target.tagName)||'';if(t==='INPUT'||t==='TEXTAREA')return;const k=(ev.key||'').toLowerCase();if((ev.ctrlKey||ev.metaKey)&&k==='z'&&!ev.shiftKey){ev.preventDefault();undoTopo();}else if((ev.ctrlKey||ev.metaKey)&&(k==='y'||(k==='z'&&ev.shiftKey))){ev.preventDefault();redoTopo();}});
 // ---- IMPORT TOPOLOGI DARI GNS3 (via collector proxy, browser kena CORS kalau langsung) ----
