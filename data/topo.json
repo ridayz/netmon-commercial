@@ -1,1 +1,51 @@
-{"at":null,"cur":null,"layers":{}}
+{
+ "at": "2026-10-12T14:10:28.667Z",
+ "cur": "c50585",
+ "layers": {
+  "c50585": {
+   "label": "RUMAH",
+   "type": "live",
+   "vb": "0 0 900 400",
+   "areas": [],
+   "nodes": [
+    {
+     "id": "ip15750",
+     "icon": "router",
+     "label": "DONCUL-HOME",
+     "sub": "60.60.60.1 • ping OK 4ms (tanpa SNMP)",
+     "ip": "60.60.60.1",
+     "x": 226,
+     "y": 183,
+     "db": "DONCUL-HOME",
+     "_w": 240,
+     "st": "ok"
+    },
+    {
+     "id": "ip37039",
+     "icon": "router",
+     "label": "60.60.60.254",
+     "sub": "60.60.60.254 • ping OK 5ms (tanpa SNMP)",
+     "ip": "60.60.60.254",
+     "st": "ok",
+     "x": 516,
+     "y": 151,
+     "_w": 240,
+     "db": "60.60.60.254"
+    },
+    {
+     "id": "ip40272",
+     "icon": "pc",
+     "label": "60.60.60.159",
+     "sub": "60.60.60.159 • ping OK 21ms (tanpa SNMP)",
+     "ip": "60.60.60.159",
+     "st": "ok",
+     "x": 631,
+     "y": 303,
+     "_w": 240,
+     "db": "60.60.60.159"
+    }
+   ],
+   "links": []
+  }
+ }
+}

@@ -785,8 +785,8 @@ function aiProg(id, stage) {
         return rs.find(Boolean) || null;
       };
       const work = async ip => {
-        const [api, winbox, ssh, http, snmp, name] = await Promise.all([probe(ip, 8728), probe(ip, 8291), probe(ip, 22), probe(ip, 80), snmpProbe(ip), revDns(ip)]);
-        return { ip, mac: arpMac[ip] || '', name, ping: alive.includes(ip), ports: [api && '8728-API', winbox && '8291-Winbox', ssh && '22-SSH', http && '80-HTTP'].filter(Boolean), snmp };
+        const [api, winbox, ssh, telnet, http, snmp, name] = await Promise.all([probe(ip, 8728), probe(ip, 8291), probe(ip, 22), probe(ip, 23), probe(ip, 80), snmpProbe(ip), revDns(ip)]);
+        return { ip, mac: arpMac[ip] || '', name, ping: alive.includes(ip), ports: [api && '8728-API', winbox && '8291-Winbox', ssh && '22-SSH', telnet && '23-Telnet', http && '80-HTTP'].filter(Boolean), snmp };
       };
       for (let i = 0; i < allIps.length; i += 16) {
         hosts.push(...await Promise.all(allIps.slice(i, i + 16).map(work)));
@@ -833,6 +833,22 @@ function aiProg(id, stage) {
       const p = path.join(__dirname, '..', 'index.html');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
       return res.end(fs.readFileSync(p));
+    }
+    if (u.pathname === '/api/ports') {
+      // probe cepat port remote-management: 22 SSH, 23 Telnet, 80/443 Web, 8291 Winbox, 8728 API
+      const ip = q.ip;
+      if (!ip) throw new Error('param ip wajib');
+      const probe = (port, ms) => new Promise(resolve => {
+        let done = false; const fin = v => { if (!done) { done = true; try { s.destroy(); } catch {} resolve(v); } };
+        const s = require('net').connect(port, ip);
+        const t = setTimeout(() => fin(false), ms || 900);
+        s.on('connect', () => { clearTimeout(t); fin(true); });
+        s.on('error', () => { clearTimeout(t); fin(false); });
+      });
+      const [ssh, telnet, http, https, winbox, api] = await Promise.all([
+        probe(22), probe(23), probe(80), probe(443), probe(8291), probe(8728),
+      ]);
+      return send(res, 200, { ok: true, ip, ports: { ssh, telnet, http, https, winbox, api } });
     }
     return send(res, 404, { ok: false, error: 'unknown endpoint' });
   } catch (e) { send(res, 500, { ok: false, error: String(e.message || e) }); }
