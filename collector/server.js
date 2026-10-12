@@ -793,6 +793,47 @@ function aiProg(id, stage) {
       }
       return send(res, 200, { ok: true, net, count: hosts.length, hosts });
     }
+    if (u.pathname === '/api/topo' && req.method === 'GET') {
+      const fs = require('fs'), path = require('path');
+      const f = path.join(__dirname, '..', 'data', 'topo.json');
+      const fb = f + '.bak';
+      const read = p => JSON.parse(fs.readFileSync(p, 'utf8'));
+      try {
+        if (!fs.existsSync(f)) return send(res, 200, { ok: true, cur: null, layers: {}, empty: true });
+        try { const d = read(f); return send(res, 200, { ok: true, cur: d.cur || null, layers: d.layers || {}, at: d.at || null }); }
+        catch (eBad) {
+          const d = read(fb);
+          return send(res, 200, { ok: true, cur: d.cur || null, layers: d.layers || {}, at: d.at || null, recovered: 'bak' });
+        }
+      } catch (e) { return send(res, 500, { ok: false, error: 'topo rusak (file + backup): ' + String(e.message || e).slice(0, 100) }); }
+    }
+    if (u.pathname === '/api/topo' && req.method === 'POST') {
+      const body = await new Promise((resolve, reject) => {
+        let b = ''; req.on('data', c => { b += c; if (b.length > 5000000) req.destroy(); });
+        req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { reject(new Error('body bukan JSON')); } });
+        req.on('error', reject);
+      });
+      const layers = body.layers;
+      if (!layers || typeof layers !== 'object') throw new Error('layers wajib objek');
+      for (const k of Object.keys(layers)) {
+        const L = layers[k];
+        if (!L || !Array.isArray(L.nodes) || !Array.isArray(L.links)) throw new Error('layer rusak: ' + k);
+      }
+      const fs = require('fs'), path = require('path');
+      const dir = path.join(__dirname, '..', 'data');
+      try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+      const f = path.join(dir, 'topo.json');
+      if (fs.existsSync(f)) try { fs.copyFileSync(f, f + '.bak'); } catch {}
+      const at = new Date().toISOString();
+      fs.writeFileSync(f, JSON.stringify({ at, cur: body.cur || null, layers }, null, 1));
+      return send(res, 200, { ok: true, at });
+    }
+    if ((u.pathname === '/' || u.pathname === '/index.html') && req.method === 'GET') {
+      const fs = require('fs'), path = require('path');
+      const p = path.join(__dirname, '..', 'index.html');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+      return res.end(fs.readFileSync(p));
+    }
     return send(res, 404, { ok: false, error: 'unknown endpoint' });
   } catch (e) { send(res, 500, { ok: false, error: String(e.message || e) }); }
 });
