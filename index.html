@@ -718,7 +718,7 @@ svg.setAttribute('viewBox',LAYERS[curLayer].vb);
 svg.innerHTML='';
 if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');const vb0=svg.viewBox.baseVal;const cx0=(vb0&&vb0.width)?vb0.width/2:450;t.setAttribute('x',cx0);t.setAttribute('y',150);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','15');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer kosong — klik 🔍 Discover buat scan perangkat satu jaringan';svg.appendChild(t);const t2=document.createElementNS('http://www.w3.org/2000/svg','text');t2.setAttribute('x',cx0);t2.setAttribute('y',172);t2.setAttribute('text-anchor','middle');t2.setAttribute('font-size','12');t2.setAttribute('fill','#64748b');t2.textContent='cth: 192.168.18.6 → langsung kebaca + live';svg.appendChild(t2);}
 (LAYERS[curLayer].areas||[]).forEach(a=>{const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',a.x);r.setAttribute('y',a.y);r.setAttribute('width',a.w);r.setAttribute('height',a.h);r.setAttribute('rx',16);r.setAttribute('fill','rgba(255,255,255,.45)');r.setAttribute('stroke','#0284c7');r.setAttribute('stroke-width','1.6');r.setAttribute('stroke-dasharray','8 5');svg.appendChild(r);const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',a.x+14);t.setAttribute('y',a.y+18);t.setAttribute('font-size',a.fs||11);t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent=a.label;svg.appendChild(t);});
-LINKS.forEach(([a,b,med,pa,pb])=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bad=topoSt(B)==='bad';const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',med==='fo'?'#fb923c':'#38bdf8');l.setAttribute('stroke-width','3');svg.appendChild(l);if(pa||pb){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const lt=document.createElementNS('http://www.w3.org/2000/svg','text');lt.setAttribute('x',mx);lt.setAttribute('y',my-8);lt.setAttribute('text-anchor','middle');lt.setAttribute('font-size','9');lt.setAttribute('font-weight','700');lt.setAttribute('fill','#475569');lt.setAttribute('stroke','#fff');lt.setAttribute('stroke-width','3');lt.setAttribute('paint-order','stroke');lt.textContent=(pa||'')+(pa||pb?'↔':'')+(pb||'');svg.appendChild(lt);}if(bad){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',mx);c.setAttribute('cy',my);c.setAttribute('r',9);c.setAttribute('fill','#fff');c.setAttribute('stroke','#ef4444');c.setAttribute('stroke-width',2);svg.appendChild(c);[[mx-5,my-5,mx+5,my+5],[mx+5,my-5,mx-5,my+5]].forEach(s=>{const x=document.createElementNS('http://www.w3.org/2000/svg','line');x.setAttribute('x1',s[0]);x.setAttribute('y1',s[1]);x.setAttribute('x2',s[2]);x.setAttribute('y2',s[3]);x.setAttribute('stroke','#ef4444');x.setAttribute('stroke-width',3);x.setAttribute('stroke-linecap','round');svg.appendChild(x);});}});
+LINKS.forEach(([a,b,med,pa,pb],li)=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bad=topoSt(B)==='bad';const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',med==='fo'?'#fb923c':'#38bdf8');l.setAttribute('stroke-width','3');l.style.cursor='pointer';l.addEventListener('click',ev=>{ev.stopPropagation();cableMenu(ev.clientX,ev.clientY,li);});l.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();delCable(li);});svg.appendChild(l);if(pa||pb){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const lt=document.createElementNS('http://www.w3.org/2000/svg','text');lt.setAttribute('x',mx);lt.setAttribute('y',my-8);lt.setAttribute('text-anchor','middle');lt.setAttribute('font-size','9');lt.setAttribute('font-weight','700');lt.setAttribute('fill','#475569');lt.setAttribute('stroke','#fff');lt.setAttribute('stroke-width','3');lt.setAttribute('paint-order','stroke');lt.textContent=(pa||'')+(pa||pb?'↔':'')+(pb||'');svg.appendChild(lt);}if(bad){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',mx);c.setAttribute('cy',my);c.setAttribute('r',9);c.setAttribute('fill','#fff');c.setAttribute('stroke','#ef4444');c.setAttribute('stroke-width',2);svg.appendChild(c);[[mx-5,my-5,mx+5,my+5],[mx+5,my-5,mx-5,my+5]].forEach(s=>{const x=document.createElementNS('http://www.w3.org/2000/svg','line');x.setAttribute('x1',s[0]);x.setAttribute('y1',s[1]);x.setAttribute('x2',s[2]);x.setAttribute('y2',s[3]);x.setAttribute('stroke','#ef4444');x.setAttribute('stroke-width',3);x.setAttribute('stroke-linecap','round');svg.appendChild(x);});}});
 TOPO.forEach(n=>{
 const st=topoSt(n);
 const nfs=n.fs||1;
@@ -729,12 +729,12 @@ const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=s
 g.innerHTML=`<rect x="${-n._w/2}" y="-30" width="${n._w}" height="60" rx="16" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/>${VECICON.includes(n.icon)?iconSvg(n.icon):`<text y="0" text-anchor="middle" font-size="22">${ICONS[n.icon]||'📦'}</text>`}<text y="16" text-anchor="middle" font-size="${Math.round(11*(n.fs||1))}" font-weight="800" fill="#0369a1">${n.label}</text><text y="26" text-anchor="middle" font-size="${Math.round(9*(n.fs||1))}" fill="#64748b">${n.sub||''}</text>`;
 g.addEventListener('pointerdown',ev=>{window._topoDrag=true;const sx=ev.clientX,sy=ev.clientY;let moved=false;try{g.setPointerCapture(ev.pointerId);}catch(e){}const move=e2=>{if(Math.abs(e2.clientX-sx)+Math.abs(e2.clientY-sy)>6)moved=true;if(!moved)return;const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;const vx=vb.width/r.width;n.x=Math.round((e2.clientX-r.left)*vx);n.y=Math.round((e2.clientY-r.top)*(vb.height/r.height));g.setAttribute('transform',`translate(${n.x},${n.y})`);};const up=()=>{g.removeEventListener('pointermove',move);window._topoDrag=false;window._topoDropAt=moved?Date.now():0;drawTopo();saveTopo();};g.addEventListener('pointermove',move);g.addEventListener('pointerup',up,{once:true});});
 g.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();topoMenu(ev.clientX,ev.clientY,n.id);});
-g.addEventListener('click',()=>{if(Date.now()-(window._topoDropAt||0)<250)return;try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
+g.addEventListener('click',()=>{if(window._cableFrom){cableDragFinish(window._cableFrom,n.id);return;}if(Date.now()-(window._topoDropAt||0)<250)return;try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
 svg.appendChild(g);});
 document.getElementById('topoList').textContent=`${TOPO.length} perangkat • ${LINKS.length} link • klik node = monitoring • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
 }
 // refresh topologi otomatis (realtime) — skip saat user lagi drag / menu terbuka
-setInterval(()=>{try{if(document.getElementById('tab-topo')?.style.display==='flex'&&!window._topoDrag&&!document.getElementById('tmenu'))drawTopo();}catch(e){}},3000);
+setInterval(()=>{try{if(document.getElementById('tab-topo')?.style.display==='flex'&&!window._topoDrag&&!window._cableFrom&&!document.getElementById('tmenu'))drawTopo();}catch(e){}},3000);
 function topoMenu(x,y,id){
 document.getElementById('tmenu')?.remove();
 const n=topoNode(id);
@@ -742,7 +742,7 @@ try{if(n&&!n.db)ensureNodeDb(n,LINKS);}catch(e){}
 const m=document.createElement('div');m.id='tmenu';
 m.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:8px;z-index:99;box-shadow:0 8px 24px rgba(2,132,199,.25);min-width:210px`;
 m.innerHTML=`<div style="font-size:12px;font-weight:800;color:#0369a1;margin-bottom:6px">Node → ${id}</div>`
-+(n&&n.db&&DB[n.db]?`<button onclick="topoCheck('${id}')" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#0369a1">🔍 Cek device</button><button onclick="topoAi('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#fff">⚡ AI Troubleshoot</button><button onclick="setNodeIp('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🌐 Isi/ubah IP</button><button onclick="cableFrom('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔌 Pasang kabel (pilih port)</button>${LIVE[n.db]?`<button onclick="topoDiscover('${id}')" style="width:100%;text-align:left;border:0;background:#fef9c3;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#a16207">📡 Discovery port</button>`:''}`:`<div style="font-size:12px;color:#64748b;margin-bottom:6px">node di luar monitoring (belum live)</div><button onclick="setNodeIp('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#fff">🌐 Isi IP — jadikan live</button>`)
++(n&&n.db&&DB[n.db]?`<button onclick="topoCheck('${id}')" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#0369a1">🔍 Cek device</button><button onclick="topoAi('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#fff">⚡ AI Troubleshoot</button><button onclick="setNodeIp('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🌐 Isi/ubah IP</button><button onclick="cableDragStart('${id}')" style="width:100%;text-align:left;border:0;background:#fff;border:2px solid #bae6fd;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔌 Pasang kabel (tarik ke tujuan)</button>${LIVE[n.db]?`<button onclick="topoDiscover('${id}')" style="width:100%;text-align:left;border:0;background:#fef9c3;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font-weight:800;color:#a16207">📡 Discovery port</button>`:''}`:`<div style="font-size:12px;color:#64748b;margin-bottom:6px">node di luar monitoring (belum live)</div><button onclick="setNodeIp('${id}')" style="width:100%;text-align:left;border:0;background:#059669;border-radius:8px;padding:8px;cursor:pointer;font-weight:800;color:#fff">🌐 Isi IP — jadikan live</button>`)
 +`<div style="font-size:12px;font-weight:800;color:#0369a1;margin:6px 0 2px">Teks</div><button onclick="editTopoText('${id}')" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:3px;cursor:pointer">✎ Edit nama & sub-teks</button><div style="display:flex;gap:4px;margin-top:4px"><button onclick="setTopoFont('${id}',0.85)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:11px">A-</button><button onclick="setTopoFont('${id}',1)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:13px">A</button><button onclick="setTopoFont('${id}',1.25)" style="flex:1;border:0;background:#f0f9ff;border-radius:8px;padding:6px;cursor:pointer;font-size:15px">A+</button></div>`
 +`<div style="font-size:12px;font-weight:800;color:#0369a1;margin:6px 0 2px">Ganti icon</div><div style="display:flex;gap:4px"><select id="iconSel" style="flex:1;border:2px solid #bae6fd;border-radius:8px;padding:7px;font-size:13px;background:#f0f9ff;color:#0c4a6e"><optgroup label="Jaringan">${['router','switch','swpoe','firewall','internet'].map(k=>`<option value="${k}"${n.icon===k?' selected':''}>${ICONS[k]} ${k}</option>`).join('')}</optgroup><optgroup label="Perangkat">${['ont','olt','ap','pc','server'].map(k=>`<option value="${k}"${n.icon===k?' selected':''}>${ICONS[k]} ${k}</option>`).join('')}</optgroup></select><button onclick="applyIconSel('${id}')" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:800">✔</button></div>`+`<button onclick="moveNode('${id}')" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">📦 Pindah layer</button>`+`<button onclick="delTopoNode('${id}')" style="width:100%;text-align:left;border:0;background:#fee2e2;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">🗑 hapus</button>`;
 document.body.appendChild(m);setTimeout(()=>document.addEventListener('click',()=>m.remove(),{once:true}),50);
@@ -924,6 +924,73 @@ else{pb=prompt('Port tujuan di "'+t.label+'" (bebas, cth: WAN/LAN1):','')||'';}
 LINKS.push([id,t.id,mediaGuess(n,t),pa,pb]);
 drawTopo();saveTopo();
 log('✔ kabel: '+n.label+':'+pa+' ↔ '+t.label+(pb?':'+pb:''));
+}
+// ---- KABEL TARIK (komersil): klik asal → garis hantu → klik tujuan ----
+function cableDragStart(id){
+document.getElementById('tmenu')?.remove();
+const n=topoNode(id);if(!n)return;
+window._cableFrom=id;window._rewireLi=null;
+cableListenOnce();
+log('> tarik kabel dari "'+n.label+'" → klik node tujuan (Esc batal)');
+drawCableGhost(null);
+}
+function cableListenOnce(){
+if(window._cableListeners)return;window._cableListeners=true;
+try{
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&window._cableFrom){cableDragCancel();log('> pasang kabel dibatalkan');}});
+const svg=document.getElementById('topoSvg');
+if(svg)svg.addEventListener('pointermove',ev=>{if(window._cableFrom){try{drawCableGhost(topoSvgPos(ev));}catch(e){}}});
+}catch(e){}
+}
+function drawCableGhost(p){
+const svg=document.getElementById('topoSvg');if(!svg)return;
+const A=topoNode(window._cableFrom);if(!A){document.getElementById('cableGhost')?.remove();return;}
+let g=document.getElementById('cableGhost');
+if(!g){g=document.createElementNS('http://www.w3.org/2000/svg','line');g.id='cableGhost';g.setAttribute('stroke','#0284c7');g.setAttribute('stroke-width','3');g.setAttribute('stroke-dasharray','8 6');g.setAttribute('pointer-events','none');svg.appendChild(g);}
+g.setAttribute('x1',A.x);g.setAttribute('y1',A.y);
+g.setAttribute('x2',p?p.x:A.x);g.setAttribute('y2',p?p.y:A.y);
+}
+function cableDragCancel(){window._cableFrom=null;window._rewireLi=null;window._rewireEnd=null;document.getElementById('cableGhost')?.remove();}
+function cableDragFinish(a,b){
+const A=topoNode(a),B=topoNode(b);
+const rwLi=window._rewireLi,rwEnd=window._rewireEnd;
+cableDragCancel();
+if(!A||!B)return;
+if(a===b){log('> kabel ke diri sendiri ditolak');return;}
+const mediaGuess=(x,y)=>((['router','switch','swpoe','olt'].includes(x.icon)||['router','switch','swpoe','olt'].includes(y.icon))?'fo':'lan');
+if(rwLi!==null&&rwLi!==undefined&&LINKS[rwLi]){LINKS[rwLi][rwEnd]=b;drawTopo();saveTopo();log('✔ pindah colok: '+A.label+' ↔ '+B.label);return;}
+const isLive=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');
+let pa='',pb='';
+if(!isLive){pa=prompt('Port di "'+A.label+'" (cth: ETH1):','ETH1');if(pa===null)return;pb=prompt('Port di "'+B.label+'" (cth: ETH1):','ETH1');if(pb===null)return;}
+else{if(A.db&&DB[A.db]&&DB[A.db].length===1)pa=DB[A.db][0].n;if(B.db&&DB[B.db]&&DB[B.db].length===1)pb=DB[B.db][0].n;}
+LINKS.push([a,b,mediaGuess(A,B),pa||'',pb||'']);
+drawTopo();saveTopo();
+log('✔ kabel: '+A.label+(pa?':'+pa:'')+' ↔ '+B.label+(pb?':'+pb:''));
+}
+function cableMenu(x,y,li){
+document.getElementById('tmenu')?.remove();
+const l=LINKS[li];if(!l)return;
+const A=topoNode(l[0]),B=topoNode(l[1]);
+const m=document.createElement('div');m.id='tmenu';
+m.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:8px;z-index:99;box-shadow:0 8px 24px rgba(2,132,199,.25);min-width:210px`;
+m.innerHTML=`<div style="font-size:12px;font-weight:800;color:#0369a1;margin-bottom:6px">Kabel → ${(A?A.label:l[0])} ↔ ${(B?B.label:l[1])}</div>`
++`<div style="font-size:12px;color:#64748b">port: ${(l[3]||'-')} ↔ ${(l[4]||'-')} • ${l[2]==='fo'?'FO':'LAN'}</div>`
++`<button onclick="editCablePorts(${li})" style="width:100%;text-align:left;border:0;background:#f0f9ff;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">✎ Edit port</button>`
++`<button onclick="rewireCable(${li})" style="width:100%;text-align:left;border:0;background:#e0f2fe;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer;font-weight:800;color:#0369a1">🔀 Pindah colok</button>`
++`<button onclick="delCable(${li})" style="width:100%;text-align:left;border:0;background:#fee2e2;border-radius:8px;padding:7px;margin-top:4px;cursor:pointer">🗑 Hapus kabel</button>`;
+document.body.appendChild(m);setTimeout(()=>document.addEventListener('click',()=>m.remove(),{once:true}),50);
+}
+function editCablePorts(li){const l=LINKS[li];if(!l)return;document.getElementById('tmenu')?.remove();const pa=prompt('Port asal:',l[3]||'');if(pa===null)return;const pb=prompt('Port tujuan:',l[4]||'');if(pb===null)return;l[3]=pa;l[4]=pb;drawTopo();saveTopo();log('> port kabel diubah');}
+function delCable(li){const l=LINKS[li];document.getElementById('tmenu')?.remove();if(!l)return;LINKS.splice(li,1);drawTopo();saveTopo();log('> kabel dihapus');}
+function rewireCable(li){
+const l=LINKS[li];document.getElementById('tmenu')?.remove();if(!l)return;
+const keepA=confirm('Tahan ujung ASAL "'+((topoNode(l[0])||{}).label||l[0])+'"?\nOK = tahan asal, ganti tujuan\nBatal = tahan tujuan, ganti asal');
+const keep=keepA?l[0]:l[1];
+window._rewireLi=li;window._rewireEnd=keepA?1:0;window._cableFrom=keep;
+cableListenOnce();
+const n=topoNode(keep);
+log('> pindah colok: "'+(n?n.label:keep)+'" ditahan → klik node tujuan baru (Esc batal)');
+drawCableGhost(null);
 }
 function topoAi(id){
 document.getElementById('tmenu')?.remove();
