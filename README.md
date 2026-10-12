@@ -23,6 +23,8 @@ Monitoring jaringan pastel biru awan: topologi per layer, traffic realtime (Rout
 3. Klik node → monitoring + traffic realtime (🟢 = live, ⚪ = dummy/simulasi).
 4. Klik kanan node → **🔍 Cek device** (analyzer lokal, tanpa AI key) / **⚡ AI Troubleshoot** (butuh API key di sidebar).
 
+Tutorial lengkap buat yang baru ambil repo: **[INSTALL.md](INSTALL.md)**.
+
 ## Aturan main
 
 - AI boleh baca + diagnosa device 🟢. Ubah config **selalu** klik Setujui + login tulis (sekali pakai, tidak disimpan). Path `user/reset/reboot` diblokir permanen.
