@@ -109,9 +109,15 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="topoZoom(0.8)" title="Mendekatkan (zoom in)">－</button>
 <button id="modePtr" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(false)" title="Mode normal: klik = pantau/pasang">👆 Pointer</button>
 <button id="modeDel" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(true)" title="Mode hapus: klik kabel = hapus kabel, klik device = hapus device">🗑 Hapus</button>
-<span style="color:#64748b">scroll = zoom • drag node • klik kanan = menu • <b>2x klik = edit teks</b></span>
+<span style="color:#64748b">slider = geser view • drag node • klik kanan = menu • <b>2x klik = edit teks</b></span>
 </div>
 <svg id="topoSvg" width="100%" height="460" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;margin-top:10px;touch-action:none"></svg>
+<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px">
+<span style="font-size:12px;font-weight:800;color:#0369a1">⇄ Geser view</span>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569">Kiri→Kanan <input id="sliderX" type="range" oninput="sliderMove()" style="width:180px;accent-color:#0284c7"></label>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569">Atas→Bawah <input id="sliderY" type="range" oninput="sliderMove()" style="width:180px;accent-color:#0284c7"></label>
+<button onclick="resetTopoView()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px" title="Kembali ke frame semua node">↺ Reset view</button>
+</div>
 <div id="topoList" style="font-size:12px;color:#475569;margin-top:8px"></div>
 <div style="font-size:12px;margin-top:6px">Lihat juga diagram archify statis: <a href="../../archify-output/topologi-netmon.html" target="_blank">archify-output/topologi-netmon.html</a> (9/9 showcase pass)</div>
 </div>
@@ -663,8 +669,8 @@ renderLayerBtns();
 document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.defaultPrevented)return;ev.preventDefault();topoCanvasMenu(ev);});
 document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(ev);});
 // zoom via scroll
-document.getElementById('topoSvg').addEventListener('wheel',ev=>{ev.preventDefault();topoZoom(ev.deltaY<0?0.8:1.25);},{passive:false});
-// ---- PAN: geser canvas dengan drag area kosong (bukan di node/kabel) ----
+// (zoom via scroll dihapus — ganti dengan slider horizontal/vertical di bawah kanvas)
+// ---- PAN: geser canvas dengan drag area kosong (bukan di node/kabel) — sinkron slider ----
 (()=>{const svg=document.getElementById('topoSvg');let panning=null;
 svg.addEventListener('pointerdown',ev=>{
 if(ev.button!==0)return;
@@ -687,7 +693,7 @@ p[1]=Math.round((panning.vb.y-dy)*10)/10;
 L.vb=p.join(' ');
 svg.setAttribute('viewBox',L.vb);
 });
-const end=()=>{if(!panning)return;panning=null;svg.style.cursor='';saveTopo();};
+const end=()=>{if(!panning)return;panning=null;svg.style.cursor='';saveTopo();try{syncTopoSliders();}catch(_){}};
 svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
 })();
 snapTopo();
@@ -805,6 +811,7 @@ function topoSt(n){if(!n.db||!DB[n.db])return n.st||'ok';const ps=DB[n.db];if(ps
 function drawTopo(){
 if(!curLayer||!LAYERS[curLayer]){const svg0=document.getElementById('topoSvg');if(svg0){svg0.setAttribute('viewBox','0 0 900 400');svg0.innerHTML='';const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',450);t.setAttribute('y',190);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','15');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Belum ada layer — klik ＋ Layer Baru (pilih live|dummy)';svg0.appendChild(t);}const tl=document.getElementById('topoList');if(tl)tl.textContent='0 layer';return;}
 if(!Array.isArray(LAYERS[curLayer].nodes)){LAYERS[curLayer].nodes=[];LAYERS[curLayer].links=[];}TOPO=LAYERS[curLayer].nodes;LINKS=LAYERS[curLayer].links;
+try{syncTopoSliders();}catch(_){}
 const svg=document.getElementById('topoSvg');const W=svg.clientWidth||900;
 svg.setAttribute('viewBox',LAYERS[curLayer].vb);
 svg.innerHTML='';
@@ -922,7 +929,13 @@ body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">via ${j.via} • $
 async function editTopoText(id){const n=topoNode(id);if(!n)return;document.getElementById('tmenu')?.remove();const v=await uiModal({title:'Edit teks node',msg:n.label,fields:[{name:'nama',type:'text',label:'Nama perangkat',value:n.label},{name:'sub',type:'text',label:'Sub-teks (cth: IP / VLAN)',value:n.sub||''}]});if(!v)return;n.label=v.nama.text.trim()||n.label;n.sub=v.sub.text.trim();drawTopo();saveTopo();log('> teks node diubah: '+n.label);}
 function setTopoFont(id,s){const n=topoNode(id);if(!n)return;n.fs=s;document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
 function topoSvgPos(ev){const svg=document.getElementById('topoSvg');const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return {x:Math.round((ev.clientX-r.left)*vb.width/r.width),y:Math.round((ev.clientY-r.top)*vb.height/r.height)};}
-// ---- ZOOM: tombol + scroll (zoom ke tengah, viewBox melebar/mengecil) ----
+// ---- ZOOM tombol +/- & PAN via slider horizontal/vertical (scroll dihapus) ----
+function topoContentBounds(){
+const L=LAYERS[curLayer]||{};const ns=L.nodes||[];
+let x0=0,y0=0,x1=900,y1=400;
+ns.forEach(n=>{const hw=(n._w||160)/2+40;x0=Math.min(x0,n.x-hw);y0=Math.min(y0,n.y-70);x1=Math.max(x1,n.x+hw);y1=Math.max(y1,n.y+50);});
+return {x0,y0,x1,y1};
+}
 function topoZoom(f){
 const svg=document.getElementById('topoSvg');if(!svg)return;
 const L=LAYERS[curLayer];if(!L||!L.vb)return;
@@ -930,7 +943,43 @@ const p=L.vb.split(' ').map(Number);const [x,y,w,h]=p;
 const nx=x+w*(1-1/f)/2,ny=y+h*(1-1/f)/2,nw=w/f,nh=h/f;
 if(nw<120||nw>6000)return;
 L.vb=[nx,ny,nw,nh].map(v=>Math.round(v*10)/10).join(' ');
-svg.setAttribute('viewBox',L.vb);saveTopo();
+svg.setAttribute('viewBox',L.vb);saveTopo();syncTopoSliders();
+}
+// slider X/Y = geser view; nilai slider = offset view dari batas kiri/atas konten
+function syncTopoSliders(){
+try{
+const sx=document.getElementById('sliderX'),sy=document.getElementById('sliderY');
+if(!sx||!sy)return;
+const L=LAYERS[curLayer];if(!L||!L.vb)return;
+const p=L.vb.split(' ').map(Number);const [vx,vy,vw,vh]=p;
+const b=topoContentBounds();
+// range: view boleh bergerak dari (konten - viewport) sampai (konten + viewport)
+const xMin=Math.round(b.x0-vw),xMax=Math.round(b.x1);
+const yMin=Math.round(b.y0-vh),yMax=Math.round(b.y1);
+sx.min=xMin;sx.max=Math.max(xMin+1,xMax);sx.step=Math.max(1,Math.round((sx.max-xMin)/200));
+sx.value=Math.min(sx.max,Math.max(sx.min,Math.round(vx)));
+sy.min=yMin;sy.max=Math.max(yMin+1,yMax);sy.step=Math.max(1,Math.round((sy.max-yMin)/200));
+sy.value=Math.min(sy.max,Math.max(sy.min,Math.round(vy)));
+}catch(e){}
+}
+function sliderMove(){
+const sx=document.getElementById('sliderX'),sy=document.getElementById('sliderY');
+if(!sx||!sy)return;
+const L=LAYERS[curLayer];if(!L||!L.vb)return;
+const p=L.vb.split(' ').map(Number);const [,vy0,vw,vh]=p;
+const vx=parseFloat(sx.value)||0;
+const vy=parseFloat(sy.value)||0;
+L.vb=[Math.round(vx*10)/10,Math.round(vy*10)/10,vw,vh].join(' ');
+const svg=document.getElementById('topoSvg');if(svg)svg.setAttribute('viewBox',L.vb);
+saveTopo();
+}
+function resetTopoView(){
+const L=LAYERS[curLayer];if(!L)return;
+const b=topoContentBounds();
+const pad=60;
+L.vb=[b.x0-pad,b.y0-pad,(b.x1-b.x0)+pad*2,(b.y1-b.y0)+pad*2].map(v=>Math.round(v*10)/10).join(' ');
+const svg=document.getElementById('topoSvg');if(svg)svg.setAttribute('viewBox',L.vb);
+saveTopo();syncTopoSliders();log('> view di-reset — semua node kelihatan lagi');
 }
 function areaAt(l,x,y){const as=(LAYERS[l].areas||[]);for(let i=as.length-1;i>=0;i--){const a=as[i];if(!a.id)a.id='a-'+l+'-'+i;if(x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h)return a;}return null;}
 function topoCanvasMenu(ev){
