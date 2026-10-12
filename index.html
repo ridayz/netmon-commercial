@@ -162,7 +162,7 @@ let curR='', curI='';
 function cur(){return ((DB[curR]||[]).find(x=>x.n===curI))||((DB[curR]||[])[0]);}
 let dl=Array(30).fill(0), ul=Array(30).fill(0), labels=Array(30).fill('');
 function devDot(r){const ps=DB[r]||[];if(ps.some(p=>p.oper==='down'))return 'grey';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'red';return 'green';}
-function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,db:n.db});});});return out;}
+function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,layerKey:k,db:n.db});});});return out;}
 function ensureNodeDb(n,links){
 if(n.db&&DB[n.db]&&DB[n.db].length)return n.db;
 const key=n.label||n.id;
@@ -180,9 +180,8 @@ n.db=key;return key;
 function pickDev(db){if(!DB[db]||!DB[db].length)return;curR=db;curI=DB[db][0].n;try{renderRouters();renderIfaces();}catch(e){}try{showTab('dash');}catch(e){}try{log('> pantau '+db);}catch(e){}}
 function renderRouters(){
 const el=document.getElementById('routers');if(!el)return;
-const layerLabel=curLayer&&LAYERS[curLayer]?(LAYERS[curLayer].label||curLayer):'';
 const isLive=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');
-const devs=topoDevs().filter(o=>o.layer===layerLabel);
+const devs=topoDevs().filter(o=>o.layerKey===curLayer);
 if(!curLayer){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada layer — buat dulu di tab Topologi.</div>';return;}
 if(!isLive){el.innerHTML='<div style="font-size:12px;color:#64748b">Layer dummy — tidak dimonitoring.<br>Pindah ke layer live buat pantau port.</div>';return;}
 if(!devs.length){el.innerHTML='<div style="font-size:12px;color:#64748b">Layer live masih kosong — tambah device di tab Topologi.</div>';return;}
@@ -207,7 +206,7 @@ function renderDowntime(){const tb=document.getElementById('downBody');if(!tb)re
 tb.innerHTML=DOWNTIME.slice(0,30).map(e=>{const live=!e.upAt;const tot=live?fmtDur(Date.now()-e.downAt)+' ⏳':fmtDur(e.totalMs||0);return `<tr style="border-top:1px solid #e0f2fe"><td style="padding:6px 10px;font-weight:700">${e.dev}</td><td style="padding:6px 10px">${e.downStr}</td><td style="padding:6px 10px">${live?'<span style="color:#b91c1c;font-weight:700">masih DOWN</span>':e.upStr}</td><td style="padding:6px 10px;font-weight:700">${tot}</td><td style="padding:6px 10px">${e.reason}</td></tr>`;}).join('');}
 function refreshDurations(){document.querySelectorAll('[data-dur]').forEach(el=>{const key=el.getAttribute('data-dur');const sep=key.indexOf('|');const r=key.slice(0,sep),n=key.slice(sep+1);const p=(DB[r]||[]).find(x=>x.n===n);if(!p)return;if(p.oper==='down'&&p.downSince){el.textContent='DOWN '+fmtDur(Date.now()-p.downSince);}else{el.textContent=p.admin+'/'+p.oper;}});}
 let chaosOn=false; window.chaosOn=false;
-function renderIfaces(){const el=document.getElementById('ifaces');el.innerHTML='';const L=LIVE[curR];const stat=(L&&L.stat&&L.stat.ifaces)||null;const rate=n=>{if(!stat)return '';const f=stat.find(x=>x.name===n);return f?` <span style="font-size:11px;color:#0369a1">↓${f.dlMbps} ↑${f.ulMbps}</span>`:'';};DB[curR].forEach(i=>{const d=document.createElement('div');d.className='iface'+(i.n===curI?' active':'');let dot='green';if(i.admin==='down')dot='grey';else if(i.oper==='down')dot='grey';else if(i.fault!=='sehat'&&i.fault!=='sehat-sfp')dot='red';const st=(i.oper==='down'&&i.downSince)?('DOWN '+fmtDur(Date.now()-i.downSince)):(i.admin+'/'+i.oper);d.innerHTML=`<span><span class="dot ${dot}"></span>${i.n}${rate(i.n)}</span><span data-dur="${curR}|${i.n}">${st}</span>`;d.onclick=()=>{curI=i.n;renderIfaces();};d.oncontextmenu=(ev)=>{ev.preventDefault();curI=i.n;showCtx(ev.clientX,ev.clientY);};el.appendChild(d);});if(L&&L.stat&&(L.stat.cpu!=null||L.stat.memPct!=null))el.innerHTML+=`<div style="font-size:11px;color:#64748b;padding:4px 2px">CPU ${L.stat.cpu!=null?L.stat.cpu+'%':'?'} • RAM ${L.stat.memPct!=null?L.stat.memPct+'%':'?'}</div>`;refresh();try{renderPortStrip();}catch(e){}}
+function renderIfaces(){const el=document.getElementById('ifaces');if(!el)return;el.innerHTML='';if(!DB[curR]||!DB[curR].length){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada device — tambah dulu di tab Topologi.</div>';try{renderPortStrip();}catch(e){}return;}const L=LIVE[curR];const stat=(L&&L.stat&&L.stat.ifaces)||null;const rate=n=>{if(!stat)return '';const f=stat.find(x=>x.name===n);return f?` <span style="font-size:11px;color:#0369a1">↓${f.dlMbps} ↑${f.ulMbps}</span>`:'';};DB[curR].forEach(i=>{const d=document.createElement('div');d.className='iface'+(i.n===curI?' active':'');let dot='green';if(i.admin==='down')dot='grey';else if(i.oper==='down')dot='grey';else if(i.fault!=='sehat'&&i.fault!=='sehat-sfp')dot='red';const st=(i.oper==='down'&&i.downSince)?('DOWN '+fmtDur(Date.now()-i.downSince)):(i.admin+'/'+i.oper);d.innerHTML=`<span><span class="dot ${dot}"></span>${i.n}${rate(i.n)}</span><span data-dur="${curR}|${i.n}">${st}</span>`;d.onclick=()=>{curI=i.n;renderIfaces();};d.oncontextmenu=(ev)=>{ev.preventDefault();curI=i.n;showCtx(ev.clientX,ev.clientY);};el.appendChild(d);});if(L&&L.stat&&(L.stat.cpu!=null||L.stat.memPct!=null))el.innerHTML+=`<div style="font-size:11px;color:#64748b;padding:4px 2px">CPU ${L.stat.cpu!=null?L.stat.cpu+'%':'?'} • RAM ${L.stat.memPct!=null?L.stat.memPct+'%':'?'}</div>`;refresh();try{renderPortStrip();}catch(e){}}
 // ala PRTG: semua device SNMP dipoll background tiap 20 dtk (rate semua port + alarm down)
 setInterval(async()=>{
 for(const key in LIVE){
@@ -239,7 +238,7 @@ function setAdmin(s){hideCtx();const c=cur();c.admin=s;if(s==='down'){c.prevFaul
 function simUnplug(){hideCtx();const c=cur();c.admin='up';if(c.type==='sfp'){c.fault='no-light';}else{c.fault='putus-23m';c.poe='0W';}setLink(curR,c,'down','kabel dicabut (simulasi)');log('> simulasi kabel '+c.n+' DICABUT');renderIfaces();}
 function badge(t,c){return `<span class="badge ${c}">${t}</span>`;}
 function refresh(){
-const c=cur();document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`;
+const c=cur();if(!c){document.getElementById('title').textContent='Netmon - Router AI';return;}document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`;
 const down=c.oper==='down';
 document.getElementById('statusPill').textContent=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');
 document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.startsWith('sehat')?'#e0f2fe':'#fef9c3');
@@ -563,7 +562,7 @@ renderIfaces();setInterval(tick,1000);
 try{syncTopo();}catch(e){}
 setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderDowntime();}catch(e){}},5000);
 function persistTopo(manual){try{const at=new Date().toLocaleString('id-ID',{hour12:false});const snap={at,cur:curLayer,layers:LAYERS};try{localStorage.setItem('netmon-topo-v1',JSON.stringify(snap));}catch(e){}try{fetch(COLL()+'/api/topo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cur:curLayer,layers:LAYERS})}).then(r=>r.json()).then(j=>{const st=document.getElementById('saveStat');if(st)st.textContent=j.ok?((manual?'💾 Tersimpan server ':'Autosave server ')+at):'Server tolak save';}).catch(()=>{const st=document.getElementById('saveStat');if(st)st.textContent=(manual?'💾 Tersimpan lokal ':'Autosave lokal ')+at+' (server off)';});}catch(e){}const st=document.getElementById('saveStat');if(st&&!st.textContent)st.textContent=(manual?'💾 Tersimpan ':'Autosave ')+at;if(manual){log('> projek topologi di-SAVE ('+at+')');try{pushAlarm('info','topologi','Projek topologi di-save');}catch(e){}}}catch(e){if(manual)log('> SAVE gagal: '+e.message);}}
-function syncTopo(){try{collGet('/api/topo',8000).then(j=>{const bn=document.getElementById('collBanner');if(!j||!j.ok){if(bn)bn.style.display='block';return;}if(bn)bn.style.display='none';if(!j.layers)return;const nS=Object.keys(j.layers).length,nL=Object.keys(LAYERS).length;if(nS>0&&(nL===0||j.recovered)){LAYERS=j.layers;if(j.cur&&LAYERS[j.cur])curLayer=j.cur;if(!LAYERS[curLayer])curLayer=firstLayerKey();TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];renderLayerBtns();drawTopo();try{localStorage.setItem('netmon-topo-v1',JSON.stringify({at:j.at||'',cur:curLayer,layers:LAYERS}));}catch(e){}log('> topo dimuat dari server'+(j.recovered?' (backup)':''));}else if(nS===0&&nL>0){try{fetch(COLL()+'/api/topo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cur:curLayer,layers:LAYERS})});}catch(e){}}}).catch(()=>{const bn=document.getElementById('collBanner');if(bn)bn.style.display='block';});}catch(e){}}
+function syncTopo(){try{collGet('/api/topo',8000).then(j=>{const bn=document.getElementById('collBanner');if(!j||!j.ok){if(bn)bn.style.display='block';return;}if(bn)bn.style.display='none';if(!j.layers)return;const nS=Object.keys(j.layers).length,nL=Object.keys(LAYERS).length;if(nS>0&&(nL===0||j.recovered)){LAYERS=j.layers;if(j.cur&&LAYERS[j.cur])curLayer=j.cur;if(!LAYERS[curLayer])curLayer=firstLayerKey();TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];renderLayerBtns();drawTopo();try{localStorage.setItem('netmon-topo-v1',JSON.stringify({at:j.at||'',cur:curLayer,layers:LAYERS}));}catch(e){}log('> topo dimuat dari server'+(j.recovered?' (backup)':''));}else if(nS===0&&nL>0){try{fetch(COLL()+'/api/topo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cur:curLayer,layers:LAYERS})}).catch(()=>{});}catch(e){}}}).catch(()=>{const bn=document.getElementById('collBanner');if(bn)bn.style.display='block';});}catch(e){}}
 let HIST=[],HI=-1;
 function snapTopo(){try{HIST=HIST.slice(0,HI+1);HIST.push(JSON.stringify({cur:curLayer,layers:LAYERS}));if(HIST.length>60)HIST.shift();HI=HIST.length-1;}catch(e){}updateUR();}
 function updateUR(){const u=document.getElementById('btnUndo'),r=document.getElementById('btnRedo');const canU=HI>0,canR=(HI>=0&&HI<HIST.length-1);if(u){u.disabled=!canU;u.style.opacity=canU?'1':'.4';}if(r){r.disabled=!canR;r.style.opacity=canR?'1':'.4';}}
@@ -729,7 +728,7 @@ drawTopo();saveTopo(true);
 log(`> topologi dirapikan otomatis (${TOPO.length} node, undo tersedia)`);
 try{pushAlarm('info','topologi','Auto-rapikan '+TOPO.length+' node');}catch(e){}
 }
-function setLayer(l){if(!l||!LAYERS[l])l=firstLayerKey();curLayer=l||'';TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];if(!DB[curR]||!DB[curR].length){const td=topoDevs().filter(o=>o.layer===(LAYERS[curLayer]?LAYERS[curLayer].label:''));if(td.length){curR=td[0].db;if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}}renderLayerBtns();try{renderRouters();renderIfaces();}catch(e){}if(curLayer)log('> layer topologi: '+LAYERS[curLayer].label);drawTopo();}
+function setLayer(l){if(!l||!LAYERS[l])l=firstLayerKey();curLayer=l||'';TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];if(!DB[curR]||!DB[curR].length){const td=topoDevs().filter(o=>o.layerKey===curLayer);if(td.length){curR=td[0].db;if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}}renderLayerBtns();try{renderRouters();renderIfaces();}catch(e){}if(curLayer)log('> layer topologi: '+LAYERS[curLayer].label);drawTopo();}
 function topoNode(id){return TOPO.find(n=>n.id===id);}
 const VECICON=['router','ap','ont','olt','switch','swpoe'];
 function topoSt(n){if(!n.db||!DB[n.db])return n.st||'ok';const ps=DB[n.db];if(ps.some(p=>p.oper==='down'))return 'bad';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'warn';return 'ok';}
@@ -878,6 +877,7 @@ readCreds();
 if(body)body.innerHTML='⏳ scan '+net+' ... (ping + ARP + reverse DNS + cek port/SNMP)';
 try{
 const j=await collGet(`/api/netscan?net=${encodeURIComponent(net)}`,180000);
+if(!j||!j.ok)throw new Error((j&&j.error)||'scan gagal');
 const rows=j.hosts||[];
 if(!body)return;
 if(!rows.length){body.innerHTML='Tidak ada host hidup di '+net+'.';return;}
@@ -890,8 +890,8 @@ log(`> discover ${net}: ${rows.length} host hidup`);
 function dToggleAll(box){try{document.querySelectorAll('.dhost').forEach(c=>{c.checked=box.checked;});}catch(e){}}
 function discoverAdd(){
 const ips=[...document.querySelectorAll('.dhost:checked')].map(c=>c.value);
-document.getElementById('dmodal')?.remove();
 if(!ips.length){log('> discover: tidak ada yang dipilih');return;}
+document.getElementById('dmodal')?.remove();
 log(`> tambah ${ips.length} hasil discover ke layer...`);
 let i=0;const step=()=>{if(i>=ips.length){log('✔ discover selesai');return;}const ip=ips[i++];const sn=(typeof DSCAN_SNMP!=='undefined'&&DSCAN_SNMP[ip])||null;addDiscoverLive(ip,sn?{community:sn}:null);setTimeout(step,1200);};step();
 }
@@ -903,6 +903,8 @@ if(!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(clean)){alert('Format IP salah, 
 addNodeByIpGo(clean,px,py,manualFb);
 }
 function adoptLiveNode(clean,j,creds,px,py){
+const dupKey=Object.keys(LIVE).find(k=>LIVE[k]&&LIVE[k].ip===clean);
+if(dupKey){log('> '+clean+' sudah live sebagai "'+dupKey+'" — skip duplikat');return;}
 const key='IP '+clean;
 const ident=j.identity||j.sysName||clean;
 const icon=guessIcon(ident,j.sysDescr||'');
@@ -946,8 +948,12 @@ collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pa
 if(!j.ok)throw new Error(j.error||'discover gagal');
 adoptLiveNode(clean,j,creds,px,py);
 }).catch(e=>{
-log('> LIVE gagal ('+String(e.message||e).slice(0,80)+')'+(manualFb?' → simpan manual (ping tadi OK)':' → fallback simulasi dummy'));
-if(manualFb)manualNode(clean,px,py);else simAdd(clean);
+log('> LIVE gagal ('+String(e.message||e).slice(0,80)+') — node merah di kanvas, klik kanan → isi IP ulang');
+const lo=parseInt(clean.split('.').pop(),10);let icon='pc';
+if(lo===1||lo===254)icon='router';else if(lo>=2&&lo<=9)icon='switch';else if(lo>=10&&lo<=19)icon='server';else if(lo>=20&&lo<=49)icon='ont';else if(lo>=50&&lo<=99)icon='ap';
+const id='ip'+Date.now()%100000;
+TOPO.push({id,icon,label:clean,sub:clean+' • gagal live',ip:clean,st:'bad',x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py});
+drawTopo();saveTopo();
 });
 }
 function simAdd(clean){
@@ -965,32 +971,6 @@ if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan']);
 drawTopo();saveTopo();
 log('> '+clean+': '+type+' masuk peta (belum live — tidak ada data karangan)');
 try{pushAlarm('info','detect/'+clean,'Masuk peta sebagai '+type+' (belum live)');}catch(e){}
-}
-function cableFrom(id){
-document.getElementById('tmenu')?.remove();
-const n=topoNode(id);if(!n)return;
-let ports=[];if(n.db&&DB[n.db])ports=DB[n.db].map(p=>p.n);
-const pa=prompt('Port lokal di "'+n.label+'"'+(ports.length?'\nPilihan: '+ports.join(', '):'\n(cth: ether1)')+':',ports[0]||'ether1');if(!pa)return;
-const others=TOPO.filter(t=>t.id!==id);
-const ts=prompt('Sambung "'+n.label+':'+pa+'" ke?\n'+others.map((t,i)=>(i+1)+'. '+t.label+(t.db&&DB[t.db]?'  ['+DB[t.db].map(p=>p.n).join(',')+']':'')).join('\n')+'\n\nKetik nomor, atau BARU buat device baru:');
-if(!ts)return;
-const mediaGuess=(a,b)=>((['router','switch','swpoe','olt'].includes(a.icon)||['router','switch','swpoe','olt'].includes(b.icon))?'fo':'lan');
-if(/^baru/i.test(ts.trim())){
-const nm=prompt('Nama device baru (cth: Modem ISP):','Modem');if(!nm)return;
-const tip=prompt('IP device baru — diping dulu (kosongkan bila tanpa IP):','192.168.18.1')||'';
-const nid='n'+Date.now()%100000;
-const mk=(icon,sub)=>{TOPO.push({id:nid,icon,label:nm,sub:sub,x:n.x+180,y:n.y+70});LINKS.push([id,nid,mediaGuess(n,{icon}),pa,'']);drawTopo();saveTopo();};
-if(tip.trim()){log('> ping '+tip.trim()+' ...');collGet('/api/ping?ip='+tip.trim(),10000).then(j=>{if(!j.ok)throw new Error('x');mk('pc',tip.trim()+' • ping OK');log('✔ kabel '+n.label+':'+pa+' → '+nm+' (ping OK'+(j.ms===null?'':', '+j.ms+'ms')+')');}).catch(()=>{mk('pc',tip.trim()+' • no ping');log('> '+tip.trim()+' TIDAK keping — node tetap dibuat, cek kabel/colokan');});}
-else{mk('pc','manual');log('✔ kabel '+n.label+':'+pa+' → '+nm);}
-return;
-}
-const t=others[parseInt(ts,10)-1];if(!t){alert('Pilihan tidak ada');return;}
-let pb='';
-if(t.db&&DB[t.db]){const pl=DB[t.db].map(p=>p.n);pb=prompt('Port tujuan di "'+t.label+'"\nPilihan: '+pl.join(', ')+':',pl[0]||'')||'';}
-else{pb=prompt('Port tujuan di "'+t.label+'" (bebas, cth: WAN/LAN1):','')||'';}
-LINKS.push([id,t.id,mediaGuess(n,t),pa,pb]);
-drawTopo();saveTopo();
-log('✔ kabel: '+n.label+':'+pa+' ↔ '+t.label+(pb?':'+pb:''));
 }
 // ---- KABEL TARIK (komersil): klik asal → garis hantu → klik tujuan ----
 function cableDragStart(id){
@@ -1023,7 +1003,7 @@ const A=topoNode(a),B=topoNode(b);
 const rwLi=window._rewireLi,rwEnd=window._rewireEnd;
 cableDragCancel();
 if(!A||!B)return;
-if(a===b){log('> kabel ke diri sendiri ditolak');return;}
+if(a===b){alert('Tidak bisa pasang kabel ke diri sendiri');log('> kabel ke diri sendiri ditolak');return;}
 const mediaGuess=(x,y)=>((['router','switch','swpoe','olt'].includes(x.icon)||['router','switch','swpoe','olt'].includes(y.icon))?'fo':'lan');
 if(rwLi!==null&&rwLi!==undefined&&LINKS[rwLi]){LINKS[rwLi][rwEnd]=b;drawTopo();saveTopo();log('✔ pindah colok: '+A.label+' ↔ '+B.label);return;}
 const isLive=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');
@@ -1061,6 +1041,7 @@ drawCableGhost(null);
 }
 function topoAi(id){
 document.getElementById('tmenu')?.remove();
+if(!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live')){log('> layer dummy — AI troubleshoot hanya untuk live');return;}
 const n=topoNode(id);if(!n)return;
 let db=null;try{db=ensureNodeDb(n,LINKS);}catch(e){}
 if(!db||!DB[db]){log('> "'+n.label+'" di luar monitoring');return;}
@@ -1069,31 +1050,9 @@ try{renderRouters();renderIfaces();}catch(e){}
 try{showTab('dash');}catch(e){}
 aiTroubleshoot();
 }
-function topoUpgrade(id){
-document.getElementById('tmenu')?.remove();
-const n=topoNode(id);if(!n)return;
-const guess=((n.label||'').match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)||[])[0]||'';
-const ip=prompt('Jadikan live — IP device:',guess);
-if(!ip)return;const clean=ip.trim();
-if(!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(clean)){alert('Format IP salah');return;}
-const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
-log('> upgrade live '+clean+' ...');
-collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,30000).then(j=>{
-if(!j.ok)throw new Error(j.error||'discover gagal');
-const key=n.db||('IP '+clean);
-const ifs=(j.interfaces||[]).map(x=>({n:x.name,type:(x.name||'').toLowerCase().includes('sfp')?'sfp':'copper',admin:x.admin||'up',oper:x.oper||'up',fault:(x.oper==='down')?'live-down':'sehat',live:true,poe:'-',speed:'-'}));
-if(!ifs.length)throw new Error('tidak ada interface terbaca');
-DB[key]=ifs;LIVE[key]={ip:clean,user:creds.user,pass:creds.pass,community:(j.via==='snmp'&&j.snmpCommunity)||creds.community,via:j.via,ifaces:JSON.parse(JSON.stringify(ifs)),identity:j.identity||j.sysName||clean};persistLive();
-n.db=key;if(!n.sub||/belum live/i.test(n.sub))n.sub=clean+' • LIVE '+j.via;
-curR=key;curI=DB[key][0].n;
-DB[key].forEach(p=>{if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();});
-renderRouters();renderIfaces();drawTopo();saveTopo();
-log('✔ '+clean+' sekarang LIVE ('+j.via+') — AI troubleshoot sudah bisa jalan');
-try{pushAlarm('info','upgrade/'+clean,'LIVE via '+j.via);}catch(e){}
-}).catch(e=>{log('> upgrade gagal: '+String(e.message||e).slice(0,120)+'\n(cek IP nyala + API user / SNMP community di device)');});
-}
 function topoCheck(id){
 document.getElementById('tmenu')?.remove();
+if(!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live')){log('> layer dummy — cek device hanya untuk live');return;}
 const n=topoNode(id);
 if(!n){return;}
 let db=null;try{db=ensureNodeDb(n,LINKS);}catch(e){}
@@ -1124,7 +1083,9 @@ const n=topoNode(id);if(!n)return;
 const keys=Object.keys(LAYERS).filter(k=>k!==curLayer);
 if(!keys.length){alert('Tidak ada layer lain');return;}
 const s=prompt('Pindah "'+n.label+'" ke layer:\n'+keys.map((k,i)=>(i+1)+'. '+LAYERS[k].label+' ('+LAYERS[k].nodes.length+' node)').join('\n')+'\n\nKetik nomor:');
-if(!s)return;const t=LAYERS[keys[parseInt(s,10)-1]];if(!t){alert('Pilihan tidak ada');return;}
+if(!s)return;const tk=keys[parseInt(s,10)-1];const t=LAYERS[tk];if(!t){alert('Pilihan tidak ada');return;}
+const srcT=(LAYERS[curLayer]||{}).type||'live';
+if((t.type||'live')!==srcT){alert('Ditolak: layer "'+t.label+'" bertipe '+(t.type||'live')+', node dari layer '+srcT+'. 1 layer = 1 tipe.');return;}
 LAYERS[curLayer].nodes=LAYERS[curLayer].nodes.filter(x=>x.id!==id);
 LAYERS[curLayer].links=LAYERS[curLayer].links.filter(([a,b])=>a!==id&&b!==id);
 t.nodes.push(n);
@@ -1191,14 +1152,6 @@ log('> ping OK ('+(j.ms===null?'?':j.ms+'ms')+') → baca device...');
 addNodeByIp(clean,px,py,true);
 }).catch(e=>{log('> gagal: '+String(e.message||e).slice(0,80));alert('IP tidak terjangkau: '+clean+'\n(pastikan device nyala + collector jalan 🟢)');});
 }
-function manualNode(clean,px,py){
-const id='n'+Date.now()%10000;
-TOPO.push({id,icon:'pc',label:clean,sub:'manual • ping OK',x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py});
-if(TOPO.length>1)LINKS.push([TOPO[0].id,id,'lan']);
-drawTopo();saveTopo();
-log('✔ '+clean+' ke-add (ping OK, tipenya belum kebaca — 2x klik buat rename)');
-}
-
 </script>
 </body>
 </html>
