@@ -14,7 +14,9 @@ const { aiAsk, buildMessages } = require('./ai');
 function loadEnv() {
   try {
     require('fs').readFileSync(__dirname + '/.env', 'utf8').split('\n').forEach(l => {
-      const m = l.match(/^\s*([A-Z_]+)\s*=\s*(.*?)\s*$/); if (m) process.env[m[1]] = m[2];
+      if (/^\s*#/.test(l)) return;
+      const m = l.match(/^\s*([A-Z_]+)\s*=\s*(.*?)\s*$/);
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
     });
   } catch {}
 }
