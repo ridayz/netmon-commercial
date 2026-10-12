@@ -84,11 +84,10 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
 <div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
 </div>
-</div>
+</div><!-- /tab-dash -->
 <div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
 <div class="panel"><h3>🗺 Topologi layer aktif — klik node = pantau device</h3><svg id="miniTopo" width="100%" height="300" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;touch-action:none"></svg><div id="miniTopoHint" style="font-size:12px;color:#475569;margin-top:6px"></div></div>
-</div>
-</div><!-- /tab-dash -->
+</div><!-- /main -->
 <div id="tab-topo" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🗺 Topologi</h3>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;margin-bottom:8px">
@@ -116,8 +115,8 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div id="topoList" style="font-size:12px;color:#475569;margin-top:8px"></div>
 <div style="font-size:12px;margin-top:6px">Lihat juga diagram archify statis: <a href="../../archify-output/topologi-netmon.html" target="_blank">archify-output/topologi-netmon.html</a> (9/9 showcase pass)</div>
 </div>
-
 </div>
+</div><!-- /tab-topo -->
 <div id="tab-log" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🔔 System Log & Alarm</h3>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px">
@@ -135,8 +134,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <tbody id="downBody"></tbody></table></div>
 </div>
 </div>
-</div>
-</div>
+</div><!-- /app -->
 <script>
 // ---- DB kanvas kosong komersil: diisi via add/discover per layer ----
 const DB={};
