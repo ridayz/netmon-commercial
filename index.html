@@ -878,17 +878,18 @@ const rows=j.hosts||[];
 if(!body)return;
 if(!rows.length){body.innerHTML='Tidak ada host hidup di '+net+'.';return;}
 DSCAN_SNMP={};rows.forEach(h=>{if(h.snmp&&h.snmp.community)DSCAN_SNMP[h.ip]=h.snmp.community;});
-body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">${rows.length} host hidup • centang → <button onclick="discoverAdd()" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">＋ Tambah ke layer</button></div>`
+body.innerHTML=`<div style="font-size:12px;margin-bottom:6px"><label style="cursor:pointer;font-weight:800;color:#0369a1"><input type="checkbox" id="dSelectAll" onchange="dToggleAll(this)" style="width:15px;height:15px;vertical-align:-2px"> Pilih semua</label> • ${rows.length} host hidup → layer "${(curLayer&&LAYERS[curLayer]?LAYERS[curLayer].label:'?')}" • <button onclick="discoverAdd()" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">＋ Tambah ke layer</button></div>`
 +rows.map((h,i)=>{const tag=(h.ports||[]).join(' ');const router=/8728|8291/.test(tag);const sn=h.snmp;return `<label style="display:flex;gap:8px;align-items:center;border-top:1px solid #e0f2fe;padding:7px 2px;cursor:pointer"><input type="checkbox" class="dhost" value="${h.ip}"${(router||sn)?' checked':''} style="width:15px;height:15px"><span style="font-weight:700;color:#0c4a6e">${h.ip}</span>${!h.ping?'<span style="font-size:11px;background:#fef9c3;color:#a16207;border-radius:6px;padding:1px 7px;font-weight:800" title="Tidak jawab ping, ketahuan dari ARP">via ARP</span>':''}${router?'<span style="font-size:11px;background:#dcfce7;color:#15803d;border-radius:6px;padding:1px 7px;font-weight:800">router?</span>':''}${sn?`<span style="font-size:11px;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:1px 7px;font-weight:800" title="${String(sn.sysDescr||'').slice(0,80)}">SNMP ✓ ${sn.community}</span>`:''}<span style="font-size:11px;color:#64748b">${h.name||''}${h.mac?' • '+h.mac:''}${sn&&sn.sysName?' • '+sn.sysName:''} ${tag||''}</span></label>`;}).join('');
 log(`> discover ${net}: ${rows.length} host hidup`);
 }catch(e){if(body)body.innerHTML='Scan gagal: '+String(e.message||e).slice(0,120);}
 }
+function dToggleAll(box){try{document.querySelectorAll('.dhost').forEach(c=>{c.checked=box.checked;});}catch(e){}}
 function discoverAdd(){
 const ips=[...document.querySelectorAll('.dhost:checked')].map(c=>c.value);
 document.getElementById('dmodal')?.remove();
 if(!ips.length){log('> discover: tidak ada yang dipilih');return;}
 log(`> tambah ${ips.length} hasil discover ke layer...`);
-let i=0;const step=()=>{if(i>=ips.length){log('✔ discover selesai');return;}const ip=ips[i++];const sn=(typeof DSCAN_SNMP!=='undefined'&&DSCAN_SNMP[ip])||null;addNodeByIpGo(ip,undefined,undefined,undefined,sn?{community:sn}:null);setTimeout(step,1200);};step();
+let i=0;const step=()=>{if(i>=ips.length){log('✔ discover selesai');return;}const ip=ips[i++];const sn=(typeof DSCAN_SNMP!=='undefined'&&DSCAN_SNMP[ip])||null;addDiscoverLive(ip,sn?{community:sn}:null);setTimeout(step,1200);};step();
 }
 function addNodeByIp(presetIp,px,py,manualFb){
 if(presetIp){addNodeByIpGo(presetIp.trim(),px,py,manualFb);return;}
@@ -897,13 +898,8 @@ if(!ip)return;const clean=ip.trim();
 if(!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(clean)){alert('Format IP salah, cth: 192.168.18.6');return;}
 addNodeByIpGo(clean,px,py,manualFb);
 }
-function addNodeByIpGo(clean,px,py,manualFb,ov){
+function adoptLiveNode(clean,j,creds,px,py){
 const key='IP '+clean;
-const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
-if(ov&&ov.community)creds.community=ov.community;
-log('> detect '+clean+' via collector '+COLL()+' ...');try{pushAlarm('info','detect/'+clean,'Auto-detect '+clean+' (coba LIVE dulu)');}catch(e){}
-collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,25000).then(j=>{
-if(!j.ok)throw new Error(j.error||'discover gagal');
 const ident=j.identity||j.sysName||clean;
 const icon=guessIcon(ident,j.sysDescr||'');
 const ifs=(j.interfaces||[]).map(x=>({n:x.name,type:(x.name||'').toLowerCase().includes('sfp')?'sfp':'copper',admin:x.admin||'up',oper:x.oper||'up',fault:(x.oper==='down')?'live-down':'sehat',live:true,poe:'-',speed:'-'}));
@@ -912,13 +908,39 @@ DB[key]=ifs;LIVE[key]={ip:clean,user:creds.user,pass:creds.pass,community:(j.via
 const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);
 let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
 const id='ip'+Date.now()%100000;
-TOPO.push({id,icon,label:ident,sub:clean+' • LIVE '+j.via,x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py,db:key});
+TOPO.push({id,icon,label:ident,sub:clean+' • LIVE '+j.via,ip:clean,x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py,db:key});
 if(best)LINKS.push([best.id,id,(icon==='router'||icon==='switch')?'fo':'lan','',(ifs[0]||{}).n||'']);
 curR=key;curI=DB[key][0].n;
 DB[key].forEach(p=>{if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();});
 renderRouters();renderIfaces();drawTopo();saveTopo();showTab('dash');
 log('✔ LIVE '+clean+': '+ident+' ('+j.via+') • '+ifs.length+' interface — traffic realtime dari device asli 🟢');
 try{pushAlarm('info','detect/'+clean,'LIVE: '+ident+' • '+ifs.length+' interface');}catch(e){}
+}
+// discover segmen → jalur live ketat: gagal = node merah (bisa betulkan), TANPA fallback dummy
+function addDiscoverLive(clean,ov){
+const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
+if(ov&&ov.community)creds.community=ov.community;
+log('> detect '+clean+' via collector '+COLL()+' ...');
+collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,25000).then(j=>{
+if(!j.ok)throw new Error(j.error||'discover gagal');
+adoptLiveNode(clean,j,creds,undefined,undefined);
+}).catch(e=>{
+const lo=parseInt(clean.split('.').pop(),10);let icon='pc';
+if(lo===1||lo===254)icon='router';else if(lo>=2&&lo<=9)icon='switch';else if(lo>=10&&lo<=19)icon='server';else if(lo>=20&&lo<=49)icon='ont';else if(lo>=50&&lo<=99)icon='ap';
+const id='ip'+Date.now()%100000;
+TOPO.push({id,icon,label:clean,sub:clean+' • gagal live',ip:clean,st:'bad',x:Math.round(200+Math.random()*400),y:Math.round(120+Math.random()*160)});
+drawTopo();saveTopo();
+log('> LIVE gagal ('+String(e.message||e).slice(0,80)+') — node merah di kanvas, klik kanan → isi IP ulang');
+});
+}
+function addNodeByIpGo(clean,px,py,manualFb,ov){
+const key='IP '+clean;
+const creds=(typeof readCreds==='function')?readCreds():{user:'netmon',pass:'netmon123',community:'netmon'};
+if(ov&&ov.community)creds.community=ov.community;
+log('> detect '+clean+' via collector '+COLL()+' ...');try{pushAlarm('info','detect/'+clean,'Auto-detect '+clean+' (coba LIVE dulu)');}catch(e){}
+collGet(`/api/discover?ip=${clean}&user=${encodeURIComponent(creds.user||'')}&pass=${encodeURIComponent(creds.pass||'')}&community=${encodeURIComponent(creds.community||'')}`,25000).then(j=>{
+if(!j.ok)throw new Error(j.error||'discover gagal');
+adoptLiveNode(clean,j,creds,px,py);
 }).catch(e=>{
 log('> LIVE gagal ('+String(e.message||e).slice(0,80)+')'+(manualFb?' → simpan manual (ping tadi OK)':' → fallback simulasi dummy'));
 if(manualFb)manualNode(clean,px,py);else simAdd(clean);
