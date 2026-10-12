@@ -101,11 +101,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button onclick="saveTopo(true)" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer">💾 Save</button>
 <button id="btnUndo" onclick="undoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Z">↩ Undo</button>
 <button id="btnRedo" onclick="redoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Y">⟳ Redo</button>
-<button onclick="exportPNG()" style="border:0;background:#0284c7;color:#fff;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer">🖼 Export PNG</button>
-<button onclick="exportArchify()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Lihat layer ini sebagai diagram archify (screenshot sendiri buat dokumen)">👁 Archify</button>
-<button onclick="viewOriginal()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Lihat layer ini gaya pastel asli, bersih tanpa toolbar (screenshot buat dokumen)">👁 Original</button>
-<button onclick="document.getElementById('importTopo').click()" class="ai-btn ghost" style="width:auto;padding:7px 12px">⬆ Import</button>
-<button onclick="exportTopoJSON()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Backup seluruh layer ke file JSON">⬇ JSON</button>
+<button class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Pilih file backup layer">⬆ Import</button>
 <input type="file" id="importTopo" accept=".json" style="display:none" onchange="importTopo(this)">
 <span id="saveStat" style="font-size:12px;color:#64748b"></span>
 </div>
@@ -113,10 +109,11 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="discoverModal()" title="Scan perangkat satu jaringan dengan laptop ini">🔍 Discover</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="addTopoNode()">＋ Tambah perangkat</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="autoLayout()" title="Susun node otomatis biar rapi (undo tersedia)">✨ Rapikan</button>
-<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="gns3Modal()" title="Tarik topologi dari GNS3 server">⬇ GNS3</button>
+<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="topoZoom(0.8)" title="Zoom in">＋</button>
+<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="topoZoom(1.25)" title="Zoom out">－</button>
 <button id="modePtr" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(false)" title="Mode normal: klik = pantau/pasang">👆 Pointer</button>
 <button id="modeDel" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(true)" title="Mode hapus: klik kabel = hapus kabel, klik device = hapus device">🗑 Hapus</button>
-<span style="color:#64748b">drag node • klik kanan node/kanvas = menu • <b>2x klik = edit teks</b> • <span style="color:#fb923c;font-weight:800">━ FO</span> • <span style="color:#38bdf8;font-weight:800">━ LAN</span> • <span style="color:#ef4444;font-weight:800">━ merah = DOWN</span> • live tiap 3 dtk</span>
+<span style="color:#64748b">scroll = zoom • drag node • klik kanan = menu • <b>2x klik = edit teks</b></span>
 </div>
 <svg id="topoSvg" width="100%" height="460" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;margin-top:10px;touch-action:none"></svg>
 <div id="topoList" style="font-size:12px;color:#475569;margin-top:8px"></div>
@@ -643,6 +640,8 @@ function importTopo(inp){const f=inp.files&&inp.files[0];if(!f)return;const rd=n
 renderLayerBtns();
 document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.defaultPrevented)return;ev.preventDefault();topoCanvasMenu(ev);});
 document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(ev);});
+// zoom via scroll
+document.getElementById('topoSvg').addEventListener('wheel',ev=>{ev.preventDefault();topoZoom(ev.deltaY<0?0.8:1.25);},{passive:false});
 snapTopo();
 document.addEventListener('keydown',ev=>{const t=(ev.target&&ev.target.tagName)||'';if(t==='INPUT'||t==='TEXTAREA')return;const k=(ev.key||'').toLowerCase();if((ev.ctrlKey||ev.metaKey)&&k==='z'&&!ev.shiftKey){ev.preventDefault();undoTopo();}else if((ev.ctrlKey||ev.metaKey)&&(k==='y'||(k==='z'&&ev.shiftKey))){ev.preventDefault();redoTopo();}});
 // ---- IMPORT TOPOLOGI DARI GNS3 (via collector proxy, browser kena CORS kalau langsung) ----
@@ -875,6 +874,16 @@ body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">via ${j.via} • $
 function editTopoText(id){const n=topoNode(id);if(!n)return;document.getElementById('tmenu')?.remove();const nl=prompt('Nama perangkat:',n.label);if(nl===null)return;const ns=prompt('Sub-teks (cth: IP / VLAN):',n.sub||'');if(ns===null)return;n.label=nl||n.label;n.sub=ns;drawTopo();saveTopo();log('> teks node diubah: '+n.label);}
 function setTopoFont(id,s){const n=topoNode(id);if(!n)return;n.fs=s;document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
 function topoSvgPos(ev){const svg=document.getElementById('topoSvg');const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return {x:Math.round((ev.clientX-r.left)*vb.width/r.width),y:Math.round((ev.clientY-r.top)*vb.height/r.height)};}
+// ---- ZOOM: tombol + scroll (zoom ke tengah, viewBox melebar/mengecil) ----
+function topoZoom(f){
+const svg=document.getElementById('topoSvg');if(!svg)return;
+const L=LAYERS[curLayer];if(!L||!L.vb)return;
+const p=L.vb.split(' ').map(Number);const [x,y,w,h]=p;
+const nx=x+w*(1-1/f)/2,ny=y+h*(1-1/f)/2,nw=w/f,nh=h/f;
+if(nw<120||nw>6000)return;
+L.vb=[nx,ny,nw,nh].map(v=>Math.round(v*10)/10).join(' ');
+svg.setAttribute('viewBox',L.vb);saveTopo();
+}
 function areaAt(l,x,y){const as=(LAYERS[l].areas||[]);for(let i=as.length-1;i>=0;i--){const a=as[i];if(!a.id)a.id='a-'+l+'-'+i;if(x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h)return a;}return null;}
 function topoCanvasMenu(ev){
 const p=topoSvgPos(ev);const a=areaAt(curLayer,p.x,p.y);
