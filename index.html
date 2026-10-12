@@ -436,6 +436,39 @@ document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
 document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
 L._err=0;
 }catch(e){try{const L=LIVE[curR];if(L){L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+e.message+' (cek collector)');}}catch(_){}}},3000);
+// ---- REALTIME CONFIG SYNC: tiap 5 dtk tarik ulang interface semua device LIVE ----
+// Perubahan (port up/down, interface baru/hilang, nama) langsung masuk DB, lalu dashboard + topologi di-redraw.
+let _rtBusy=false;
+function ifSig(list){return (list||[]).map(p=>p.n+':'+p.admin+':'+p.oper).sort().join('|');}
+async function realtimeSync(){
+  if(_rtBusy||!Object.keys(LIVE).length)return;
+  _rtBusy=true;
+  try{
+    for(const key of Object.keys(LIVE)){
+      const L=LIVE[key];if(!L||!L.ip)continue;
+      let j;
+      try{j=await collGet(`/api/discover?ip=${L.ip}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&community=${encodeURIComponent(L.community||'')}`,15000);}catch(e){continue;}
+      if(!j||!j.ok||!(j.interfaces||[]).length)continue;
+      const fresh=(j.interfaces||[]).map(x=>({n:x.name,type:(x.name||'').toLowerCase().includes('sfp')?'sfp':'copper',admin:x.admin||'up',oper:x.oper||'up',fault:(x.oper==='down')?'live-down':'sehat',live:true,poe:'-',speed:'-'}));
+      const old=DB[key]||[];
+      if(ifSig(old)===ifSig(fresh)){L._lastSync=Date.now();continue;}
+      // pertahankan downSince & state lokal bila port yang sama
+      fresh.forEach(p=>{const o=old.find(q=>q.n===p.n);if(o){if(o.downSince)p.downSince=o.downSince;if(o.swap)p.swap=o.swap;}if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();});
+      DB[key]=fresh;L.ifaces=JSON.parse(JSON.stringify(fresh));L._lastSync=Date.now();
+      if(!fresh.some(p=>p.n===curI))curI=fresh[0]&&fresh[0].n;
+      const changed=old.filter(o=>{const f=fresh.find(q=>q.n===o.n);return !f||f.oper!==o.oper||f.admin!==o.admin;}).map(o=>o.n);
+      const added=fresh.filter(f=>!old.find(o=>o.n===f.n)).map(f=>f.n);
+      changed.forEach(nm=>{const f=fresh.find(q=>q.n===nm);log('> '+key+'/'+nm+' '+(f?('admin '+f.admin+' • oper '+f.oper):'hilang dari device'));});
+      added.forEach(nm=>log('> '+key+' port baru: '+nm));
+    }
+    persistLive();
+    try{renderRouters();renderIfaces();}catch(e){}
+    try{if(document.getElementById('tab-topo')?.style.display==='flex')drawTopo();}catch(e){}
+    try{saveTopo();}catch(e){}
+  }finally{_rtBusy=false;}
+}
+setInterval(realtimeSync,5000);
+setTimeout(realtimeSync,2000);
 // ---- AUTO-CARE: pantau semua device LIVE, kerjakan aksi aman, yang fisik jadi tiket ----
 let AC={on:false,lastAct:{},seen:{},timer:null};
 function setAutoCare(){
