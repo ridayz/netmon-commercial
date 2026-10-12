@@ -87,9 +87,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 <div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
 <div class="panel"><h3>🗺 Topologi layer aktif — klik node = pantau device</h3><svg id="miniTopo" width="100%" height="300" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;touch-action:none"></svg><div id="miniTopoHint" style="font-size:12px;color:#475569;margin-top:6px"></div></div>
-<div class="grid2">
-<div class="panel"><h3>🔦 Layer 1 — SFP / Fiber DDM</h3><div id="sfp"></div></div>
-<div class="panel"><h3>🧾 Error Counter & Flapping</h3><div id="err"></div></div>
 </div>
 </div><!-- /tab-dash -->
 <div id="tab-topo" style="display:none;flex-direction:column;gap:12px">
@@ -237,28 +234,9 @@ if(c.type==='copper'){
  else if(c.fault==='disabled-human') tdr=`<div class="kv"><span>Admin</span><b>${badge('DISABLED','bad')}</b></div><div class="kv"><span>TDR</span><b>tidak diukur (port mati)</b></div>`;
  else tdr=`<div class="kv"><span>Pair 1-2 / 3-6 / 4-5 / 7-8</span><b>${badge('OK semua','ok')}</b></div><div class="kv"><span>Panjang</span><b>~38m</b></div>`;
  tdr+=`<div class="kv"><span>PoE</span><b>${c.poe}</b></div><div class="kv"><span>Speed</span><b>${c.speed}</b></div>`;
-}else tdr=`<div class="kv"><span>Media</span><b>Fiber — lihat panel SFP DDM ➜</b></div>`;
+}else tdr=`<div class="kv"><span>Media</span><b>Fiber</b></div>`;
 document.getElementById('tdr').innerHTML=tdr;
-// SFP
-let sfp='';
-if(c.type==='sfp'){
- let v={tx:'-2.8',rx:'-7.1',tmp:'41',volt:'3.31',bias:'6.2',st:'ok'};
- if(c.fault==='redaman-tinggi')v={tx:'-2.9',rx:'-24.6',tmp:'48',volt:'3.28',bias:'7.8',st:'warn'};
- if(c.fault==='no-light')v={tx:'-2.5',rx:'-40.0',tmp:'39',volt:'3.30',bias:'5.9',st:'bad'};
- if(c.fault==='sehat-sfp')v={tx:'-3.1',rx:'-8.4',tmp:'42',volt:'3.32',bias:'6.0',st:'ok'};
- const red=(parseFloat(v.tx)-parseFloat(v.rx)).toFixed(1);
- const cls=v.st==='ok'?'ok':(v.st==='warn'?'warn':'bad');
- const lbl=v.st==='ok'?'NORMAL':(v.st==='warn'?'REDAMAN GEDE':'NO LIGHT');
- sfp=`<div class="kv"><span>TX Power</span><b>${v.tx} dBm</b></div><div class="kv"><span>RX Power</span><b>${v.rx} dBm ${badge(lbl,cls)}</b></div><div class="kv"><span>Redaman (TX-RX)</span><b>${red} dB</b></div><div class="bar"><i style="width:${Math.min(100,red/25*100)}%"></i></div><div class="kv"><span>Temp / Volt / Bias</span><b>${v.tmp}°C / ${v.volt}V / ${v.bias}mA</b></div><div class="kv"><span>LOS / SFP alarm</span><b>${v.st==='bad'?badge('LOS','bad'):badge('no alarm','ok')}</b></div>`;
-}else sfp=`<div class="kv"><span>Port ini copper</span><b>${badge('SFP N/A','info')}</b></div><div class="kv"><span>Yang dicek</span><b>TDR + error counter</b></div>`;
-document.getElementById('sfp').innerHTML=sfp;
-// ERR
-let e={crc:'0',fcs:'0',col:'0',flap:'0',last:'2 hari lalu'};
-if(c.fault==='kabel-jelek')e={crc:'14.203 ↑',fcs:'3.871 ↑',col:'112',flap:'17x/hari',last:'4 mnt lalu'};
-if(c.fault==='putus-23m')e={crc:'0',fcs:'0',col:'0',flap:'2x (lalu down)',last:'3 jam lalu'};
-if(c.fault==='redaman-tinggi')e={crc:'8.940 ↑',fcs:'1.204 ↑',col:'0',flap:'6x/hari',last:'22 mnt lalu'};
-if(c.fault==='no-light')e={crc:'0',fcs:'0',col:'0',flap:'1x (lalu down)',last:'5 jam lalu'};
-document.getElementById('err').innerHTML=`<div class="kv"><span>CRC error</span><b>${e.crc}</b></div><div class="kv"><span>FCS / Align</span><b>${e.fcs}</b></div><div class="kv"><span>Collision</span><b>${e.col}</b></div><div class="kv"><span>Link flap</span><b>${e.flap}</b></div><div class="kv"><span>Last link change</span><b>${e.last}</b></div>`;
+// (SFP DDM & Error Counter dihapus dari dashboard)
 }
 const ctx=document.getElementById('chart');
 const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
