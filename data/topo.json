@@ -1,48 +1,101 @@
 {
- "at": "2026-10-12T14:10:28.667Z",
- "cur": "c50585",
+ "at": "2026-10-12T21:26:00.790Z",
+ "cur": "c30755",
  "layers": {
   "c50585": {
    "label": "RUMAH",
    "type": "live",
-   "vb": "0 0 900 400",
+   "vb": "68 10 1096 520",
    "areas": [],
    "nodes": [
     {
      "id": "ip15750",
      "icon": "router",
-     "label": "DONCUL-HOME",
-     "sub": "60.60.60.1 • ping OK 4ms (tanpa SNMP)",
+     "label": "Mikrotik-Doncul",
+     "sub": "60.60.60.1 • LIVE routeros-api",
      "ip": "60.60.60.1",
-     "x": 226,
-     "y": 183,
-     "db": "DONCUL-HOME",
-     "_w": 240,
-     "st": "ok"
+     "x": 82,
+     "y": 151,
+     "db": "IP 60.60.60.1",
+     "_w": 236
     },
     {
      "id": "ip37039",
-     "icon": "router",
-     "label": "60.60.60.254",
-     "sub": "60.60.60.254 • ping OK 5ms (tanpa SNMP)",
+     "icon": "ap",
+     "label": "TP-LINK",
+     "sub": "60.60.60.254 • LIVE snmp",
      "ip": "60.60.60.254",
      "st": "ok",
      "x": 516,
      "y": 151,
-     "_w": 240,
-     "db": "60.60.60.254"
+     "_w": 194,
+     "db": "TP-LINK"
     },
     {
      "id": "ip40272",
-     "icon": "pc",
-     "label": "60.60.60.159",
-     "sub": "60.60.60.159 • ping OK 21ms (tanpa SNMP)",
+     "icon": "ap",
+     "label": "AP-TP-LINK-RJ",
+     "sub": "60.60.60.159 • ping OK 6ms (tanpa SNMP)",
      "ip": "60.60.60.159",
      "st": "ok",
-     "x": 631,
-     "y": 303,
+     "x": 520,
+     "y": 344,
      "_w": 240,
-     "db": "60.60.60.159"
+     "db": "AP-TP-LINK-RJ"
+    }
+   ],
+   "links": [
+    [
+     "ip37039",
+     "ip40272",
+     "fo",
+     "mgmt",
+     "mgmt"
+    ],
+    [
+     "ip15750",
+     "ip37039",
+     "fo",
+     "",
+     "mgmt"
+    ]
+   ]
+  },
+  "c30755": {
+   "label": "Tes DUMMY",
+   "type": "dummy",
+   "vb": "-60 -60 1020 520",
+   "areas": [],
+   "nodes": [
+    {
+     "id": "n19351",
+     "icon": "router",
+     "label": "Dummy-1",
+     "sub": "dummy",
+     "x": 472,
+     "y": 196,
+     "_w": 112,
+     "db": "Dummy-1"
+    },
+    {
+     "id": "n45168",
+     "icon": "switch",
+     "label": "Dummy-1",
+     "sub": "dummy",
+     "x": 52,
+     "y": 157,
+     "_w": 112,
+     "db": "Dummy-1"
+    },
+    {
+     "id": "n54482",
+     "icon": "internet",
+     "label": "Dummy-1",
+     "sub": "dummy",
+     "x": 346,
+     "y": 357,
+     "_w": 112,
+     "db": "Dummy-1"
     }
    ],
    "links": []
