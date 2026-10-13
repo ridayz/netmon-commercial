@@ -77,7 +77,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="panel"><h3>📈 Traffic Realtime</h3><canvas id="chart" height="130"></canvas>
 <div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio DL:UL — menunggu data...</div>
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik DL/UL (port LAN)</button>
-<div style="margin-top:12px"><h3>🔌 Layer 1 — Copper / Cable Test (TDR)</h3><div id="tdr"></div></div>
 </div>
 <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
 <div class="log" id="log">> Netmon - Router AI siap. Klik node di topologi buat pantau.</div>
@@ -97,8 +96,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button onclick="saveTopo(true)" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer">💾 Save</button>
 <button id="btnUndo" onclick="undoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Z">↩ Undo</button>
 <button id="btnRedo" onclick="redoTopo()" class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Ctrl+Y">⟳ Redo</button>
-<button class="ai-btn ghost" style="width:auto;padding:7px 12px" title="Pilih file backup layer">⬆ Import</button>
-<input type="file" id="importTopo" accept=".json" style="display:none" onchange="importTopo(this)">
 <span id="saveStat" style="font-size:12px;color:#64748b"></span>
 </div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px">
@@ -223,24 +220,12 @@ document.body.appendChild(m);setTimeout(()=>document.addEventListener('click',hi
 function hideCtx(){document.getElementById('ctx')?.remove();}
 function setAdmin(s){hideCtx();const c=cur();c.admin=s;if(s==='down'){c.prevFault=c.fault;c.fault='disabled-human';setLink(curR,c,'down','disable manual');log('> kamu DISABLE '+c.n+' (klik kanan)');}else{c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';setLink(curR,c,'up','enable manual');log('> kamu ENABLE '+c.n+' manual');}renderIfaces();}
 function simUnplug(){hideCtx();const c=cur();c.admin='up';if(c.type==='sfp'){c.fault='no-light';}else{c.fault='putus-23m';c.poe='0W';}setLink(curR,c,'down','kabel dicabut (simulasi)');log('> simulasi kabel '+c.n+' DICABUT');renderIfaces();}
-function badge(t,c){return `<span class="badge ${c}">${t}</span>`;}
 function refresh(){
 const c=cur();if(!c){document.getElementById('title').textContent='Netmon - Router AI';return;}document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`;
 const down=c.oper==='down';
 document.getElementById('statusPill').textContent=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');
 document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.startsWith('sehat')?'#e0f2fe':'#fef9c3');
-// TDR
-let tdr='';
-if(c.type==='copper'){
- if(c.fault==='live-down') tdr=`<div class="kv"><span>Status asli</span><b>${badge('DOWN di device','bad')}</b></div><div class="kv"><span>Catatan</span><b>data live — TDR dummy tidak berlaku</b></div>`;
- else if(c.fault==='putus-23m') tdr=`<div class="kv"><span>Pair 1-2 / 3-6</span><b>OPEN @ ~23m ${badge('PUTUS','bad')}</b></div><div class="kv"><span>Pair 4-5 / 7-8</span><b>OPEN @ ~23m</b></div><div class="kv"><span>Kesimpulan TDR</span><b>Kabel putus / tidak nyolok ujung</b></div>`;
- else if(c.fault==='kabel-jelek') tdr=`<div class="kv"><span>Pair 1-2</span><b>OK</b></div><div class="kv"><span>Pair 3-6</span><b>${badge('SHORT 41m','warn')} impedansi aneh</b></div><div class="kv"><span>Kesimpulan TDR</span><b>Crimping / kabel jelek</b></div>`;
- else if(c.fault==='disabled-human') tdr=`<div class="kv"><span>Admin</span><b>${badge('DISABLED','bad')}</b></div><div class="kv"><span>TDR</span><b>tidak diukur (port mati)</b></div>`;
- else tdr=`<div class="kv"><span>Pair 1-2 / 3-6 / 4-5 / 7-8</span><b>${badge('OK semua','ok')}</b></div><div class="kv"><span>Panjang</span><b>~38m</b></div>`;
- tdr+=`<div class="kv"><span>PoE</span><b>${c.poe}</b></div><div class="kv"><span>Speed</span><b>${c.speed}</b></div>`;
-}else tdr=`<div class="kv"><span>Media</span><b>Fiber</b></div>`;
-document.getElementById('tdr').innerHTML=tdr;
-// (SFP DDM & Error Counter dihapus dari dashboard)
+// (Panel TDR dihapus dari dashboard — character copper/fiber tetap di AI diagnosa)
 }
 const ctx=document.getElementById('chart');
 const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
@@ -625,7 +610,7 @@ function updateUR(){const u=document.getElementById('btnUndo'),r=document.getEle
 function restoreTopo(){try{const s=JSON.parse(HIST[HI]);LAYERS=s.layers;if(s.cur&&LAYERS[s.cur])curLayer=s.cur;if(!LAYERS[curLayer])curLayer=firstLayerKey();TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];renderLayerBtns();drawTopo();persistTopo();}catch(e){log('> undo/redo gagal: '+e.message);}}
 function undoTopo(){if(HI>0){HI--;restoreTopo();updateUR();log('> ↩ undo');}}
 function redoTopo(){if(HI<HIST.length-1){HI++;restoreTopo();updateUR();log('> ⟳ redo');}}
-function renderLayerBtns(){const el=document.getElementById('layerBtns');if(!el)return;el.innerHTML='';const ks=Object.keys(LAYERS);if(!ks.length){el.innerHTML='<span style="font-size:12px;color:#64748b">belum ada layer</span>';return;}ks.forEach(k=>{const L=LAYERS[k];if(!L||!Array.isArray(L.nodes)||!Array.isArray(L.links))return;const on=(k===curLayer);const b=document.createElement('button');b.style.cssText=`border:0;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer;background:${on?'#0284c7':'#fff'};color:${on?'#fff':'#0369a1'};${on?'':'border:2px solid #bae6fd;'}`;b.textContent=(L.label||k)+' ['+(L.type==='dummy'?'dummy':'live')+'] ('+L.nodes.length+')';const x=document.createElement('span');x.textContent=' ✕';x.title='hapus layer';x.style.cssText='margin-left:6px;color:#ef4444;cursor:pointer';x.onclick=(ev)=>{ev.stopPropagation();delLayer(k);};b.appendChild(x);b.onclick=()=>setLayer(k);b.ondblclick=()=>renameLayer(k);b.title='klik: buka • 2x klik: rename • tipe dikunci: '+(L.type||'live');el.appendChild(b);});}
+function renderLayerBtns(){const el=document.getElementById('layerBtns');if(!el)return;el.innerHTML='';const ks=Object.keys(LAYERS);if(!ks.length){el.innerHTML='<span style="font-size:12px;color:#64748b">belum ada layer</span>';return;}ks.forEach(k=>{const L=LAYERS[k];if(!L||!Array.isArray(L.nodes)||!Array.isArray(L.links))return;const on=(k===curLayer);const b=document.createElement('button');b.style.cssText=`border:0;border-radius:8px;padding:7px 14px;font-weight:800;cursor:pointer;background:${on?'#0284c7':'#fff'};color:${on?'#fff':'#0369a1'};${on?'':'border:2px solid #bae6fd;'}`;b.textContent=(L.label||k)+' ['+(L.type==='dummy'?'dummy':'live')+'] ('+L.nodes.length+')';const rn=document.createElement('span');rn.textContent=' ✎';rn.title='rename layer';rn.style.cssText='margin-left:6px;color:#0284c7;cursor:pointer';rn.onclick=(ev)=>{ev.stopPropagation();renameLayer(k);};b.appendChild(rn);const x=document.createElement('span');x.textContent=' ✕';x.title='hapus layer';x.style.cssText='margin-left:6px;color:#ef4444;cursor:pointer';x.onclick=(ev)=>{ev.stopPropagation();delLayer(k);};b.appendChild(x);b.onclick=()=>setLayer(k);b.ondblclick=()=>renameLayer(k);b.title='klik: buka • ✎/2x klik: rename • tipe dikunci: '+(L.type||'live');el.appendChild(b);});}
 async function renameLayer(k){const v=await uiModal({title:'Rename layer',msg:'Layer "'+(LAYERS[k].label||k)+'"',fields:[{name:'nama',type:'text',label:'Nama layer baru',value:LAYERS[k].label||k}]});if(!v)return;const nl=v.nama.text.trim();if(!nl)return;LAYERS[k].label=nl;renderLayerBtns();saveTopo();log('> layer di-rename: '+nl);}
 function newLayer(){newLayerGo();}
 function newLayerGo(){uiModal({title:'Pilih tipe layer',fields:[{label:'Tipe layer',type:'choice',choices:[{v:'live',label:'🟢 LIVE — pantau device asli (ping/SNMP)'},{v:'dummy',label:'⚪ DUMMY — simulasi tanpa device'}]}]}).then(t1=>{if(!t1)return;newLayerStep2(t1[0].choice);});}
@@ -674,7 +659,7 @@ const doc=`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>${l
 window.open(URL.createObjectURL(new Blob([doc],{type:'text/html'})),'_blank');
 log('> view original dibuka ('+TOPO.length+' node) — tinggal screenshot');
 }
-function importTopo(inp){const f=inp.files&&inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);const ls=d.layers||d;if(typeof ls!=='object'||!Object.keys(ls).length)throw new Error('format bukan projek netmon');let n=0;Object.keys(ls).forEach(k=>{const L=ls[k];if(!L||!Array.isArray(L.nodes)||!Array.isArray(L.links))return;let key=k;while(LAYERS[key])key=key+'-2';LAYERS[key]={label:L.label||key,type:(L.type==='dummy')?'dummy':'live',vb:L.vb||'0 0 900 400',areas:L.areas||[],nodes:L.nodes,links:L.links};TOPO_HOME[key]={};L.nodes.forEach(nn=>{TOPO_HOME[key][nn.id]={x:nn.x,y:nn.y};});n++;});if(!n)throw new Error('tidak ada layer valid di file');setLayer(curLayer);saveTopo(true);log('> '+n+' layer di-import dari '+f.name);}catch(e){log('> import gagal: '+e.message);alert('Import gagal: '+e.message);}};rd.readAsText(f);inp.value='';}
+// (Import JSON dihapus dari toolbar — restore darurat via merge manual ke /api/topo)
 renderLayerBtns();
 document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.defaultPrevented)return;ev.preventDefault();topoCanvasMenu(ev);});
 document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(ev);});
