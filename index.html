@@ -22,7 +22,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .topbar{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
 .topbar h1{margin:0;font-size:16px;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
 .topbar p{margin:4px 0 0;color:#64748b;font-size:12px}
-.pill{background:#e0f2fe;color:#0369a1;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700}
+.pill{background:#e0f2fe;color:#0369a1;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .card{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:14px}
 .card small{color:#0284c7;font-weight:700}
@@ -73,7 +73,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span>ke 8.8.8.8</span></div>
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
-<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:300px;max-width:1150px"><canvas id="chart"></canvas></div>
+<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:300px;width:100%"><canvas id="chart"></canvas></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;color:#0369a1;font-weight:700">
 <span>🔍 Window grafik</span>
 <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">Geser <input id="cwStart" type="range" min="0" max="0" value="0" oninput="cwOnInput()" style="flex:1;accent-color:#0284c7"></label>
@@ -809,6 +809,10 @@ function topoSt(n){if(!n.db||!DB[n.db])return n.st||'ok';const ps=DB[n.db];if(ps
 function drawTopo(){
 if(!curLayer||!LAYERS[curLayer]){const svg0=document.getElementById('topoSvg');if(svg0){svg0.setAttribute('viewBox','0 0 900 400');svg0.innerHTML='';const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',450);t.setAttribute('y',190);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','15');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Belum ada layer — klik ＋ Layer Baru (pilih live|dummy)';svg0.appendChild(t);}const tl=document.getElementById('topoList');if(tl)tl.textContent='0 layer';return;}
 if(!Array.isArray(LAYERS[curLayer].nodes)){LAYERS[curLayer].nodes=[];LAYERS[curLayer].links=[];}TOPO=LAYERS[curLayer].nodes;LINKS=LAYERS[curLayer].links;
+// anti-kedip: refresh 3-detik di-skip kalau tidak ada yang berubah (posisi/status/label/link/view/seleksi sama)
+try{const _svg0=document.getElementById('topoSvg');
+const _ts=curLayer+'|'+curR+'|'+(LAYERS[curLayer].vb||'')+'|'+TOPO.map(n=>n.id+':'+n.x+','+n.y+':'+topoSt(n)+':'+(n.label||'')+':'+(n.sub||'')+':'+(n.fs||1)+':'+(n.icon||'')).join(';')+'|'+LINKS.map(l=>l.join(',')).join(';')+'|'+TOPO.map(n=>n.db&&DB[n.db]?DB[n.db].map(p=>p.admin+'/'+p.oper).join(','):'').join(';');
+if(_svg0&&_svg0._ts===_ts)return;if(_svg0)_svg0._ts=_ts;}catch(_){}
 try{syncTopoSliders();}catch(_){}
 const svg=document.getElementById('topoSvg');const W=svg.clientWidth||900;
 svg.setAttribute('viewBox',LAYERS[curLayer].vb);
