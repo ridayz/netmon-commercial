@@ -6,3 +6,4 @@ tokens.json
 .DS_Store
 Thumbs.db
 data/*.bak
+.superpowers/
