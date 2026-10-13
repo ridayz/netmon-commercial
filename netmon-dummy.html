@@ -73,12 +73,18 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span>ke 8.8.8.8</span></div>
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
-<div class="grid2">
 <div class="panel"><h3>📈 Traffic Realtime</h3><canvas id="chart" height="130"></canvas>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;color:#0369a1;font-weight:700">
+<span>🔍 Window grafik</span>
+<label style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">Geser <input id="cwStart" type="range" min="0" max="0" value="0" oninput="cwOnInput()" style="flex:1;accent-color:#0284c7"></label>
+<label style="display:flex;align-items:center;gap:6px">Lebar <input id="cwLen" type="range" min="10" max="30" value="30" oninput="cwOnInput()" style="width:120px;accent-color:#0284c7"></label>
+<button onclick="cwReset()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px" title="Kembali ke 30 titik live">⟲ Live</button>
+<span id="cwLab" style="color:#64748b;font-weight:400"></span>
+</div>
 <div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio Download : Upload — menunggu data...</div>
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik Download/Upload (port LAN)</button>
 </div>
-<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div class="panel"><h3>🧾 Log</h3>
 <div class="log" id="log">> Netmon - Router AI siap. Klik node di topologi buat pantau.</div>
 <div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
 <div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
@@ -229,7 +235,25 @@ document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.s
 }
 const ctx=document.getElementById('chart');
 const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
-function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chart.update();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+// ---- WINDOW SLIDER grafik: geser + atur lebar tampil tanpa gerakkan data ----
+let cwLen=30, cwStart=0;
+function chartView(){try{
+const n=dl.length;
+if(cwLen>n)cwLen=n;
+if(cwStart>n-cwLen)cwStart=Math.max(0,n-cwLen);
+if(!chart.data||!chart.data.datasets)return;
+chart.data.labels=labels.slice(cwStart,cwStart+cwLen);
+chart.data.datasets[0].data=dl.slice(cwStart,cwStart+cwLen);
+chart.data.datasets[1].data=ul.slice(cwStart,cwStart+cwLen);
+chart.update();
+const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');
+if(s1){s1.max=Math.max(0,n-cwLen);if(+s1.value!==cwStart)s1.value=cwStart;}
+if(s2&&+s2.value!==cwLen)s2.value=cwLen;
+const lb=document.getElementById('cwLab');if(lb)lb.textContent='tampil '+cwLen+' titik • mulai #'+(cwStart+1);
+}catch(e){}}
+function cwOnInput(){const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');if(s2)cwLen=+s2.value||30;if(s1)cwStart=+s1.value||0;chartView();}
+function cwReset(){cwLen=30;cwStart=0;chartView();}
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chartView();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
@@ -441,7 +465,7 @@ const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&
 if(!j.ok)throw new Error(j.error||'traffic gagal');
 const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!(L.swap||{})[c.n];
 const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
-dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();chart.update();
+dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){}
 document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
 document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
 L._err=0;
