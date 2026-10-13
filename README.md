@@ -1,31 +1,32 @@
-# Netmon - Router AI
+# NetMon Komersil — Router AI (standalone lokal)
 
-Monitoring jaringan pastel biru awan: topologi per layer, traffic realtime (RouterOS API + SNMP), discovery otomatis, export diagram Archify, dan AI troubleshoot (analyzer + eksekusi seizin user).
-
-![Topologi RUMAH](review/rumah-topologi.png)
-*Topologi RUMAH hasil Discover — 13 perangkat, 1 router live.*
-
-![Traffic live](review/rumah-speedtest.png)
-*Traffic realtime ether1-ISP-1 (DONCUL-HOME) pas speedtest jalan.*
-
-## Isi repo
-
-- `index.html` — dashboard + topologi (single-file, buka langsung)
-- `collector/` — backend Node.js (bridge ke device, AI, scan, export)
-- `start-netmon.bat` — dobel-klik: collector + dashboard jalan bareng
-- `review/` — screenshot
-- `netmon-dummy.html` — salinan `index.html` (cadangan)
+Monitoring jaringan + topologi + AI troubleshoot. Install di mana, dipakai di
+situ (ala PRTG): dashboard + collector jalan di mesin yang sama, topologi +
+database tersimpan lokal di `data/topo.json`.
 
 ## Jalanin
 
-1. Dobel-klik `start-netmon.bat` (collector nyala + browser kebuka).
-2. Tab Topologi → **🔍 Discover** → pilih subnet → Scan → centang → tambah ke layer.
-3. Klik node → monitoring + traffic realtime (🟢 = live, ⚪ = dummy/simulasi).
-4. Klik kanan node → **🔍 Cek device** (analyzer lokal, tanpa AI key) / **⚡ AI Troubleshoot** (butuh API key di sidebar).
-
-Tutorial lengkap buat yang baru ambil repo: **[INSTALL.md](INSTALL.md)**.
+1. Dobel-klik `start-netmon.bat` (collector nyala di :8932 + browser kebuka).
+2. Tab Topologi → **＋ Layer Baru** → pilih tipe:
+   - **live** — device asli (add by jenis → klik kanan → isi IP → discover).
+     Kabel langsung attach device-ke-device. Port mati = kabel merah.
+   - **dummy** — ala Packet Tracer (tambah bebas, konek kabel = pilih port,
+     traffic simulasi + animasi kabel).
+3. Tab Dashboard → klik nama device (sidebar) → port muncul di bawah grafik
+   → klik port → traffic port itu live. Mini topologi di bawah ikut sinkron.
 
 ## Aturan main
 
-- AI boleh baca + diagnosa device 🟢. Ubah config **selalu** klik Setujui + login tulis (sekali pakai, tidak disimpan). Path `user/reset/reboot` diblokir permanen.
-- Kredensial (`collector/.env`, API key browser) tidak pernah di-commit.
+- 1 layer = 1 tipe (live|dummy), tidak bisa campur/diubah.
+- Jalur live tanpa data karangan: discover gagal = node merah, betulkan IP-nya.
+- Discovery segmen: tab Topologi → 🔍 Discover → pilih /24 → centang (+Pilih
+  semua) → tambah ke layer live aktif.
+- Kabel: klik node asal (Pasang kabel) → tarik → klik tujuan. Klik kabel =
+  edit/hapus/pindah colok. Undo/redo + Rapikan tersedia.
+- Pindah mesin: copy `data/topo.json` (backup otomatis `data/topo.json.bak`).
+  Export/Import JSON juga tersedia di tab Topologi.
+
+## Kredensial
+
+`collector/.env` (JANGAN commit) — lihat `collector/.env.example`.
+AI boleh baca + diagnosa device 🟢. Ubah config selalu klik Setujui.

@@ -1,0 +1,104 @@
+{
+ "at": "2026-10-12T21:26:00.790Z",
+ "cur": "c30755",
+ "layers": {
+  "c50585": {
+   "label": "RUMAH",
+   "type": "live",
+   "vb": "68 10 1096 520",
+   "areas": [],
+   "nodes": [
+    {
+     "id": "ip15750",
+     "icon": "router",
+     "label": "Mikrotik-Doncul",
+     "sub": "60.60.60.1 • LIVE routeros-api",
+     "ip": "60.60.60.1",
+     "x": 82,
+     "y": 151,
+     "db": "IP 60.60.60.1",
+     "_w": 236
+    },
+    {
+     "id": "ip37039",
+     "icon": "ap",
+     "label": "TP-LINK",
+     "sub": "60.60.60.254 • LIVE snmp",
+     "ip": "60.60.60.254",
+     "st": "ok",
+     "x": 516,
+     "y": 151,
+     "_w": 194,
+     "db": "TP-LINK"
+    },
+    {
+     "id": "ip40272",
+     "icon": "ap",
+     "label": "AP-TP-LINK-RJ",
+     "sub": "60.60.60.159 • ping OK 6ms (tanpa SNMP)",
+     "ip": "60.60.60.159",
+     "st": "ok",
+     "x": 520,
+     "y": 344,
+     "_w": 240,
+     "db": "AP-TP-LINK-RJ"
+    }
+   ],
+   "links": [
+    [
+     "ip37039",
+     "ip40272",
+     "fo",
+     "mgmt",
+     "mgmt"
+    ],
+    [
+     "ip15750",
+     "ip37039",
+     "fo",
+     "",
+     "mgmt"
+    ]
+   ]
+  },
+  "c30755": {
+   "label": "Tes DUMMY",
+   "type": "dummy",
+   "vb": "-60 -60 1020 520",
+   "areas": [],
+   "nodes": [
+    {
+     "id": "n19351",
+     "icon": "router",
+     "label": "Dummy-1",
+     "sub": "dummy",
+     "x": 472,
+     "y": 196,
+     "_w": 112,
+     "db": "Dummy-1"
+    },
+    {
+     "id": "n45168",
+     "icon": "switch",
+     "label": "Dummy-1",
+     "sub": "dummy",
+     "x": 52,
+     "y": 157,
+     "_w": 112,
+     "db": "Dummy-1"
+    },
+    {
+     "id": "n54482",
+     "icon": "internet",
+     "label": "Dummy-1",
+     "sub": "dummy",
+     "x": 346,
+     "y": 357,
+     "_w": 112,
+     "db": "Dummy-1"
+    }
+   ],
+   "links": []
+  }
+ }
+}

@@ -10,7 +10,7 @@ if %errorlevel%==0 (
   start "netmon-collector" /min node "collector\server.js"
   timeout /t 3 /nobreak >nul
 )
-REM 2) dashboard
+REM 2) dashboard (via collector — sekalian cek server + persist)
 echo [netmon] buka dashboard...
-start "" "index.html"
+start "" "http://localhost:8932/"
 echo [netmon] beres. Jangan tutup window netmon-collector kalau masih mantau.
