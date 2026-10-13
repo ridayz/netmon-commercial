@@ -57,6 +57,16 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
 <input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
 <div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
+<div class="label">AI NOC <span id="aiDot" title="status AI">⚪</span></div>
+<div style="font-size:11px;color:#64748b" id="aiStatus">tanpa key — mode lokal</div>
+<input id="aiKey" type="password" placeholder="AI key (9Router / OpenAI-compatible)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
+<input id="aiBase" placeholder="http://localhost:20128/v1" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
+<input id="aiModel" placeholder="nine-router/auto-failover" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
+<div style="display:flex;gap:6px;margin-top:6px">
+<button onclick="testAiKey()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px">Cek API</button>
+<button onclick="aiToggleLocal()" id="aiLocalBtn" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px">Mode: auto</button>
+</div>
+<label style="display:flex;gap:6px;align-items:center;font-size:11px;color:#64748b;margin-top:4px;cursor:pointer"><input type="checkbox" id="aiAlwaysLocal" onchange="aiSetAlwaysLocal(this.checked)" style="width:14px;height:14px"> selalu mode lokal (tanpa key)</label>
 </div>
 <div class="main">
 <div class="topbar"><div><h1 id="title">-</h1></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="statusPill">●</div>
@@ -311,20 +321,28 @@ let LIVE={};try{LIVE=JSON.parse(localStorage.getItem('netmon-live-v1')||'{}');}c
 function persistLive(){try{localStorage.setItem('netmon-live-v1',JSON.stringify(LIVE));}catch(e){}}
 function ensureDetectGroup(){let g=SIDEBAR.find(g=>g.layer==='Hasil Auto-Detect');if(!g){g={layer:'Hasil Auto-Detect',devs:[]};SIDEBAR.push(g);}return g;}
 function restoreLive(){for(const key in LIVE){const L=LIVE[key];if(!L||!L.ifaces)continue;if(!DB[key])DB[key]=JSON.parse(JSON.stringify(L.ifaces));const g=ensureDetectGroup();if(!g.devs.includes(key))g.devs.push(key);}try{document.getElementById('collUrl').value=localStorage.getItem('netmon-coll')||'http://localhost:8932';}catch(e){}restoreAiFields();}
-function restoreAiFields(){try{const k=localStorage.getItem('netmon-ai-key');if(k&&document.getElementById('aiKey'))document.getElementById('aiKey').value=k;const b=localStorage.getItem('netmon-ai-base');if(b&&document.getElementById('aiBase'))document.getElementById('aiBase').value=b;const m=localStorage.getItem('netmon-ai-model');if(m&&document.getElementById('aiModel'))document.getElementById('aiModel').value=m;}catch(e){}}
+function restoreAiFields(){try{const k=localStorage.getItem('netmon-ai-key');if(k&&document.getElementById('aiKey'))document.getElementById('aiKey').value=k;const b=localStorage.getItem('netmon-ai-base');if(b&&document.getElementById('aiBase'))document.getElementById('aiBase').value=b;const m=localStorage.getItem('netmon-ai-model');if(m&&document.getElementById('aiModel'))document.getElementById('aiModel').value=m;}catch(e){}try{syncAiLocalUI();aiBootPill();}catch(e){}}
+function persistAiFields(){try{const k=document.getElementById('aiKey'),b=document.getElementById('aiBase'),m=document.getElementById('aiModel');if(k)localStorage.setItem('netmon-ai-key',k.value.trim());if(b)localStorage.setItem('netmon-ai-base',b.value.trim());if(m)localStorage.setItem('netmon-ai-model',m.value.trim());}catch(e){}}
+function aiDot(st){try{const d=document.getElementById('aiDot');if(d){d.textContent=st==='ok'?'🟢':st==='err'?'🔴':st==='local'?'🔵':'⚪';}}catch(e){}}
+function aiAlwaysLocal(){try{return localStorage.getItem('netmon-ai-always-local')==='1';}catch(e){return false;}}
+function aiSetAlwaysLocal(v){try{if(v)localStorage.setItem('netmon-ai-always-local','1');else localStorage.removeItem('netmon-ai-always-local');}catch(e){}syncAiLocalUI();}
+function aiToggleLocal(){aiSetAlwaysLocal(!aiAlwaysLocal());log('> mode AI: '+(aiAlwaysLocal()?'selalu lokal (tanpa key)':'auto (key bila ada)'));}
+function syncAiLocalUI(){try{const c=document.getElementById('aiAlwaysLocal');if(c)c.checked=aiAlwaysLocal();const b=document.getElementById('aiLocalBtn');if(b)b.textContent='Mode: '+(aiAlwaysLocal()?'lokal':'auto');}catch(e){}}
+function aiBootPill(){if(aiAlwaysLocal()){setAiStatus('mode lokal selalu (tanpa key)','#0284c7');aiDot('local');return;}const k=aiCreds().key;if(k){setAiStatus('key terisi — belum dicek','#64748b');aiDot('nokey');}else{setAiStatus('tanpa key — mode lokal','#64748b');aiDot('local');}}
 function setAiStatus(t,c){const s=document.getElementById('aiStatus');if(s){s.textContent=t;s.style.color=c||'#64748b';}}
 async function testAiKey(){
+persistAiFields();
 const key=(document.getElementById('aiKey')?.value||localStorage.getItem('netmon-ai-key')||'').trim();
-if(!key){setAiStatus('key kosong','#b91c1c');return;}
+if(!key){setAiStatus('key kosong','#b91c1c');aiDot('local');return;}
 setAiStatus('mengecek...','#64748b');
 try{
 const base=(document.getElementById('aiBase')?.value||localStorage.getItem('netmon-ai-base')||'').trim();
 const model=(document.getElementById('aiModel')?.value||localStorage.getItem('netmon-ai-model')||'').trim();
 const r=await fetch(COLL()+'/api/ai-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aiKey:key,aiBase:base,aiModel:model})});
 const j=await r.json();
-if(j.ok){setAiStatus('valid — '+(j.model||''),'#15803d');log('> API key valid');}
-else{setAiStatus('invalid: '+String(j.error||'').slice(0,60),'#b91c1c');log('> API key TIDAK valid: '+String(j.error||'').slice(0,80));}
-}catch(e){setAiStatus('gagal: '+String(e.message||e).slice(0,60),'#b91c1c');}
+if(j.ok){setAiStatus('valid — '+(j.model||''),'#15803d');aiDot('ok');log('> API key valid');}
+else{setAiStatus('invalid: '+String(j.error||'').slice(0,60),'#b91c1c');aiDot('err');log('> API key TIDAK valid: '+String(j.error||'').slice(0,80));}
+}catch(e){setAiStatus('gagal: '+String(e.message||e).slice(0,60),'#b91c1c');aiDot('err');}
 }
 function aiCtx(){
 const dev=curR+'/'+((cur()||{}).n||'');
@@ -395,7 +413,8 @@ log('> 🔁 cek ulang hasil perbaikan...');
 setTimeout(()=>aiTroubleshoot('VERIFIKASI: cek apakah masalah sebelumnya sudah beres. Kalau beres tulis DONE, kalau belum tulis apa yang masih salah.',true),1200);
 }catch(e){log('> aksi gagal: '+String(e.message||e).slice(0,150));if(btn){btn.disabled=false;btn.textContent='coba lagi';}}
 }
-async function aiLoginAndRun(ticket,btn){
+async function aiLoginAndRun(ticket,btn,endpoint){
+const EP=endpoint||'/api/ai-act';
 const box=document.getElementById('aiActions');if(!box)return null;
 box.innerHTML='';
 const w=document.createElement('div');
@@ -409,7 +428,7 @@ const u=document.getElementById('aiWU').value.trim(),p=document.getElementById('
 if(!u||!p){log('> isi user + password dulu.');return;}
 document.getElementById('aiWGo').disabled=true;document.getElementById('aiWGo').textContent='⏳...';
 try{
-const r=await fetch(COLL()+'/api/ai-act',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket,user:u,pass:p})});
+const r=await fetch(COLL()+EP,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket,user:u,pass:p})});
 const j=await r.json();
 document.getElementById('aiWP').value='';
 if(!j.ok)throw new Error(j.error||'gagal');
@@ -418,9 +437,91 @@ resolve(j);
 };
 });
 }
+async function aiKeyNotice(){
+try{
+const v=await uiModal({title:'AI key belum ada',msg:'Diagnosa mendalam + rencana fix otomatis (A) butuh AI key. Tanpa key, tetap bisa pakai analyzer lokal + fix berpola (B).',okLabel:'Lanjut',fields:[{name:'mode',label:'Pilih mode kerja AI',type:'choice',choices:[{v:'local',label:'MODE LOKAL'},{v:'key',label:'ISI KEY'},{v:'always',label:'SELALU LOKAL'}]}]});
+if(!v||!v.mode)return null;
+return v.mode.choice||'local';
+}catch(e){return 'local';}
+}
+// B: analyzer lokal + fix berpola (tanpa AI key)
+async function aiLocalFix(msg,isVerify){
+try{
+const L=LIVE[curR];
+if(!L||!L.ip){log('> mode lokal butuh device live — klik node live dulu.');return;}
+if(!isVerify)log('> 🔍 analyzer lokal (B, tanpa key) baca '+L.ip+' ...');
+const j=await collGet(`/api/diag?ip=${L.ip}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}`,30000);
+if(!j.ok)throw new Error(j.error||'diag gagal');
+if(isVerify){
+if(!(j.masalah||[]).length){log('> ✅ Done — verifikasi lokal: tidak ada temuan.');try{pushAlarm('info',curR,'Verifikasi lokal: Done ✅');}catch(e){}}
+else{log('> ⚠️ verifikasi lokal: masih ada '+(j.masalah||[]).length+' temuan.');(j.masalah||[]).forEach(m=>log('> • '+m));renderDiagFixes(j,{user:L.user||'',pass:L.pass||''});}
+return;
+}
+log('> VONIS (lokal): '+j.vonis);
+(j.masalah||[]).forEach(m=>log('> • '+m));
+(j.saran||[]).forEach(s=>log('> ➡ '+s));
+if(!(j.masalah||[]).length){log('> ✅ Done — tidak ada temuan.');return;}
+renderDiagFixes(j,{user:L.user||'',pass:L.pass||''});
+try{pushAlarm((j.masalah||[]).length?'warn':'info',curR,'Analyzer lokal: '+j.vonis);}catch(e){}
+}catch(e){log('> analyzer lokal gagal: '+String(e.message||e).slice(0,120));}
+}
+function renderDiagFixes(j,cred){
+const box=document.getElementById('aiActions');if(!box)return;box.innerHTML='';
+if(!(j.fixes||[]).length){log('> (temuan ini belum ada fix otomatis yang aman — hanya saran manual)');return;}
+log('> 🔧 '+(j.fixes||[]).length+' fix siap — klik Yes, isi 1 login tulis, jalan:');
+(j.fixes||[]).forEach(f=>{
+const b=document.createElement('button');
+b.style.cssText='text-align:left;border:0;background:#059669;color:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:800';
+b.textContent='✅ Yes: '+f.label+(f.risk?' ('+f.risk+')':'');
+b.title=(f.evidence||'')+(f.risk?'\nRisiko: '+f.risk:'');
+b.onclick=()=>aiFixTicket(f,j.ip,cred,b);
+box.appendChild(b);
+});
+}
+async function aiFixTicket(fix,ip,cred,btn){
+if(btn){btn.disabled=true;btn.textContent='⏳ minta tiket...';}
+try{
+const r=await fetch(COLL()+'/api/diag-fix-ticket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip,kind:fix.kind,iface:fix.iface,name:fix.name,maxLimit:fix.maxLimit,user:(cred||{}).user||'',pass:(cred||{}).pass||''})});
+const j=await r.json();
+if(!j.ok)throw new Error(j.error||'tiket gagal');
+await aiApprove(j.ticket,btn);
+}catch(e){log('> fix gagal disiapkan: '+String(e.message||e).slice(0,140));if(btn){btn.disabled=false;btn.textContent='coba lagi';}}
+}
+// A: render rencana AI → 1 tombol Yes → 1 login → eksekusi semua langkah
+function renderAiPlan(plan){
+const box=document.getElementById('aiActions');if(!box)return;box.innerHTML='';
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const w=document.createElement('div');
+w.style.cssText='background:#f0f9ff;border:2px solid #0284c7;border-radius:12px;padding:12px 14px;font-size:13px';
+let h=`<div style="font-weight:800;font-size:14px;color:#0c4a6e;margin-bottom:6px">📋 Rencana: ${esc(plan.title||'fix')}</div>`;
+if((plan.evidence||[]).length)h+='<div style="font-weight:800;color:#0369a1;margin:6px 0 2px">Bukti:</div><ul style="margin:4px 0;padding-left:20px">'+plan.evidence.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>';
+h+='<div style="font-weight:800;color:#0369a1;margin:6px 0 2px">Langkah ('+(plan.steps||[]).length+'):</div><ol style="margin:4px 0;padding-left:20px">'+(plan.steps||[]).map(s=>'<li><b>'+esc(s.op||'')+'</b> '+esc(s.iface||s.name||'')+' — '+esc(s.label)+'</li>').join('')+'</ol>';
+h+=`<div style="font-size:12px;color:#64748b;margin:6px 0">Backup config otomatis sebelum eksekusi • tiap langkah diverifikasi • gagal = rollback otomatis.</div>`;
+h+=`<div style="display:flex;gap:8px;margin-top:6px"><button id="aiPlanYes" style="border:0;background:#059669;color:#fff;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer">✅ Yes, eksekusi ${plan.steps||[]?(plan.steps.length):''} langkah</button><button id="aiPlanNo" style="border:2px solid #e2e8f0;background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:800">Batal</button></div>`;
+w.innerHTML=h;box.appendChild(w);
+document.getElementById('aiPlanNo').onclick=()=>{box.innerHTML='';log('> rencana dibatalkan.');};
+document.getElementById('aiPlanYes').onclick=(ev)=>aiPlanLoginAndRun(plan.ticket,ev.target);
+}
+async function aiPlanLoginAndRun(ticket,btn){
+const r=await aiLoginAndRun(ticket,btn,'/api/ai-plan-act');
+if(!r)return;
+log('> '+String(r.reply||'').split('\n').join('\n> '));
+const box=document.getElementById('aiActions');if(box)box.innerHTML='';
+log('> 🔁 cek ulang hasil perbaikan...');
+setTimeout(()=>aiTroubleshoot('VERIFIKASI: cek apakah masalah sebelumnya sudah beres. Kalau beres tulis DONE, kalau belum tulis apa yang masih salah.',true),1200);
+}
 async function aiTroubleshoot(msg,isVerify){
 const {key,base,model}=aiCreds();
-if(!key){log('> ⚠️ API key belum diisi — isi di sidebar → Cek API dulu.');return;}
+if(!key||aiAlwaysLocal()){
+if(!key&&!aiAlwaysLocal()&&!sessionStorage.getItem('aiKeyNotice')){
+try{sessionStorage.setItem('aiKeyNotice','1');}catch(e){}
+const pick=await aiKeyNotice();
+if(pick==='always'){aiSetAlwaysLocal(true);log('> mode AI dikunci lokal — ubah kapan saja di sidebar AI NOC.');}
+else if(pick==='key'){log('> isi AI key di sidebar (AI NOC) → Cek API → klik ⚡ AI Troubleshoot lagi. Sementara pakai 🔍 Cek device (mode lokal).');return;}
+else if(pick==null){log('> AI troubleshoot dibatalkan.');return;}
+}
+return aiLocalFix(msg,isVerify);
+}
 const b=document.getElementById('aiFixBtn');if(b&&!isVerify){b.disabled=true;b.textContent='⏳ AI kerja...';}
 if(!isVerify)log('> ⚡ AI troubleshoot '+curR+' ... (analisa + minta akses kalau perlu benerin)');
 const reqId='ai-'+Date.now().toString(36)+Math.floor(Math.random()*99);
@@ -439,9 +540,10 @@ if(pj.done){clearInterval(progTimer);progStop=true;}
 }catch(e){aiProgress(true,lastStage+' (jalan...)',secs);}
 },2000);
 try{
-const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model,reqId})});
+const r=await fetch(COLL()+'/api/ai-ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg||'TROUBLESHOOT: diagnosa device ini sampai tuntas',ctx:aiCtx(),aiKey:key,aiBase:base,aiModel:model,reqId,wantPlan:!isVerify})});
 const j=await r.json();
 if(!j.ok)throw new Error(j.error||('server '+r.status));
+aiDot('ok');
 clearInterval(progTimer);
 const secs=Math.round((Date.now()-t0)/1000);
 if(j.accessed)log('> 🔍 akses: '+j.accessed);
@@ -449,11 +551,16 @@ const box=document.getElementById('aiResult');
 if(box){box.style.display='block';box.innerHTML=fmtAiReply(j.reply)+`<div style="margin-top:8px;font-size:12px;color:#64748b">⏱ selesai dalam ${secs} dtk • ${j.accessed||'tanpa akses device'}</div>`;}
 log('> ✔ hasil keluar ('+secs+' dtk) — baca panel di bawah log.');
 if(j.files&&j.files.length)j.files.forEach(f=>log('> ⬇ backup: '+COLL()+f.url));
-if(j.actions&&j.actions.length&&!isVerify){renderAiActions(j.actions);log('> ☝️ AI minta persetujuan + login buat '+j.actions.length+' aksi di atas.');}
+if(j.plan&&j.plan.ticket&&!isVerify){renderAiPlan(j.plan);log('> ☝️ AI susun rencana '+j.plan.steps.length+' langkah + bukti di atas — klik Yes + 1 login untuk eksekusi.');}
+else if(j.actions&&j.actions.length&&!isVerify){renderAiActions(j.actions);log('> ☝️ AI minta persetujuan + login buat '+j.actions.length+' aksi di atas.');}
 else if(j.actions&&j.actions.length&&isVerify){renderAiActions(j.actions);log('> ⚠️ masih ada PR — setujui lagi kalau mau lanjut.');}
 else if(isVerify&&/done/i.test(j.reply)){log('> ✅ Done — AI verifikasi beres.');try{pushAlarm('info',curR,'AI troubleshoot: Done ✅');}catch(e){}}
 try{pushAlarm('info',curR,isVerify?'AI verifikasi selesai':'AI troubleshoot selesai');}catch(e){}
-}catch(e){log('> AI troubleshoot gagal: '+String(e.message||e).slice(0,150));const box2=document.getElementById('aiResult');if(box2){box2.style.display='block';box2.innerHTML=`<div style="font-weight:800">🔴 Gagal</div><div>${String(e.message||e).slice(0,200)}</div>`;}}
+}catch(e){const em=String(e.message||e);
+if(!isVerify&&/key|auth|401|unauthor|quota|model|timeout|kosong/i.test(em)){aiDot('err');setAiStatus('AI error — fallback lokal','#b91c1c');
+if(!sessionStorage.getItem('aiKeyErr')){try{sessionStorage.setItem('aiKeyErr','1');}catch(_){}log('> ⚠️ AI key bermasalah ('+em.slice(0,80)+') — lanjut mode lokal. Cek sidebar AI NOC.');}
+return aiLocalFix(msg,isVerify);}
+log('> AI troubleshoot gagal: '+em.slice(0,150));const box2=document.getElementById('aiResult');if(box2){box2.style.display='block';box2.innerHTML=`<div style="font-weight:800">🔴 Gagal</div><div>${em.slice(0,200)}</div>`;}}
 clearInterval(progTimer);
 if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
 }
@@ -1281,6 +1388,7 @@ log('> VONIS: '+j.vonis);
 (j.masalah||[]).forEach(m=>log('> • '+m));
 (j.saran||[]).forEach(s=>log('> ➡ '+s));
 if(!(j.masalah||[]).length)log('> ✅ Done — tidak ada temuan.');
+else renderDiagFixes(j,{user:L.user||'',pass:L.pass||''});
 try{pushAlarm((j.masalah||[]).length?'warn':'info',db,'Analyzer lokal: '+j.vonis);}catch(e){}
 }).catch(e=>log('> analyzer lokal gagal: '+String(e.message||e).slice(0,120)));
 }

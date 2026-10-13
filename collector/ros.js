@@ -104,7 +104,7 @@ async function rosQuery(host, user, password, path, params = {}, port = 8728) {
       let s = first;
       for (;;) {
         const p = RosApi.parse(s);
-        if (p.type === '!re') out.push(p.attrs);
+        if (p.type === '!re') { const o = { ...p.attrs }; const idE = (p.list || []).find(x => x.tag === 'id'); if (idE) o._id = idE.id; out.push(o); }
         if (p.type === '!done') return out;
         if (p.type === '!trap') throw new Error('trap: ' + JSON.stringify(p.attrs));
         if (p.type === '!fatal') throw new Error('fatal');

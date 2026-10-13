@@ -96,6 +96,141 @@ function vetRosCmd(path, args) {
   if (ROS_DENY.test(path)) return 'path diblokir: ' + path;
   return null;
 }
+// ---- PLAN EXECUTOR (A: rencana AI / B: fix rule-based) ----
+// op tulis yang diizinkan dalam rencana. Selain ini DITOLAK server.
+const PLAN_OPS = ['iface-enable', 'iface-disable', 'iface-flap', 'queue-set', 'wifi-set', 'poe-cycle', 'conntrack-clear'];
+function vetPlanStep(st) {
+  if (!st || typeof st !== 'object') return 'langkah bukan objek';
+  if (!PLAN_OPS.includes(st.op)) return 'op tidak diizinkan: ' + st.op;
+  if (st.op === 'conntrack-clear') return null;
+  const nm = st.iface || st.name;
+  if (!nm || typeof nm !== 'string' || !nm.trim() || nm.length > 64) return 'target kosong/tidak valid untuk ' + st.op;
+  if (/\/user|\/reset|\/reboot/i.test(nm)) return 'target diblokir';
+  if (st.op === 'queue-set') {
+    if (!/^(\d+[kKmM]?|0)\/(\d+[kKmM]?|0)$/.test(String(st.maxLimit || ''))) return 'maxLimit format salah (cth 0/10M)';
+  }
+  if (st.op === 'wifi-set') {
+    if (!st.args || typeof st.args !== 'object' || !Object.keys(st.args).length) return 'wifi-set butuh args';
+    const badK = Object.keys(st.args).find(k => !['frequency', 'tx-power', 'ssid', 'disabled'].includes(k));
+    if (badK) return 'wifi arg tidak diizinkan: ' + badK;
+  }
+  return null;
+}
+async function rosIfacesFresh(ip, u, p) {
+  const r = await rosQuery(ip, u, p, '/interface/print', { '.proplist': 'name,disabled,running' }, D.port);
+  return r.map(i => ({ n: i.name, disabled: i.disabled === 'true', running: i.running === 'true' }));
+}
+async function planBackup(ip, u, p) {
+  const text = await rosExport(ip, u, p, D.port);
+  const fs2 = require('fs'); try { fs2.mkdirSync(__dirname + '/backups'); } catch {}
+  const fn = 'pre-plan-' + ip.replace(/\./g, '-') + '-' + Date.now() + '.rsc';
+  fs2.writeFileSync(__dirname + '/backups/' + fn, text);
+  return fn;
+}
+// eksekusi 1 langkah + verifikasi baca-ulang. return {ok, detail, undo?}
+async function planStepExec(ip, u, p, st, res_ver) {
+  const nm = (st.iface || st.name || '').trim();
+  const setIface = async dis => rosQuery(ip, u, p, '/interface/set', { numbers: nm, disabled: dis ? 'yes' : 'no' }, D.port);
+  if (st.op === 'iface-enable') {
+    const before = (await rosIfacesFresh(ip, u, p)).find(x => x.n === nm);
+    if (!before) throw new Error('interface tidak ketemu: ' + nm);
+    await setIface(false);
+    const after = (await rosIfacesFresh(ip, u, p)).find(x => x.n === nm);
+    if (after && after.disabled) throw new Error('verifikasi gagal: ' + nm + ' masih disabled');
+    return { ok: true, detail: nm + ' admin UP', undo: async () => { await setIface(true); } };
+  }
+  if (st.op === 'iface-disable') {
+    await setIface(true);
+    const after = (await rosIfacesFresh(ip, u, p)).find(x => x.n === nm);
+    if (after && !after.disabled) throw new Error('verifikasi gagal: ' + nm + ' masih enabled');
+    return { ok: true, detail: nm + ' admin DOWN', undo: async () => { await setIface(false); } };
+  }
+  if (st.op === 'iface-flap') {
+    await setIface(true); await sleep(3000); await setIface(false);
+    const after = (await rosIfacesFresh(ip, u, p)).find(x => x.n === nm);
+    if (after && after.disabled) throw new Error('verifikasi gagal: ' + nm + ' tidak nyala lagi');
+    return { ok: true, detail: nm + ' flap ok (down 3 dtk → up)', undo: null };
+  }
+  if (st.op === 'queue-set') {
+    const qs = await rosQuery(ip, u, p, '/queue/simple/print', { '.proplist': 'name,max-limit' }, D.port);
+    const q = qs.find(x => x.name === nm);
+    if (!q) throw new Error('queue tidak ketemu: ' + nm);
+    const before = q['max-limit'] || '';
+    await rosQuery(ip, u, p, '/queue/simple/set', { numbers: nm, 'max-limit': st.maxLimit }, D.port);
+    const q2 = (await rosQuery(ip, u, p, '/queue/simple/print', { '.proplist': 'name,max-limit' }, D.port)).find(x => x.name === nm);
+    if (!q2 || (q2['max-limit'] || '') !== st.maxLimit) throw new Error('verifikasi gagal: max-limit tidak berubah');
+    return { ok: true, detail: nm + ' max-limit ' + before + ' → ' + st.maxLimit, undo: async () => { await rosQuery(ip, u, p, '/queue/simple/set', { numbers: nm, 'max-limit': before }, D.port); } };
+  }
+  if (st.op === 'wifi-set') {
+    const ver = String((res_ver && res_ver.version) || '');
+    const is7 = /^7\./.test(ver);
+    const rows = is7
+      ? await rosQuery(ip, u, p, '/interface/wifi/print', {}, D.port).catch(() => null)
+      : await rosQuery(ip, u, p, '/interface/wireless/print', {}, D.port).catch(() => null);
+    const useWifi = Array.isArray(rows) ? (is7 ? 'wifi' : 'wireless') : (is7 ? 'wireless' : 'wifi');
+    const path = '/interface/' + useWifi + '/print';
+    const before = (await rosQuery(ip, u, p, path, {}, D.port)).find(x => x.name === nm);
+    if (!before) throw new Error('radio tidak ketemu: ' + nm);
+    const setPath = '/interface/' + useWifi + '/set';
+    const args = { numbers: nm }; Object.assign(args, st.args || {});
+    await rosQuery(ip, u, p, setPath, args, D.port);
+    const after = (await rosQuery(ip, u, p, path, {}, D.port)).find(x => x.name === nm);
+    const key = Object.keys(st.args || {})[0];
+    const okV = after && key && String(after[key] ?? after[key.replace('-', '')] ?? '') !== '';
+    if (!okV) throw new Error('verifikasi gagal: ' + nm);
+    const undoArgs = {}; Object.keys(st.args || {}).forEach(k => { if (before[k] !== undefined) undoArgs[k] = before[k]; });
+    return { ok: true, detail: nm + ' ' + JSON.stringify(st.args), undo: Object.keys(undoArgs).length ? (async () => { await rosQuery(ip, u, p, setPath, { numbers: nm, ...undoArgs }, D.port); }) : null };
+  }
+  if (st.op === 'poe-cycle') {
+    let before = 'auto-on';
+    try {
+      const pr = await rosQuery(ip, u, p, '/interface/ethernet/poe/print', { '.proplist': 'name,poe-out' }, D.port);
+      const row = pr.find(x => x.name === nm); if (row && row['poe-out']) before = row['poe-out'];
+    } catch {}
+    await rosQuery(ip, u, p, '/interface/ethernet/poe/set', { numbers: nm, 'poe-out': 'off' }, D.port);
+    await sleep(5000);
+    await rosQuery(ip, u, p, '/interface/ethernet/poe/set', { numbers: nm, 'poe-out': before }, D.port);
+    return { ok: true, detail: nm + ' PoE off 5 dtk → ' + before, undo: null };
+  }
+  if (st.op === 'conntrack-clear') {
+    const c0 = (await rosQuery(ip, u, p, '/ip/firewall/connection/print', { '.proplist': 'src-address' }, D.port)).length;
+    if (!c0) return { ok: true, detail: 'conntrack sudah kosong', undo: null };
+    const all = await rosQuery(ip, u, p, '/ip/firewall/connection/print', { '.proplist': 'src-address' }, D.port);
+    const ids = all.map(x => x._id).filter(Boolean);
+    for (let i = 0; i < ids.length; i += 100) {
+      await rosQuery(ip, u, p, '/ip/firewall/connection/remove', { numbers: ids.slice(i, i + 100).join(',') }, D.port).catch(() => {});
+    }
+    await sleep(1500);
+    const c1 = (await rosQuery(ip, u, p, '/ip/firewall/connection/print', { '.proplist': 'src-address' }, D.port)).length;
+    if (c1 > c0 * 0.5) throw new Error('verifikasi gagal: conntrack masih ' + c1);
+    return { ok: true, detail: 'conntrack ' + c0 + ' → ' + c1 + ' (tanpa rollback: koneksi reconnect sendiri)', undo: null };
+  }
+  throw new Error('op tidak dikenal: ' + st.op);
+}
+// runner rencana: backup → langkah berurutan + verifikasi → rollback bila gagal
+async function runPlan(ip, user, pass, steps, title) {
+  const results = [];
+  let backupFile = null;
+  try { backupFile = await planBackup(ip, user, pass); }
+  catch (e) { return { ok: false, steps: results, rolledBack: false, backupFile: null, error: 'backup config gagal — rencana DIBATALKAN demi keamanan: ' + String(e.message || e).slice(0, 100) }; }
+  let res_ver = null;
+  try { const rv = await rosQuery(ip, user, pass, '/system/resource/print', {}, D.port); res_ver = { version: (rv[0] || {}).version || '' }; } catch {}
+  const undos = [];
+  for (let i = 0; i < steps.length; i++) {
+    const st = steps[i];
+    try {
+      const r = await planStepExec(ip, user, pass, st, res_ver);
+      results.push({ label: st.label || (st.op + ' ' + (st.iface || st.name || '')), ok: true, detail: r.detail });
+      if (r.undo) undos.push(r.undo);
+    } catch (e) {
+      results.push({ label: st.label || (st.op + ' ' + (st.iface || st.name || '')), ok: false, detail: String(e.message || e).slice(0, 140) });
+      let rolledBack = true;
+      for (let k = undos.length - 1; k >= 0; k--) { try { await undos[k](); } catch { rolledBack = false; } }
+      return { ok: false, steps: results, rolledBack, backupFile, error: 'langkah ' + (i + 1) + '/' + steps.length + ' gagal: ' + String(e.message || e).slice(0, 120) };
+    }
+  }
+  return { ok: true, steps: results, rolledBack: false, backupFile };
+}
 // tiket approve untuk aksi tulis (dongkrak 5 menit)
 const PENDING = new Map();
 function mkTicket(op) {
@@ -195,6 +330,18 @@ async function diagDeep(ip, user, pass) {
       const a = r[0] || {};
       out.res = { board: a['board-name'] || '', version: a.version || '', uptime: a.uptime || '', cpu: a['cpu-load'] != null ? Number(a['cpu-load']) : null };
     }).catch(e => { out.resErr = String(e.message || e).slice(0, 80); }),
+    rosQuery(ip, u, p, '/queue/simple/print', { '.proplist': 'name,target,max-limit' }, D.port).then(r => {
+      out.queue = r.map(q => ({ name: q.name, target: q.target || '', maxLimit: q['max-limit'] || '' }));
+    }).catch(e => { out.queueErr = String(e.message || e).slice(0, 80); }),
+    rosQuery(ip, u, p, '/interface/wifi/print', { '.proplist': 'name,disabled,running' }, D.port).then(r => {
+      out.wifi = r.map(w => ({ name: w.name, radio: 'wifi', admin: w.disabled === 'true' ? 'down' : 'up', oper: w.running === 'true' ? 'up' : 'down' }));
+    }).catch(() => { out.wifi = null; }),
+    rosQuery(ip, u, p, '/interface/wireless/print', { '.proplist': 'name,disabled,running,frequency,ssid' }, D.port).then(r => {
+      if (!out.wifi) out.wifi = r.map(w => ({ name: w.name, radio: 'wireless', admin: w.disabled === 'true' ? 'down' : 'up', oper: w.running === 'true' ? 'up' : 'down', frequency: w.frequency || '', ssid: w.ssid || '' }));
+    }).catch(() => {}),
+    rosQuery(ip, u, p, '/ip/firewall/connection/print', { '.proplist': 'src-address' }, D.port).then(r => {
+      out.conntrack = { count: r.length };
+    }).catch(e => { out.conntrackErr = String(e.message || e).slice(0, 80); }),
   ];
   await Promise.all(jobs);
   return out;
@@ -268,8 +415,29 @@ function aiProg(id, stage) {
       }
       if (diag.routes && diag.routes.inactive && diag.routes.inactive.length) { masalah.push(`Route mati: ${diag.routes.inactive.join('; ')}`); saran.push('Cek gateway/link route yang mati'); }
       if (diag.res && diag.res.cpu != null && diag.res.cpu >= 80) { masalah.push(`CPU ${diag.res.cpu}% — overload`); saran.push('Cek firewall rules/conn-track, matikan service nganggur'); }
+      const fixes = [];
+      const seenFix = new Set();
+      const addFix = f => { const k = f.kind + ':' + (f.iface || f.name || ''); if (!seenFix.has(k)) { seenFix.add(k); fixes.push(f); } };
+      (diag.ifaces || []).forEach(i => {
+        if (i.admin === 'down') addFix({ kind: 'iface-enable', iface: i.n, label: `Enable ${i.n} (admin DOWN)`, evidence: `${i.n}: admin DOWN di device`, risk: 'medium — pastikan port memang harus nyala' });
+        else if (i.oper === 'up' && (i.err > 100 || i.drop > 100)) addFix({ kind: 'iface-flap', iface: i.n, label: `Flap ${i.n} (err ${i.err}/drop ${i.drop})`, evidence: `${i.n}: UP tapi err ${i.err}/drop ${i.drop}`, risk: 'low — putus sesaat ±3 detik' });
+      });
+      const parseRate = v => { const m = String(v || '').match(/^(\d+)([kKmM]?)$/); if (!m) return null; return Number(m[1]) * (m[2].toLowerCase() === 'm' ? 1e6 : m[2].toLowerCase() === 'k' ? 1e3 : 1); };
+      (diag.queue || []).forEach(qd => {
+        const parts = String(qd.maxLimit || '').split('/');
+        const ul = parseRate(parts[0]);
+        if (ul != null && ul > 0 && ul < 2e6) {
+          const fmt = v => v >= 1e6 ? (v / 1e6) + 'M' : Math.round(v / 1e3) + 'k';
+          const newUl = Math.max(ul * 2, 5e6);
+          addFix({ kind: 'queue-set', name: qd.name, maxLimit: '0/' + fmt(newUl), label: `Naikkan limit upload ${qd.name} (${qd.maxLimit} → 0/${fmt(newUl)})`, evidence: `queue ${qd.name}: max-limit ${qd.maxLimit} (upload kekecilan)`, risk: 'low — bisa dikembalikan' });
+        }
+      });
+      (diag.wifi || []).forEach(w => {
+        if (w.admin === 'down') addFix({ kind: 'iface-enable', iface: w.name, label: `Enable radio ${w.name} (admin DOWN)`, evidence: `radio ${w.name}: admin DOWN`, risk: 'low' });
+      });
+      if (diag.conntrack && diag.conntrack.count > 10000) addFix({ kind: 'conntrack-clear', label: `Bersihkan conntrack (${diag.conntrack.count} koneksi)`, evidence: `conntrack ${diag.conntrack.count} koneksi (ambang 10000)`, risk: 'low — koneksi aktif reconnect sendiri' });
       const vonis = !masalah.length ? `SEHAT — ${(diag.ifaces || []).length} interface UP semua, no error` : `ADA ${masalah.length} TEMUAN`;
-      return send(res, 200, { ok: true, ip, vonis, masalah, saran, diag });
+      return send(res, 200, { ok: true, ip, vonis, masalah, saran, fixes, diag });
     }
     if (u.pathname === '/api/ai-test' && req.method === 'POST') {      const body = await new Promise((resolve, reject) => {
         let b = ''; req.on('data', c => { b += c; });
@@ -333,7 +501,7 @@ function aiProg(id, stage) {
           try { diag = await diagDeep(lv.ip, q.user, q.pass); accessed = `${diag.ip} (${(lv.identity || '')}) — ${((diag.ifaces || []).length)} interface dibaca`; aiProg(reqId, '✔ diagnosa ok'); } catch (e) { diag = { error: String(e.message || e).slice(0, 120) }; aiProg(reqId, 'gagal diagnosa: ' + diag.error); }
         } else accessed = `${lv.ip} (${lv.identity || ''})`;
       }
-      const ctxAll = { ...(body.ctx || {}), snapshot: snap, diag };
+      const ctxAll = { ...(body.ctx || {}), snapshot: snap, diag, wantPlan: !!body.wantPlan };
       aiProg(reqId, '🤖 kirim ke AI (' + model + ') ...');
       const reply = await aiAsk({ baseURL, key, model, messages: buildMessages(body.message, ctxAll) });
       aiProg(reqId, '✔ AI jawab, proses tiket ...');
@@ -351,11 +519,33 @@ function aiProg(id, stage) {
           proposals.push({ ticket, label: '✅ Setujui: ' + label });
         } catch (e) { proposals.push({ rejected: 'format usulan salah' }); }
       }
-      const cleanReply = reply.replace(/```ros-cmd[\s\S]*?```/g, '').trim();
-      const rejected = proposals.filter(p => p.rejected).map(p => '⛔ ditolak: ' + p.rejected);
+      let plan = null;
+      const rejectedPlan = [];
+      try {
+        const rePlan = /```ai-plan\s*([\s\S]*?)```/g; let mp;
+        while ((mp = rePlan.exec(reply)) !== null) {
+          if (plan) { rejectedPlan.push('ditolak: hanya 1 rencana per jawaban'); continue; }
+          try {
+            const p = JSON.parse(mp[1].trim());
+            if (!p || !Array.isArray(p.steps) || !p.steps.length || p.steps.length > 5) throw new Error('rencana harus 1-5 langkah');
+            const targetIp = (snap && snap.ip) || null;
+            if (!targetIp) throw new Error('tidak ada device target');
+            for (const st of p.steps) {
+              const bad = vetPlanStep(st);
+              if (bad) throw new Error(bad);
+              st.ip = targetIp;
+              if (!st.label) st.label = st.op + ' ' + (st.iface || st.name || '');
+            }
+            const ticket = mkTicket({ kind: 'ai-plan', ip: targetIp, title: String(p.title || 'rencana fix').slice(0, 120), steps: p.steps });
+            plan = { title: String(p.title || 'rencana fix').slice(0, 120), evidence: Array.isArray(p.evidence) ? p.evidence.slice(0, 8) : [], steps: p.steps.map(x => ({ label: x.label, op: x.op })), ticket };
+          } catch (e) { rejectedPlan.push('ditolak: rencana tidak valid (' + String(e.message || e).slice(0, 80) + ')'); }
+        }
+      } catch (e) { rejectedPlan.push('ditolak: parse rencana gagal'); }
+      const cleanReply = reply.replace(/```ros-cmd[\s\S]*?```/g, '').replace(/```ai-plan[\s\S]*?```/g, '').trim();
+      const rejected = rejectedPlan.concat(proposals.filter(p => p.rejected).map(p => 'ditolak: ' + p.rejected));
       const actions = proposals.filter(p => p.ticket).map(p => ({ ticket: p.ticket, label: p.label }));
       aiProg(reqId, 'selesai');
-      return send(res, 200, { ok: true, model, accessed, reply: cleanReply + (rejected.length ? '\n\n' + rejected.join('\n') : ''), actions: actions.length ? actions : undefined });
+      return send(res, 200, { ok: true, model, accessed, reply: cleanReply + (rejected.length ? '\n\n' + rejected.join('\n') : ''), actions: actions.length ? actions : undefined, plan: plan || undefined });
     }
     if (u.pathname === '/api/iface-enable') {
       const ip = q.ip, iface = q.iface, user = q.user || process.env.W_USER || '', pass = q.pass || process.env.W_PASS || '';
@@ -363,6 +553,60 @@ function aiProg(id, stage) {
       if (!user || !pass) throw new Error('W_USER/W_PASS belum diisi di .env');
       await rosQuery(ip, user, pass, '/interface/set', { numbers: iface, disabled: 'no' }, D.port);
       return send(res, 200, { ok: true, ip, iface, action: 'enable' });
+    }
+    if (u.pathname === '/api/diag-fix-ticket' && req.method === 'POST') {
+      const body = await new Promise((resolve, reject) => {
+        let b = ''; req.on('data', c => { b += c; });
+        req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { reject(new Error('body bukan JSON')); } });
+        req.on('error', reject);
+      });
+      const ip = body.ip, kind = body.kind;
+      if (!ip || !kind) throw new Error('param ip & kind wajib');
+      if (!PLAN_OPS.includes(kind)) throw new Error('kind tidak diizinkan: ' + kind);
+      const fresh = await diagDeep(ip, body.user, body.pass);
+      let step = null, label = '';
+      if (kind === 'iface-enable') {
+        const t = (fresh.ifaces || []).find(x => x.n === body.iface);
+        if (!t) throw new Error('interface tidak ketemu: ' + body.iface);
+        if (t.admin !== 'down') throw new Error('kondisi sudah berubah: ' + body.iface + ' tidak lagi admin DOWN');
+        step = { label: 'Enable ' + t.n + ' (admin DOWN)', op: 'iface-enable', iface: t.n }; label = step.label;
+      } else if (kind === 'iface-flap') {
+        const t = (fresh.ifaces || []).find(x => x.n === body.iface);
+        if (!t) throw new Error('interface tidak ketemu: ' + body.iface);
+        if (!(t.oper === 'up' && (t.err > 100 || t.drop > 100))) throw new Error('kondisi sudah berubah: ' + body.iface + ' tidak lagi err/drop tinggi');
+        step = { label: 'Flap ' + t.n + ' (err ' + t.err + '/drop ' + t.drop + ')', op: 'iface-flap', iface: t.n }; label = step.label;
+      } else if (kind === 'queue-set') {
+        const qd = (fresh.queue || []).find(x => x.name === body.name);
+        if (!qd) throw new Error('queue tidak ketemu: ' + body.name);
+        if (!/^(\d+[kKmM]?|0)\/(\d+[kKmM]?|0)$/.test(String(body.maxLimit || ''))) throw new Error('maxLimit format salah');
+        step = { label: 'Set ' + qd.name + ' max-limit ' + qd.maxLimit + ' ke ' + body.maxLimit, op: 'queue-set', name: qd.name, maxLimit: body.maxLimit }; label = step.label;
+      } else if (kind === 'conntrack-clear') {
+        const c = (fresh.conntrack && fresh.conntrack.count) || 0;
+        if (c <= 10000) throw new Error('kondisi sudah berubah: conntrack tinggal ' + c);
+        step = { label: 'Bersihkan conntrack (' + c + ' koneksi)', op: 'conntrack-clear' }; label = step.label;
+      } else throw new Error('kind belum didukung fix 1-langkah: ' + kind);
+      const ticket = mkTicket({ kind: 'ai-plan', ip, title: label, steps: [step] });
+      return send(res, 200, { ok: true, ticket, label: 'Yes: ' + label });
+    }
+    if (u.pathname === '/api/ai-plan-act' && req.method === 'POST') {
+      const body = await new Promise((resolve, reject) => {
+        let b = ''; req.on('data', c => { b += c; if (b.length > 200000) req.destroy(); });
+        req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { reject(new Error('body bukan JSON')); } });
+        req.on('error', reject);
+      });
+      const op = PENDING.get(body.ticket);
+      if (!op || op.kind !== 'ai-plan') throw new Error('tiket rencana tidak valid / kedaluwarsa');
+      const WU = (body.user && String(body.user).trim()) || process.env.W_USER || '';
+      const WP = (body.pass !== undefined ? String(body.pass) : '') || process.env.W_PASS || '';
+      if (!WU || !WP) return send(res, 200, { ok: false, needLogin: true, error: 'Eksekusi rencana butuh 1 login tulis.' });
+      PENDING.delete(body.ticket);
+      const pr = await runPlan(op.ip, WU, WP, op.steps || [], op.title || '');
+      const lines = (pr.steps || []).map((x, i) => (x.ok ? 'PASS' : 'FAIL') + ' ' + (i + 1) + '. ' + x.label + (x.detail ? ' - ' + x.detail : ''));
+      let reply = (pr.ok ? 'Rencana beres (' + pr.steps.length + ' langkah).' : 'Rencana berhenti: ' + pr.error) + ' ' + lines.join(' | ');
+      if (pr.backupFile) reply += ' Backup: collector/backups/' + pr.backupFile;
+      if (pr.rolledBack === true) reply += ' Rollback: perubahan dikembalikan.';
+      else if (pr.rolledBack === false && !pr.ok) reply += ' WARNING rollback sebagian gagal.';
+      return send(res, 200, { ok: pr.ok, reply, steps: pr.steps, rolledBack: pr.rolledBack, backupFile: pr.backupFile, error: pr.error || undefined });
     }
     if (u.pathname === '/api/ai-act' && req.method === 'POST') {
       const body = await new Promise((resolve, reject) => {
@@ -372,10 +616,19 @@ function aiProg(id, stage) {
       });
       const op = PENDING.get(body.ticket);
       if (!op) throw new Error('tiket tidak valid / kedaluwarsa — minta lagi');
-      PENDING.delete(body.ticket);
       const WU = (body.user && String(body.user).trim()) || process.env.W_USER || '';
       const WP = (body.pass !== undefined ? String(body.pass) : '') || process.env.W_PASS || '';
       if (!WU || !WP) return send(res, 200, { ok: false, needLogin: true, error: 'Aksi tulis butuh login device. Isi user + password tulis.' });
+      PENDING.delete(body.ticket);
+      if (op.kind === 'ai-plan') {
+        const pr = await runPlan(op.ip, WU, WP, op.steps || [], op.title || '');
+        const lines = (pr.steps || []).map((x, i) => (x.ok ? '✅' : '❌') + ' ' + (i + 1) + '. ' + x.label + (x.detail ? ' — ' + x.detail : ''));
+        let reply = (pr.ok ? `✅ Rencana "${op.title || 'fix'}" beres (${pr.steps.length} langkah).` : `🔴 Rencana berhenti: ${pr.error}`) + '\n' + lines.join('\n');
+        if (pr.backupFile) reply += '\n💾 Backup sebelum eksekusi: collector/backups/' + pr.backupFile;
+        if (pr.rolledBack === true) reply += '\n↩ Perubahan yang sudah jalan DIKEMBALIKAN (rollback).';
+        else if (pr.rolledBack === false && !pr.ok) reply += '\n⚠️ Rollback sebagian gagal — cek manual + pakai file backup.';
+        return send(res, 200, { ok: pr.ok, reply, steps: pr.steps, rolledBack: pr.rolledBack, backupFile: pr.backupFile, error: pr.error || undefined });
+      }
       if (op.kind === 'iface-disable') await rosQuery(op.ip, WU, WP, '/interface/set', { numbers: op.iface, disabled: 'yes' }, D.port);
       else if (op.kind === 'iface-enable') await rosQuery(op.ip, WU, WP, '/interface/set', { numbers: op.iface, disabled: 'no' }, D.port);
       else if (op.kind === 'ros-cmd') {
@@ -856,3 +1109,4 @@ function aiProg(id, stage) {
 server.listen(PORT, () => console.log('netmon-collector on :' + PORT));
 process.on('unhandledRejection', e => console.error('[unhandledRejection]', e && e.message || e));
 process.on('uncaughtException', e => console.error('[uncaughtException]', e && e.message || e));
+

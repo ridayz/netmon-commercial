@@ -41,3 +41,5 @@ database tersimpan lokal di `data/topo.json`.
 
 `collector/.env` (JANGAN commit) — lihat `collector/.env.example`.
 AI boleh baca + diagnosa device 🟢. Ubah config selalu klik Setujui.
+AI key buat diagnosa mendalam (plan A) diisi di sidebar (AI NOC) → Cek API;
+tanpa key, AI jalan mode lokal (analyzer + fix berpola, plan B).

@@ -1,12 +1,21 @@
 {
- "at": "2026-10-13T15:33:09.765Z",
- "cur": "c30755",
+ "at": "2026-10-13T17:39:35.144Z",
+ "cur": "c50585",
  "layers": {
   "c50585": {
    "label": "RUMAH",
    "type": "live",
-   "vb": "68 10 1096 520",
-   "areas": [],
+   "vb": "-192 -150 1096 520",
+   "areas": [
+    {
+     "id": "a91975",
+     "label": "Area Baru",
+     "x": 172,
+     "y": -69,
+     "w": 260,
+     "h": 140
+    }
+   ],
    "nodes": [
     {
      "id": "ip15750",
@@ -35,12 +44,12 @@
      "id": "ip40272",
      "icon": "ap",
      "label": "AP-TP-LINK-RJ",
-     "sub": "60.60.60.159 • ping OK 6ms (tanpa SNMP)",
+     "sub": "60.60.60.159 • tidak keping",
      "ip": "60.60.60.159",
-     "st": "ok",
+     "st": "bad",
      "x": 520,
      "y": 344,
-     "_w": 240,
+     "_w": 215,
      "db": "AP-TP-LINK-RJ"
     }
    ],
@@ -72,8 +81,8 @@
      "icon": "router",
      "label": "Dummy-1",
      "sub": "dummy",
-     "x": 472,
-     "y": 196,
+     "x": 650,
+     "y": 272,
      "_w": 112,
      "db": "Dummy-1"
     },
@@ -98,10 +107,25 @@
      "db": "Dummy-1"
     }
    ],
-   "links": []
+   "links": [
+    [
+     "n45168",
+     "n54482",
+     "fo",
+     "ETH1",
+     "ETH1"
+    ],
+    [
+     "n54482",
+     "n19351",
+     "fo",
+     "ETH1",
+     "ETH1"
+    ]
+   ]
   },
   "pu": {
-   "label": "Manage ICTel PU",
+   "label": "Manage ThirdParty",
    "type": "live",
    "vb": "0 0 980 440",
    "areas": [
@@ -110,28 +134,32 @@
      "x": 5,
      "y": 18,
      "w": 280,
-     "h": 116
+     "h": 116,
+     "id": "a-pu-0"
     },
     {
      "label": "Area Server ICTel",
      "x": 450,
      "y": 178,
      "w": 310,
-     "h": 116
+     "h": 116,
+     "id": "a-pu-1"
     },
     {
      "label": "Area Server President University",
      "x": 300,
      "y": 18,
      "w": 450,
-     "h": 116
+     "h": 116,
+     "id": "a-pu-2"
     },
     {
      "label": "Area Publik / Kampus / Asrama",
      "x": 100,
      "y": 180,
      "w": 330,
-     "h": 220
+     "h": 220,
+     "id": "a-pu-3"
     }
    ],
    "nodes": [
@@ -141,7 +169,9 @@
      "label": "IForte / ISP",
      "sub": "uplink 500M",
      "x": 70,
-     "y": 70
+     "y": 70,
+     "db": "IForte / ISP",
+     "_w": 117
     },
     {
      "id": "swForte",
@@ -150,7 +180,8 @@
      "sub": "ISP",
      "x": 210,
      "y": 70,
-     "db": "Switch Iforte"
+     "db": "Switch Iforte",
+     "_w": 125
     },
     {
      "id": "swPu",
@@ -159,7 +190,8 @@
      "sub": "area PU",
      "x": 370,
      "y": 70,
-     "db": "Switch ICTel PU"
+     "db": "Switch ICTel PU",
+     "_w": 140
     },
     {
      "id": "rPu",
@@ -168,7 +200,8 @@
      "sub": "BGP + IP publik",
      "x": 520,
      "y": 70,
-     "db": "Router PU"
+     "db": "Router PU",
+     "_w": 131
     },
     {
      "id": "rIctel",
@@ -177,7 +210,8 @@
      "sub": "VLAN 31-40",
      "x": 670,
      "y": 70,
-     "db": "Router Ictel"
+     "db": "Router Ictel",
+     "_w": 117
     },
     {
      "id": "swCore",
@@ -186,7 +220,8 @@
      "sub": "server ICTel",
      "x": 690,
      "y": 230,
-     "db": "SW Ictel Core"
+     "db": "SW Ictel Core",
+     "_w": 125
     },
     {
      "id": "olt",
@@ -195,7 +230,8 @@
      "sub": "area ICTel",
      "x": 520,
      "y": 230,
-     "db": "GPON / OLT"
+     "db": "Gepon / OLT",
+     "_w": 112
     },
     {
      "id": "ontK",
@@ -204,7 +240,8 @@
      "sub": "publik",
      "x": 350,
      "y": 230,
-     "db": "ONT Kampus"
+     "db": "ONT Kampus",
+     "_w": 112
     },
     {
      "id": "swR",
@@ -213,7 +250,8 @@
      "sub": "ke AP",
      "x": 180,
      "y": 230,
-     "db": "SW Ruijie PoE"
+     "db": "SW Ruijie PoE",
+     "_w": 125
     },
     {
      "id": "apA",
@@ -222,7 +260,8 @@
      "sub": "flapping",
      "x": 180,
      "y": 350,
-     "db": "AP A4.1"
+     "db": "AP A4.1",
+     "_w": 112
     },
     {
      "id": "apP",
@@ -231,7 +270,8 @@
      "sub": "asrama",
      "x": 350,
      "y": 350,
-     "db": "AP Pavilion 1"
+     "db": "AP Pavilion 1",
+     "_w": 125
     }
    ],
    "links": [
@@ -288,7 +328,7 @@
    ]
   },
   "kij": {
-   "label": "ICTEL KIJ",
+   "label": "Simulasi Topologi",
    "type": "live",
    "vb": "0 0 900 300",
    "areas": [],
@@ -299,7 +339,9 @@
      "label": "ISP",
      "sub": "uplink KIJ",
      "x": 90,
-     "y": 150
+     "y": 150,
+     "db": "ISP",
+     "_w": 112
     },
     {
      "id": "swK",
@@ -308,7 +350,8 @@
      "sub": "inti KIJ",
      "x": 290,
      "y": 150,
-     "db": "Switch ICTel"
+     "db": "Switch ICTel",
+     "_w": 117
     },
     {
      "id": "oltK",
@@ -317,7 +360,8 @@
      "sub": "PON",
      "x": 490,
      "y": 150,
-     "db": "OLT KIJ"
+     "db": "OLT",
+     "_w": 112
     },
     {
      "id": "ont1",
@@ -326,7 +370,8 @@
      "sub": "fiber OK",
      "x": 660,
      "y": 80,
-     "db": "ONT-01"
+     "db": "ONT-01",
+     "_w": 112
     },
     {
      "id": "ont2",
@@ -335,7 +380,8 @@
      "sub": "fiber OK",
      "x": 660,
      "y": 220,
-     "db": "ONT-02"
+     "db": "ONT-02",
+     "_w": 112
     },
     {
      "id": "ten1",
@@ -343,7 +389,9 @@
      "label": "Tenant A",
      "sub": "user",
      "x": 815,
-     "y": 80
+     "y": 80,
+     "db": "Tenant A",
+     "_w": 112
     },
     {
      "id": "ten2",
@@ -351,7 +399,9 @@
      "label": "Tenant B",
      "sub": "user",
      "x": 815,
-     "y": 220
+     "y": 220,
+     "db": "Tenant B",
+     "_w": 112
     }
    ],
    "links": [

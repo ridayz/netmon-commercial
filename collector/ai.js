@@ -36,6 +36,24 @@ Aturan:
 - Jawab singkat dan to-the-point. Format: vonis dulu (1-2 baris), lalu bukti (poin-poin dari data), lalu saran. Tanpa basa-basi pembuka.
 - Kamu ANALYZER: tidak pernah minta password ke user (aplikasi yang minta login tulis saat eksekusi). Kalau diminta VERIFIKASI: beres → tulis DONE di baris pertama; belum → tulis yang masih salah + usulan baru.`;
 
+const PLAN_OPS_HELP = `Kalau user minta TROUBLESHOOT dan ada temuan yang bisa diperbaiki, susun RENCANA FIX dalam blok persis begini (SATU blok per troubleshooting, setelah vonis+bukti):
+\`\`\`ai-plan
+{"title":"ringkasan rencana","evidence":["fakta1 dari data","fakta2"],"steps":[{"label":"Enable ether3 (admin DOWN)","op":"iface-enable","iface":"ether3"}]}
+\`\`\`
+Aturan RENCANA (wajib):
+- steps maksimal 5 langkah, berurutan: cek-baca dulu bila perlu, tulis belakangan. Langkah tulis HANYA dari daftar op ini (op lain DITOLAK server):
+  iface-enable {iface} = nyalakan port (admin DOWN)
+  iface-disable {iface} = matikan port (butuh alasan kuat, tulis di label)
+  iface-flap {iface} = disable 3 detik lalu enable lagi (untuk err/drop tinggi)
+  queue-set {name, maxLimit} = ubah limit queue, cth maxLimit "0/10M" (0 = tanpa limit arah itu). Format maxLimit "UP/DOWN", angka + k/M.
+  wifi-set {iface, args} = ubah radio, args cth {"frequency":"2412"} atau {"tx-power":"17"}. Jangan tebak channel yang dipakai tetangga tanpa data.
+  poe-cycle {iface} = matikan PoE 5 detik lalu nyalakan lagi (HANYA kalau yakin device ujung tahan direstart).
+  conntrack-clear {} = hapus semua koneksi tracked (untuk conntrack penuh; koneksi aktif akan reconnect sendiri).
+- Setiap langkah tulis WAJIB bisa diverifikasi ulang oleh server (baca ulang state). Kalau ragu, jangan masukkan.
+- Jangan sentuh routing, user, reset, reboot, firewall rules, atau hapus config — semua itu DITOLAK.
+- Semua langkah otomatis menarget device yang sedang didiagnosa; jangan tulis ip manual.
+- Kalau device SEHAT / tidak ada yang bisa difix aman: JANGAN keluarkan blok ai-plan, tulis DONE saja.`;
+
 function buildMessages(message, ctx) {
   const c = ctx || {};
   const dev = c.selected || '?';
@@ -61,7 +79,7 @@ function buildMessages(message, ctx) {
       `\n- Route mati: ${(dg.routes && dg.routes.inactive && dg.routes.inactive.length) ? dg.routes.inactive.join('; ') : 'tidak ada (' + ((dg.routes || {}).total || 0) + ' route)'}` +
       `\n- Resource: ${dg.res ? (dg.res.board + ' ' + dg.res.version + ' up ' + dg.res.uptime + ' CPU ' + (dg.res.cpu ?? '?') + '%') : 'n/a'}`;
   } else if (dg && dg.error) diagTxt = '\n\nDiagnosa dalam gagal: ' + dg.error;
-  const context = `DEVICE YANG LAGI DIBUKA: ${dev}\n\nDATA LIVE ROUTER (snapshot sekarang):\n${snapTxt}${diagTxt}\n\nStatus dari dashboard:\n${ifs || '(kosong)'}\n\n${lv}\n\nAlarm device ini:\n${alarms || '(tidak ada)'}\n\nRiwayat downtime device ini:\n${down || '(tidak ada)'}`;
+  const context = `DEVICE YANG LAGI DIBUKA: ${dev}\n\nDATA LIVE ROUTER (snapshot sekarang):\n${snapTxt}${diagTxt}\n\nStatus dari dashboard:\n${ifs || '(kosong)'}\n\n${lv}\n\nAlarm device ini:\n${alarms || '(tidak ada)'}\n\nRiwayat downtime device ini:\n${down || '(tidak ada)'}` + (c.wantPlan ? `\n\n${PLAN_OPS_HELP}\n\nTROUBLESHOOT device di atas sampai tuntas: vonis + bukti, lalu (kalau ada yang bisa difix aman) SATU blok ai-plan.` : '');
   return [
     { role: 'system', content: AI_SYSTEM },
     { role: 'user', content: context + '\n\nPERTANYAAN USER:\n' + message },
