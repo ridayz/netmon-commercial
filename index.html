@@ -108,7 +108,9 @@ body.dark .gf-badge.bad{color:#f87171}
 <button id="tabBtnDash" onclick="showTab('dash')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#0284c7;color:#fff">Dashboard</button>
 <button id="tabBtnTopo" onclick="showTab('topo')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#fff;color:#0369a1">Topologi</button>
 <button id="tabBtnLog" onclick="showTab('log')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#fff;color:#0369a1">🔔 Log/Alarm <span id="alarmBadge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:4px">0</span></button>
-</div></div></div>
+</div>
+<button onclick="gfToggleTheme()" id="themeBtnGlobal" style="border:2px solid #bae6fd;background:#fff;color:#0369a1;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer;font-size:13px" title="Ganti mode terang/gelap">🌙 Dark</button>
+</div></div>
 <div id="collBanner" style="display:none;background:#fee2e2;border:2px solid #f87171;color:#b91c1c;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700">⚠ Collector offline — topologi tampil dari cache, fitur live nonaktif. Nyalakan collector (start-netmon.bat) lalu refresh.</div>
 <div id="tab-dash" style="display:flex;flex-direction:column;gap:14px">
 <div class="gf-shell" id="gfShell">
@@ -125,7 +127,7 @@ body.dark .gf-badge.bad{color:#f87171}
 <div class="gf-ph"><span class="gf-ic">📡</span><b>Network Traffic — per interface</b><span class="gf-sub" id="gfGraphSub">live</span></div>
 <div style="display:flex;gap:14px;min-height:220px;flex-wrap:wrap">
 <div style="flex:1;min-width:260px"><canvas id="gfChart" height="210"></canvas></div>
-<div id="gfLegend" style="width:240px;min-width:180px;font-size:11px;overflow:auto;max-height:230px;color:#9aa7b5"></div>
+<div id="gfLegend" style="width:240px;min-width:180px;font-size:11px;overflow:auto;max-height:230px;color:var(--gf-legend-sub)"></div>
 </div>
 </div>
 <div class="gf-panel">
@@ -182,20 +184,23 @@ body.dark .gf-badge.bad{color:#f87171}
 </div>
 </div><!-- /tab-topo -->
 <div id="tab-log" style="display:none;flex-direction:column;gap:12px">
-<div class="panel"><h3>🔔 System Log & Alarm</h3>
+<div class="gf-shell">
+<div class="gf-panel">
+<div class="gf-ph"><span class="gf-ic">🔔</span><b>System Log & Alarm</b><span class="gf-sub">event timestamp + severity + filter</span></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px">
-<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('all')">Semua</button>
-<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('info')">ℹ Info</button>
-<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('warn')">⚠ Warning</button>
-<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('crit')">🚨 Critical</button>
-<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-left:auto;cursor:pointer"><input type="checkbox" id="alarmSound" style="width:15px;height:15px"> Bunyi alarm</label>
-<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="clearAlarms()">🧹 Bersihkan</button>
+<button class="gf-btn" onclick="setLogFilter('all')">Semua</button>
+<button class="gf-btn" onclick="setLogFilter('info')">ℹ Info</button>
+<button class="gf-btn" onclick="setLogFilter('warn')">⚠ Warning</button>
+<button class="gf-btn" onclick="setLogFilter('crit')">🚨 Critical</button>
+<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-left:auto;cursor:pointer;color:var(--gf-text)"><input type="checkbox" id="alarmSound" style="width:15px;height:15px"> Bunyi alarm</label>
+<button class="gf-btn" onclick="clearAlarms()">🧹 Bersihkan</button>
 </div>
 <div id="alarmList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:300px;overflow:auto"></div>
-<h3 style="margin:14px 0 6px">📋 Riwayat Downtime (dummy)</h3>
-<div style="overflow:auto"><table style="width:100%;font-size:12.5px;border-collapse:collapse;background:#f8fafc;border-radius:10px;overflow:hidden">
-<thead><tr style="background:#e0f2fe;color:#0369a1"><th style="text-align:left;padding:7px 10px">Perangkat</th><th style="text-align:left;padding:7px 10px">DOWN jam</th><th style="text-align:left;padding:7px 10px">UP lagi jam</th><th style="text-align:left;padding:7px 10px">Total down</th><th style="text-align:left;padding:7px 10px">Sebab</th></tr></thead>
-<tbody id="downBody"></tbody></table></div>
+</div>
+<div class="gf-panel">
+<div class="gf-ph"><span class="gf-ic">📋</span><b>Riwayat Downtime</b><span class="gf-sub" id="downSub"></span></div>
+<div style="overflow:auto;max-height:220px"><table class="gf-table"><thead><tr><th>Perangkat</th><th>DOWN jam</th><th>UP lagi jam</th><th>Total down</th><th>Sebab</th></tr></thead><tbody id="downBody"></tbody></table></div>
+</div>
 </div>
 </div>
 </div><!-- /app -->
@@ -205,7 +210,7 @@ const DB={};
 const SIDEBAR=[];
 let curR='', curI='';
 function cur(){return ((DB[curR]||[]).find(x=>x.n===curI))||((DB[curR]||[])[0]);}
-let dl=Array(30).fill(0), ul=Array(30).fill(0), labels=Array(30).fill('');
+// let dl/ul/labels — array lama dihapus, diganti GFX per-interface (Grafana-style)
 function devDot(r){const ps=DB[r]||[];if(ps.some(p=>p.oper==='down'))return 'grey';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'red';return 'green';}
 function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,layerKey:k,db:n.db});});});return out;}
 function ensureNodeDb(n,links){
@@ -236,7 +241,7 @@ devs.forEach(o=>{const ps=DB[o.db]||[];const downs=ps.filter(p=>p.oper==='down')
 function renderPortStrip(){
 try{
 const body=document.getElementById('gfIfaceBody');if(!body)return;
-if(!curR||!DB[curR]||!DB[curR].length){const sub=document.getElementById('gfIfaceSub');if(sub)sub.textContent='pilih device dulu';body.innerHTML='<tr><td colspan="8" style="padding:12px;color:#64748b;text-align:center">Pilih device live dulu (sidebar kiri / topologi bawah).</td></tr>';return;}
+if(!curR||!DB[curR]||!DB[curR].length){const sub=document.getElementById('gfIfaceSub');if(sub)sub.textContent='pilih device dulu';body.innerHTML='<tr><td colspan="8" style="padding:12px;color:var(--gf-legend-sub);text-align:center">Pilih device live dulu (sidebar kiri / topologi bawah).</td></tr>';return;}
 const sub=document.getElementById('gfIfaceSub');
 const L=LIVE[curR];
 if(sub)sub.textContent=curR+' • '+(DB[curR]||[]).length+' port'+(L?' 🟢 live':'');
@@ -244,19 +249,20 @@ body.innerHTML='';
 (DB[curR]||[]).forEach(pp=>{
 const isSel=pp.n===curI;
 const linkDown=pp.oper==='down'||pp.admin==='down';
-const typeIco=(pp.type==='sfp')?'<span style="color:#0284c7">▣</span>':'<span style="color:#64748b">☰</span>';
+const typeIco=(pp.type==='sfp')?'<span style="color:var(--gf-accent2)">▣</span>':'<span style="color:var(--gf-legend-sub)">☰</span>';
 const mac=(L&&L.macs&&L.macs[pp.n])||'—';
 const rt=(L&&L._rateAll&&L._rateAll[pp.n])?{rx:L._rateAll[pp.n].rx,tx:L._rateAll[pp.n].tx}:null;
 const rate=rt?(rt.rx||0).toFixed(1)+' ↓ '+(rt.tx||0).toFixed(1)+' ↑':'—';
 const tr=document.createElement('tr');
-tr.style.cssText='cursor:pointer;'+(isSel?'background:#bae6fd;':'');
-tr.innerHTML='<td style="padding:7px 10px">'+typeIco+'</td><td style="padding:7px 10px;font-weight:800;color:'+(isSel?'#0369a1':'#0c4a6e')+'">'+pp.n+'</td><td style="padding:7px 10px">'+(linkDown?'<span class="gf-badge bad">DOWN</span>':'<span class="gf-badge ok">UP</span>')+'</td><td style="padding:7px 10px">'+(pp.admin==='down'?'<span class="gf-badge bad">DISABLED</span>':'<span class="gf-badge ok">OK</span>')+'</td><td style="padding:7px 10px;font-family:monospace;font-size:11px">'+mac+'</td><td style="padding:7px 10px;font-size:11px;color:#0284c7;font-weight:700">'+rate+'</td><td style="padding:7px 10px">'+(pp.speed||'—')+'</td><td style="padding:7px 10px;color:#64748b;font-size:11px">'+(pp.fault||'')+'</td>';
+tr.style.cssText='cursor:pointer;'+(isSel?'background:var(--gf-tbody-hover);outline:2px solid var(--gf-accent2);outline-offset:-2px;':'');
+tr.innerHTML='<td style="padding:7px 10px">'+typeIco+'</td><td style="padding:7px 10px;font-weight:800;color:var(--gf-accent)">'+pp.n+'</td><td style="padding:7px 10px">'+(linkDown?'<span class="gf-badge bad">DOWN</span>':'<span class="gf-badge ok">UP</span>')+'</td><td style="padding:7px 10px">'+(pp.admin==='down'?'<span class="gf-badge bad">DISABLED</span>':'<span class="gf-badge ok">OK</span>')+'</td><td style="padding:7px 10px;font-family:monospace;font-size:11px">'+mac+'</td><td style="padding:7px 10px;font-size:11px;color:var(--gf-accent2);font-weight:700">'+rate+'</td><td style="padding:7px 10px">'+(pp.speed||'—')+'</td><td style="padding:7px 10px;color:var(--gf-legend-sub);font-size:11px">'+(pp.fault||'')+'</td>';
 tr.onclick=()=>{curI=pp.n;try{renderIfaces();}catch(e){}};
 tr.oncontextmenu=(ev)=>{ev.preventDefault();curI=pp.n;showCtx(ev.clientX,ev.clientY);};
 body.appendChild(tr);
 });
 }catch(e){log('> renderPortStrip gagal: '+String(e.message||e).slice(0,80));}
 }
+function renderIfaces(){try{renderPortStrip();}catch(e){}try{refresh();}catch(e){}}
 // ala PRTG: semua device SNMP dipoll background tiap 20 dtk (rate semua port + alarm down)
 setInterval(async()=>{
 for(const key in LIVE){
@@ -317,13 +323,17 @@ let gfTimer=null;
 function gfSetRange(sec){gfRangeSec=sec;try{gfDraw();}catch(e){}}
 function gfSetRefresh(ms){gfRefreshMs=+ms;gfStartPoller();}
 // ---- THEME TOGGLE: light (biru awan) / dark (pastel grafana) ----
+function gfTheme(){try{const cs=getComputedStyle(document.body);return{grid:(cs.getPropertyValue('--gf-chart-grid')||'#e0f2fe').trim()||'#e0f2fe',tick:(cs.getPropertyValue('--gf-chart-tick')||'#64748b').trim()||'#64748b'};}catch(e){return{grid:'#e0f2fe',tick:'#64748b'};}}
+function gfApplyChartTheme(){try{if(!gfChart)return;const th=gfTheme();gfChart.options.scales.x.ticks.color=th.tick;gfChart.options.scales.x.grid.color=th.grid;gfChart.options.scales.y.ticks.color=th.tick;gfChart.options.scales.y.grid.color=th.grid;}catch(e){}}
 function gfToggleTheme(){
 const b=document.body.classList.toggle('dark');
 try{localStorage.setItem('netmon-theme',b?'dark':'light');}catch(e){}
-const btn=document.getElementById('gfThemeBtn');if(btn)btn.textContent=b?'☀ Light':'🌙 Dark';
-try{gfChart&&gfChart.update('none');}catch(e){}
+const t1=document.getElementById('gfThemeBtn'),t2=document.getElementById('themeBtnGlobal');
+if(t1)t1.textContent=b?'☀ Light':'🌙 Dark';
+if(t2)t2.textContent=b?'☀ Light':'🌙 Dark';
+try{gfApplyChartTheme();gfDraw();gfChart&&gfChart.update('none');}catch(e){}
 }
-(function initTheme(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const btn=document.getElementById('gfThemeBtn');if(btn)btn.textContent='☀ Light';}}catch(e){}})();
+(function initTheme(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b1=document.getElementById('gfThemeBtn'),b2=document.getElementById('themeBtnGlobal');if(b1)b1.textContent='☀ Light';if(b2)b2.textContent='☀ Light';}}catch(e){}})();
 function gfMb(x){return +(x/1e6).toFixed(2);}
 function gfPush(dev,ifname,rx,tx){
 const d=(GFX[dev]=GFX[dev]||{t:[],if:{}});
@@ -340,8 +350,9 @@ const dev=curR;
 const d=GFX[dev]||{t:[],if:{}};
 const ifn=Object.keys(d.if||{});
 if(!gfChart||typeof Chart==='undefined'){
-gfChart=new Chart(cv,{type:'line',data:{labels:[],datasets:[]},options:{animation:false,responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{display:true,ticks:{color:'#64748b',maxRotation:0,autoSkip:true,maxTicksLimit:6},grid:{color:'#e0f2fe'}},y:{ticks:{color:'#64748b',callback:function(v){return v+' M';}},grid:{color:'#e0f2fe'}}}}});
-}
+const th=gfTheme();
+gfChart=new Chart(cv,{type:'line',data:{labels:[],datasets:[]},options:{animation:false,responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{display:true,ticks:{color:th.tick,maxRotation:0,autoSkip:true,maxTicksLimit:6},grid:{color:th.grid}},y:{ticks:{color:th.tick,callback:function(v){return v+' M';}},grid:{color:th.grid}}}}});
+}else{gfApplyChartTheme();}
 const t=d.t||[];
 const labels=t.map(function(x){return new Date(x).toLocaleTimeString('id-ID',{hour12:false});});
 const ds=[];const lg=[];
@@ -353,12 +364,12 @@ const flat=[].concat(f.rx,f.tx).filter(function(v){return v!=null&&v>0;});
 const mean=flat.length?flat.reduce(function(a,b){return a+b;},0)/flat.length:0;
 const last=(f.rx[t.length-1]||0)+(f.tx[t.length-1]||0);
 const mx=flat.length?Math.max.apply(null,flat):0;
-lg.push('<div style="padding:8px 0;border-bottom:1px solid #e0f2fe"><div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:4px;background:'+col+';border-radius:2px"></span><b style="color:#0c4a6e">'+name+'</b></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;color:#64748b;font-size:10px;margin-top:4px"><span style="font-weight:800">Mean</span><span style="font-weight:800">Last</span><span style="font-weight:800">Max</span><span>'+mean.toFixed(1)+' M</span><span>'+last.toFixed(1)+' M</span><span>'+mx.toFixed(1)+' M</span></div></div>');
+lg.push('<div style="padding:8px 0;border-bottom:1px solid var(--gf-legend-line)"><div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:4px;background:'+col+';border-radius:2px"></span><b style="color:var(--gf-legend-text)">'+name+'</b></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;color:var(--gf-legend-sub);font-size:10px;margin-top:4px"><span style="font-weight:800">Mean</span><span style="font-weight:800">Last</span><span style="font-weight:800">Max</span><span>'+mean.toFixed(1)+' M</span><span>'+last.toFixed(1)+' M</span><span>'+mx.toFixed(1)+' M</span></div></div>');
 });
 gfChart.data.labels=labels;gfChart.data.datasets=ds;
 try{gfChart.update('none');}catch(e){}
 const lgEl=document.getElementById('gfLegend');
-if(lgEl)lgEl.innerHTML=lg.length?('<div style="display:grid;grid-template-columns:repeat(3,auto);gap:2px 10px;color:#64748b;font-size:10px;font-weight:800;margin-bottom:2px"><span></span><span>Mean</span><span>Last</span><span>Max</span></div>'+lg.join('')):'<span style="color:#64748b">belum ada data — tunggu refresh '+(gfRefreshMs/1000)+'s</span>';
+if(lgEl)lgEl.innerHTML=lg.length?('<div style="display:grid;grid-template-columns:repeat(3,auto);gap:2px 10px;color:var(--gf-legend-sub);font-size:10px;font-weight:800;margin-bottom:2px"><span></span><span>Mean</span><span>Last</span><span>Max</span></div>'+lg.join('')):'<span style="color:var(--gf-legend-sub)">belum ada data — tunggu refresh '+(gfRefreshMs/1000)+'s</span>';
 const sub=document.getElementById('gfGraphSub');if(sub)sub.textContent=ifn.length+' interface • live';
 }catch(e){}
 }
@@ -696,11 +707,12 @@ function markAlarmsRead(){unreadCrit=0;updateBadge();}
 function setLogFilter(f){logFilter=f;renderAlarms();}
 function clearAlarms(){ALARMS=[];unreadCrit=0;updateBadge();renderAlarms();log('> alarm dibersihkan');}
 function beep(){if(!document.getElementById('alarmSound')?.checked)return;try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=0.08;o.start();o.stop(c.currentTime+0.25);}catch(e){}}
-function renderAlarms(){const el=document.getElementById('alarmList');if(!el)return;const rows=ALARMS.filter(a=>logFilter==='all'||a.sev===logFilter);if(!rows.length){el.innerHTML='<div style="font-size:13px;color:#64748b;background:#f0f9ff;border:2px dashed #bae6fd;border-radius:12px;padding:14px;text-align:center">Belum ada event. Gangguan / DOWN / diagnosa AI akan tercatat di sini.</div>';return;}el.innerHTML=rows.map(a=>{const bg=a.sev==='crit'?'#fee2e2':(a.sev==='warn'?'#fef9c3':'#e0f2fe');const fg=a.sev==='crit'?'#b91c1c':(a.sev==='warn'?'#a16207':'#0369a1');const ic=a.sev==='crit'?'🚨':(a.sev==='warn'?'⚠':'ℹ');return `<div style="background:${bg};color:${fg};border-radius:10px;padding:8px 12px;font-size:13px"><b>${ic} [${a.t}] ${a.dev}</b> — ${a.msg}</div>`;}).join('');}
+function renderAlarms(){const el=document.getElementById('alarmList');if(!el)return;const rows=ALARMS.filter(a=>logFilter==='all'||a.sev===logFilter);if(!rows.length){el.innerHTML='<div style="font-size:13px;color:var(--gf-sub);background:var(--gf-log-bg);border:2px dashed var(--gf-border);border-radius:12px;padding:14px;text-align:center">Belum ada event. Gangguan / DOWN / diagnosa AI akan tercatat di sini.</div>';return;}el.innerHTML=rows.map(a=>{const bg=a.sev==='crit'?'#fee2e2':(a.sev==='warn'?'#fef9c3':'#e0f2fe');const fg=a.sev==='crit'?'#b91c1c':(a.sev==='warn'?'#a16207':'#0369a1');const ic=a.sev==='crit'?'🚨':(a.sev==='warn'?'⚠':'ℹ');return `<div style="background:${bg};color:${fg};border-radius:10px;padding:8px 12px;font-size:13px"><b>${ic} [${a.t}] ${a.dev}</b> — ${a.msg}</div>`;}).join('');}
+function renderDowntime(){const el=document.getElementById('downBody');if(!el)return;const sub=document.getElementById('downSub');const rows=DOWNTIME.slice(0,50);if(sub)sub.textContent=DOWNTIME.length+' kejadian';if(!rows.length){el.innerHTML='<tr><td colspan="5" style="padding:12px;color:var(--gf-sub);text-align:center">Belum ada downtime tercatat.</td></tr>';return;}el.innerHTML=rows.map(d=>{const dur=d.upAt?Math.round((d.upAt-d.downAt)/1000)+' dtk':'masih DOWN ⏳';return `<tr><td style="padding:6px 10px;font-weight:700;color:var(--gf-text)">${d.dev}</td><td style="padding:6px 10px">${d.downStr}</td><td style="padding:6px 10px">${d.upStr}</td><td style="padding:6px 10px;color:var(--gf-accent2)">${dur}</td><td style="padding:6px 10px;color:var(--gf-sub)">${d.reason||'—'}</td></tr>`;}).join('');}
 // seed awal
 pushAlarm('info','sistem','Netmon - Router AI mulai.');
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'){DOWNTIME.push({dev:r+'/'+p.n,downAt:p.downSince||Date.now(),downStr:clockStr(new Date(p.downSince||Date.now())),upAt:null,upStr:'—',reason:p.fault||'awal'});}}}
-renderDowntime();
+renderAlarms();renderDowntime();
 // sambung tick → alarm otomatis tiap ada DOWN/loss tinggi (throttle 20 dtk per device)
 let lastAlarmAt={};
 function maybeAlarm(dev,sev,msg){const k=dev+sev;const now=Date.now();if(now-(lastAlarmAt[k]||0)<20000)return;lastAlarmAt[k]=now;pushAlarm(sev,dev,msg);}
@@ -743,7 +755,7 @@ renderIfaces();setInterval(tick,1000);gfStartPoller();
 
 try{syncTopo();}catch(e){}
 try{setTimeout(pingIpNodes,4000);}catch(e){}
-setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderDowntime();}catch(e){}},5000);
+setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderAlarms();}catch(e){}},5000);
 function persistTopo(manual){try{const at=new Date().toLocaleString('id-ID',{hour12:false});const snap={at,cur:curLayer,layers:LAYERS};try{localStorage.setItem('netmon-topo-v1',JSON.stringify(snap));}catch(e){}try{fetch(COLL()+'/api/topo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cur:curLayer,layers:LAYERS})}).then(r=>r.json()).then(j=>{const st=document.getElementById('saveStat');if(st)st.textContent=j.ok?((manual?'💾 Tersimpan server ':'Autosave server ')+at):'Server tolak save';}).catch(()=>{const st=document.getElementById('saveStat');if(st)st.textContent=(manual?'💾 Tersimpan lokal ':'Autosave lokal ')+at+' (server off)';});}catch(e){}const st=document.getElementById('saveStat');if(st&&!st.textContent)st.textContent=(manual?'💾 Tersimpan ':'Autosave ')+at;if(manual){log('> projek topologi di-SAVE ('+at+')');try{pushAlarm('info','topologi','Projek topologi di-save');}catch(e){}}}catch(e){if(manual)log('> SAVE gagal: '+e.message);}}
 function syncTopo(){try{collGet('/api/topo',8000).then(j=>{const bn=document.getElementById('collBanner');if(!j||!j.ok){if(bn)bn.style.display='block';return;}if(bn)bn.style.display='none';if(!j.layers)return;const nS=Object.keys(j.layers).length,nL=Object.keys(LAYERS).length;if(nS>0&&(nL===0||j.recovered)){LAYERS=j.layers;if(j.cur&&LAYERS[j.cur])curLayer=j.cur;if(!LAYERS[curLayer])curLayer=firstLayerKey();TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];try{Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(!n.db||!DB[n.db])ensureNodeDb(n,LAYERS[k].links||[]);});});}catch(e){}renderLayerBtns();drawTopo();try{renderRouters();}catch(e){}try{renderPortStrip();}catch(e){}try{localStorage.setItem('netmon-topo-v1',JSON.stringify({at:j.at||'',cur:curLayer,layers:LAYERS}));}catch(e){}log('> topo dimuat dari server'+(j.recovered?' (backup)':''));}else if(nS===0&&nL>0){try{fetch(COLL()+'/api/topo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cur:curLayer,layers:LAYERS})}).catch(()=>{});}catch(e){}}}).catch(()=>{const bn=document.getElementById('collBanner');if(bn)bn.style.display='block';});}catch(e){}}
 let HIST=[],HI=-1;
@@ -957,25 +969,7 @@ g.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();t
 g.addEventListener('click',()=>{if(window._delMode){delTopoNode(n.id);return;}if(window._cableFrom){cableDragFinish(window._cableFrom,n.id);return;}if(Date.now()-(window._topoDropAt||0)<250)return;const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){try{log('> "'+n.label+'" layer dummy — tidak dimonitoring');}catch(_){}return;}try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
 svg.appendChild(g);});
 document.getElementById('topoList').textContent=`${TOPO.length} perangkat • ${LINKS.length} link • klik node = monitoring • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
-try{drawMiniTopo();}catch(e){}
-}
-function drawMiniTopo(){
-const svg=document.getElementById('miniTopo');if(!svg)return;
-const hint=document.getElementById('miniTopoHint');
-if(!curLayer||!LAYERS[curLayer]){svg.setAttribute('viewBox','0 0 900 300');svg.innerHTML='';if(hint)hint.textContent='Belum ada layer.';return;}
-svg.setAttribute('viewBox',LAYERS[curLayer].vb||'0 0 900 400');
-svg.innerHTML='';
-if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',450);t.setAttribute('y',140);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','14');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer "'+(LAYERS[curLayer].label||curLayer)+'" masih kosong — tambah device di tab Topologi';svg.appendChild(t);if(hint)hint.textContent='';return;}
-LINKS.forEach(([a,b,med])=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bad=!!(B.db&&DB[B.db]&&DB[B.db].some(p=>p.oper==='down'));const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',bad?'#ef4444':(med==='fo'?'#fb923c':'#38bdf8'));l.setAttribute('stroke-width','3');if(!bad)l.setAttribute('class','cable-live');svg.appendChild(l);});
-TOPO.forEach(n=>{
-const st=topoSt(n);
-const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='pointer';
-const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');
-const sel=n.db&&n.db===curR;
-g.innerHTML=`<rect x="-52" y="-24" width="104" height="48" rx="14" fill="${fill}" stroke="${sel?'#0284c7':stroke}" stroke-width="${sel?4:2.5}"/><text y="4" text-anchor="middle" font-size="12" font-weight="800" fill="#0369a1">${(n.label||'').slice(0,14)}</text><text y="17" text-anchor="middle" font-size="9" fill="#64748b">${(n.sub||'').slice(0,18)}</text>`;
-g.addEventListener('click',()=>{try{const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){log('> layer dummy — tidak dimonitoring');return;}const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){}});
-svg.appendChild(g);});
-if(hint)hint.textContent=`${TOPO.length} perangkat • ${LINKS.length} link • ${LAYERS[curLayer].type==='dummy'?'layer dummy (tidak dimonitoring)':'klik node = pantau di sidebar + strip port'}`;
+// drawMiniTopo() dihapus — mini topologi digantikan oleh panel Grafana-style di tab dashboard
 }
 // refresh topologi otomatis (realtime) — skip saat user lagi drag / menu terbuka
 setInterval(()=>{try{if(window._topoDrag||window._cableFrom)return;if(document.getElementById('tab-topo')?.style.display==='flex'&&!document.getElementById('tmenu'))drawTopo();}catch(e){}},3000);
