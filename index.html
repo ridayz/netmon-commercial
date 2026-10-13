@@ -44,50 +44,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 @keyframes cableFlow{from{stroke-dashoffset:18;}to{stroke-dashoffset:0;}}
 .cable-live{stroke-dasharray:10 8;animation:cableFlow 1s linear infinite;}
 @media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.sidebar{width:220px}}
-
-/* ---- GRAFANA-STYLE THEME: CSS variables untuk light (biru awan) + dark (pastel grafana) ---- */
-:root{
---gf-bg1:#eaf6ff;--gf-bg2:#f7fbff;--gf-border:#bae6fd;--gf-text:#0c4a6e;
---gf-accent:#0369a1;--gf-accent2:#0284c7;--gf-sub:#64748b;
---gf-panel:#ffffff;--gf-thead:#e0f2fe;--gf-tbody-bg:#f8fafc;--gf-tbody-line:#e0f2fe;--gf-tbody-hover:#e0f2fe;
---gf-log-bg:#f0f9ff;--gf-sel-bg:#ffffff;--gf-chart-grid:#e0f2fe;--gf-chart-tick:#64748b;
---gf-legend-line:#e0f2fe;--gf-legend-text:#0c4a6e;--gf-legend-sub:#64748b;
-}
-body.dark{
---gf-bg1:#1e2a3a;--gf-bg2:#16202e;--gf-border:#2d4a6b;--gf-text:#c8ddf0;
---gf-accent:#73c8f7;--gf-accent2:#46a2f5;--gf-sub:#8fa8bd;
---gf-panel:#1a2634;--gf-thead:#243447;--gf-tbody-bg:#1e2a3a;--gf-tbody-line:#2d4a6b;--gf-tbody-hover:#243447;
---gf-log-bg:#101a26;--gf-sel-bg:#243447;--gf-chart-grid:#2d4a6b;--gf-chart-tick:#8fa8bd;
---gf-legend-line:#2d4a6b;--gf-legend-text:#c8ddf0;--gf-legend-sub:#8fa8bd;
-}
-.gf-shell{background:linear-gradient(180deg,var(--gf-bg1),var(--gf-bg2));border:2px solid var(--gf-border);border-radius:16px;padding:16px;color:var(--gf-text)}
-.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:2px solid var(--gf-border)}
-.gf-crumb{display:flex;gap:10px;align-items:baseline;font-size:15px}
-.gf-app{font-weight:900;color:var(--gf-accent)}
-.gf-dash{color:var(--gf-accent2);font-weight:700;font-size:14px}
-.gf-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.gf-sel{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gf-accent);font-weight:800}
-.gf-sel select{background:var(--gf-sel-bg);border:2px solid var(--gf-border);color:var(--gf-text);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer}
-.gf-dot{font-size:10px;color:#22c55e}
-.gf-dev{font-size:13px;font-weight:800;color:var(--gf-text)}
-.gf-panel{background:var(--gf-panel);border:2px solid var(--gf-border);border-radius:14px;padding:14px;margin-bottom:12px}
-.gf-ph{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-.gf-ph b{font-size:15px;color:var(--gf-accent)}
-.gf-ic{font-size:18px}
-.gf-sub{font-size:12px;color:var(--gf-sub);margin-left:auto}
-.gf-table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--gf-tbody-bg)}
-.gf-table thead th{background:var(--gf-thead);color:var(--gf-accent);font-weight:800;padding:8px 10px;text-align:left;font-size:11px;letter-spacing:.3px;text-transform:uppercase;position:sticky;top:0}
-.gf-table tbody tr{border-bottom:1px solid var(--gf-tbody-line);transition:background .12s}
-.gf-table tbody tr:hover{background:var(--gf-tbody-hover)}
-.gf-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800}
-.gf-badge.ok{background:rgba(34,197,94,.15);color:var(--gf-ok,#15803d)}
-.gf-badge.bad{background:rgba(239,68,68,.15);color:var(--gf-bad,#b91c1c)}
-body.dark .gf-badge.ok{color:#4ade80}
-body.dark .gf-badge.bad{color:#f87171}
-.gf-log{background:var(--gf-log-bg);border:2px solid var(--gf-border);color:var(--gf-text);height:120px}
-.gf-btn{background:var(--gf-accent2);border:0;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-weight:800;cursor:pointer}
-.gf-btn:hover{filter:brightness(.9)}
-.gf-ai-btn{background:#059669;border:0;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-weight:800;cursor:pointer}
 </style>
 </head>
 <body>
@@ -108,45 +64,29 @@ body.dark .gf-badge.bad{color:#f87171}
 <button id="tabBtnDash" onclick="showTab('dash')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#0284c7;color:#fff">Dashboard</button>
 <button id="tabBtnTopo" onclick="showTab('topo')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#fff;color:#0369a1">Topologi</button>
 <button id="tabBtnLog" onclick="showTab('log')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#fff;color:#0369a1">🔔 Log/Alarm <span id="alarmBadge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:4px">0</span></button>
-</div>
-<button onclick="gfToggleTheme()" id="themeBtnGlobal" style="border:2px solid #bae6fd;background:#fff;color:#0369a1;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer;font-size:13px" title="Ganti mode terang/gelap">🌙 Dark</button>
-</div></div>
+</div></div></div>
 <div id="collBanner" style="display:none;background:#fee2e2;border:2px solid #f87171;color:#b91c1c;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700">⚠ Collector offline — topologi tampil dari cache, fitur live nonaktif. Nyalakan collector (start-netmon.bat) lalu refresh.</div>
 <div id="tab-dash" style="display:flex;flex-direction:column;gap:14px">
-<div class="gf-shell" id="gfShell">
-<div class="gf-top">
-<div class="gf-crumb"><span class="gf-app">Mikrotik monitoring</span><span class="gf-dash" id="gfDashName">Network Traffic</span></div>
-<div class="gf-controls">
-<label class="gf-sel"><span>Range</span><select id="gfRange" onchange="gfSetRange(this.value)"><option value="300">Last 5 minutes</option><option value="900">Last 15 minutes</option><option value="1800" selected>Last 30 minutes</option><option value="3600">Last 1 hour</option></select></label>
-<label class="gf-sel"><span>Refresh</span><select id="gfRefresh" onchange="gfSetRefresh(this.value)"><option value="5000">5s</option><option value="10000" selected>10s</option><option value="30000">30s</option></select></label>
-<span class="gf-dot" id="gfDevDot" title="status device">●</span><span class="gf-dev" id="gfDevName">no device</span>
-<button onclick="gfToggleTheme()" class="gf-btn" style="padding:5px 10px;font-size:11px" id="gfThemeBtn" title="Ganti mode terang/gelap">🌙 Dark</button>
+<div class="cards">
+<div class="card"><small>DOWNLOAD</small><h2 id="dl">-</h2><span id="dlSub">-</span></div>
+<div class="card"><small>UPLOAD</small><h2 id="ul">-</h2><span id="ulSub">-</span></div>
+<div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span>ke 8.8.8.8</span></div>
+<div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
+<div class="grid2">
+<div class="panel"><h3>📈 Traffic Realtime</h3><canvas id="chart" height="130"></canvas>
+<div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio DL:UL — menunggu data...</div>
+<button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik DL/UL (port LAN)</button>
+<div style="margin-top:12px"><h3>🔌 Layer 1 — Copper / Cable Test (TDR)</h3><div id="tdr"></div></div>
 </div>
-<div class="gf-panel">
-<div class="gf-ph"><span class="gf-ic">📡</span><b>Network Traffic — per interface</b><span class="gf-sub" id="gfGraphSub">live</span></div>
-<div style="display:flex;gap:14px;min-height:220px;flex-wrap:wrap">
-<div style="flex:1;min-width:260px"><canvas id="gfChart" height="210"></canvas></div>
-<div id="gfLegend" style="width:240px;min-width:180px;font-size:11px;overflow:auto;max-height:230px;color:var(--gf-legend-sub)"></div>
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<div class="log" id="log">> Netmon - Router AI siap. Klik node di topologi buat pantau.</div>
+<div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
+<div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
 </div>
-</div>
-<div class="gf-panel">
-<div class="gf-ph"><span class="gf-ic">🔌</span><b>Interfaces</b><span class="gf-sub" id="gfIfaceSub"></span></div>
-<div style="overflow:auto;max-height:340px"><table class="gf-table"><thead><tr><th>Type</th><th>Name</th><th>Link</th><th>Status</th><th>MAC</th><th>Rate</th><th>MTU</th><th>Comment</th></tr></thead><tbody id="gfIfaceBody"></tbody></table></div>
-<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
-<button onclick="toggleSwap()" id="swapBtn" class="gf-btn" style="display:none">⇄ Balik DL/UL (port aktif)</button>
-<div id="aiActions" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-<span style="font-size:11px;color:#64748b">klik baris = pantau interface di topologi</span>
-</div>
-<div id="aiResult" style="display:none;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.65;color:#0c4a6e;margin-top:10px;white-space:pre-wrap"></div>
-<div style="margin-top:12px">
-<div style="font-size:12px;font-weight:800;color:#0369a1;margin-bottom:6px">🧾 EVENT LOG</div>
-<div class="log gf-log" id="log">&gt; Netmon - Router AI siap. Klik node di topologi buat pantau.</div>
-</div>
-</div>
-</div><!-- /gf-shell -->
 </div><!-- /tab-dash -->
-</div>
+<div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
+<div class="panel"><h3>🗺 Topologi layer aktif — klik node = pantau device</h3><svg id="miniTopo" width="100%" height="300" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;touch-action:none"></svg><div id="miniTopoHint" style="font-size:12px;color:#475569;margin-top:6px"></div></div>
 </div><!-- /main -->
 <div id="tab-topo" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🗺 Topologi</h3>
@@ -184,23 +124,20 @@ body.dark .gf-badge.bad{color:#f87171}
 </div>
 </div><!-- /tab-topo -->
 <div id="tab-log" style="display:none;flex-direction:column;gap:12px">
-<div class="gf-shell">
-<div class="gf-panel">
-<div class="gf-ph"><span class="gf-ic">🔔</span><b>System Log & Alarm</b><span class="gf-sub">event timestamp + severity + filter</span></div>
+<div class="panel"><h3>🔔 System Log & Alarm</h3>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px">
-<button class="gf-btn" onclick="setLogFilter('all')">Semua</button>
-<button class="gf-btn" onclick="setLogFilter('info')">ℹ Info</button>
-<button class="gf-btn" onclick="setLogFilter('warn')">⚠ Warning</button>
-<button class="gf-btn" onclick="setLogFilter('crit')">🚨 Critical</button>
-<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-left:auto;cursor:pointer;color:var(--gf-text)"><input type="checkbox" id="alarmSound" style="width:15px;height:15px"> Bunyi alarm</label>
-<button class="gf-btn" onclick="clearAlarms()">🧹 Bersihkan</button>
+<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('all')">Semua</button>
+<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('info')">ℹ Info</button>
+<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('warn')">⚠ Warning</button>
+<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="setLogFilter('crit')">🚨 Critical</button>
+<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-left:auto;cursor:pointer"><input type="checkbox" id="alarmSound" style="width:15px;height:15px"> Bunyi alarm</label>
+<button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="clearAlarms()">🧹 Bersihkan</button>
 </div>
 <div id="alarmList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:300px;overflow:auto"></div>
-</div>
-<div class="gf-panel">
-<div class="gf-ph"><span class="gf-ic">📋</span><b>Riwayat Downtime</b><span class="gf-sub" id="downSub"></span></div>
-<div style="overflow:auto;max-height:220px"><table class="gf-table"><thead><tr><th>Perangkat</th><th>DOWN jam</th><th>UP lagi jam</th><th>Total down</th><th>Sebab</th></tr></thead><tbody id="downBody"></tbody></table></div>
-</div>
+<h3 style="margin:14px 0 6px">📋 Riwayat Downtime (dummy)</h3>
+<div style="overflow:auto"><table style="width:100%;font-size:12.5px;border-collapse:collapse;background:#f8fafc;border-radius:10px;overflow:hidden">
+<thead><tr style="background:#e0f2fe;color:#0369a1"><th style="text-align:left;padding:7px 10px">Perangkat</th><th style="text-align:left;padding:7px 10px">DOWN jam</th><th style="text-align:left;padding:7px 10px">UP lagi jam</th><th style="text-align:left;padding:7px 10px">Total down</th><th style="text-align:left;padding:7px 10px">Sebab</th></tr></thead>
+<tbody id="downBody"></tbody></table></div>
 </div>
 </div>
 </div><!-- /app -->
@@ -210,7 +147,7 @@ const DB={};
 const SIDEBAR=[];
 let curR='', curI='';
 function cur(){return ((DB[curR]||[]).find(x=>x.n===curI))||((DB[curR]||[])[0]);}
-// let dl/ul/labels — array lama dihapus, diganti GFX per-interface (Grafana-style)
+let dl=Array(30).fill(0), ul=Array(30).fill(0), labels=Array(30).fill('');
 function devDot(r){const ps=DB[r]||[];if(ps.some(p=>p.oper==='down'))return 'grey';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'red';return 'green';}
 function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,layerKey:k,db:n.db});});});return out;}
 function ensureNodeDb(n,links){
@@ -239,30 +176,24 @@ el.innerHTML='';
 devs.forEach(o=>{const ps=DB[o.db]||[];const downs=ps.filter(p=>p.oper==='down').length;const live=!!LIVE[o.db];const b=document.createElement('div');b.className='router-btn'+(o.db===curR?' active':'');b.style.cssText+=';display:flex;gap:8px;align-items:flex-start;width:100%;'+(live?'':'background:#f1f5f9;border-color:#cbd5e1;color:#475569');b.innerHTML=`<span class="dot ${devDot(o.db)}" style="margin-top:4px"></span><span style="flex:1"><b>${o.db}</b> ${live?'🟢':'⚪'}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}</span></span>`;b.onclick=()=>pickDev(o.db);el.appendChild(b);});
 }
 function renderPortStrip(){
-try{
-const body=document.getElementById('gfIfaceBody');if(!body)return;
-if(!curR||!DB[curR]||!DB[curR].length){const sub=document.getElementById('gfIfaceSub');if(sub)sub.textContent='pilih device dulu';body.innerHTML='<tr><td colspan="8" style="padding:12px;color:var(--gf-legend-sub);text-align:center">Pilih device live dulu (sidebar kiri / topologi bawah).</td></tr>';return;}
-const sub=document.getElementById('gfIfaceSub');
-const L=LIVE[curR];
-if(sub)sub.textContent=curR+' • '+(DB[curR]||[]).length+' port'+(L?' 🟢 live':'');
-body.innerHTML='';
-(DB[curR]||[]).forEach(pp=>{
-const isSel=pp.n===curI;
-const linkDown=pp.oper==='down'||pp.admin==='down';
-const typeIco=(pp.type==='sfp')?'<span style="color:var(--gf-accent2)">▣</span>':'<span style="color:var(--gf-legend-sub)">☰</span>';
-const mac=(L&&L.macs&&L.macs[pp.n])||'—';
-const rt=(L&&L._rateAll&&L._rateAll[pp.n])?{rx:L._rateAll[pp.n].rx,tx:L._rateAll[pp.n].tx}:null;
-const rate=rt?(rt.rx||0).toFixed(1)+' ↓ '+(rt.tx||0).toFixed(1)+' ↑':'—';
-const tr=document.createElement('tr');
-tr.style.cssText='cursor:pointer;'+(isSel?'background:var(--gf-tbody-hover);outline:2px solid var(--gf-accent2);outline-offset:-2px;':'');
-tr.innerHTML='<td style="padding:7px 10px">'+typeIco+'</td><td style="padding:7px 10px;font-weight:800;color:var(--gf-accent)">'+pp.n+'</td><td style="padding:7px 10px">'+(linkDown?'<span class="gf-badge bad">DOWN</span>':'<span class="gf-badge ok">UP</span>')+'</td><td style="padding:7px 10px">'+(pp.admin==='down'?'<span class="gf-badge bad">DISABLED</span>':'<span class="gf-badge ok">OK</span>')+'</td><td style="padding:7px 10px;font-family:monospace;font-size:11px">'+mac+'</td><td style="padding:7px 10px;font-size:11px;color:var(--gf-accent2);font-weight:700">'+rate+'</td><td style="padding:7px 10px">'+(pp.speed||'—')+'</td><td style="padding:7px 10px;color:var(--gf-legend-sub);font-size:11px">'+(pp.fault||'')+'</td>';
-tr.onclick=()=>{curI=pp.n;try{renderIfaces();}catch(e){}};
-tr.oncontextmenu=(ev)=>{ev.preventDefault();curI=pp.n;showCtx(ev.clientX,ev.clientY);};
-body.appendChild(tr);
-});
-}catch(e){log('> renderPortStrip gagal: '+String(e.message||e).slice(0,80));}
+const box=document.getElementById('portStrip');if(!box)return;
+const nm=document.getElementById('portDevName');
+if(!curR||!DB[curR]||!DB[curR].length){if(nm)nm.textContent='belum ada device';box.style.color='#64748b';box.textContent='Pilih device live dulu (sidebar kiri / topologi bawah).';return;}
+if(nm)nm.textContent=curR+(LIVE[curR]?' 🟢':' ⚪');
+box.innerHTML='';box.style.color='';
+DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';const b=document.createElement('button');b.style.cssText='border:2px solid '+(p.n===curI?'#0284c7':'#bae6fd')+';background:'+(p.n===curI?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';b.innerHTML=`<span class="dot ${dot}"></span>${p.n}`;b.title=p.admin+'/'+p.oper+' (klik kanan = disable/enable)';b.onclick=()=>{curI=p.n;renderIfaces();};b.oncontextmenu=(ev)=>{ev.preventDefault();curI=p.n;renderIfaces();showCtx(ev.clientX,ev.clientY);};box.appendChild(b);});
 }
-function renderIfaces(){try{renderPortStrip();}catch(e){}try{refresh();}catch(e){}}
+function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
+function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+function setLink(rName,p,oper,reason){reason=reason||'otomatis';
+if(oper==='down'&&p.oper!=='down'){p.oper='down';p.downSince=Date.now();p.flaps=(p.flaps||0)+1;log('> '+p.n+' DOWN ('+reason+')');try{pushAlarm('crit',rName+'/'+p.n,'DOWN ('+reason+') — catat mulai '+clockStr(new Date()));}catch(e){}try{DOWNTIME.unshift({dev:rName+'/'+p.n,downAt:Date.now(),downStr:clockStr(new Date()),upAt:null,upStr:'—',reason});renderDowntime();}catch(e){}}
+else if(oper==='up'&&p.oper==='down'){const dur=p.downSince?fmtDur(Date.now()-p.downSince):'?';p.oper='up';p.downSince=null;log('> '+p.n+' UP lagi setelah DOWN '+dur+' ('+reason+') ✅');try{pushAlarm('info',rName+'/'+p.n,'UP lagi setelah DOWN '+dur+' ('+reason+') ✅');}catch(e){}try{const open=DOWNTIME.find(e=>e.dev===(rName+'/'+p.n)&&!e.upAt);const now=new Date();if(open){open.upAt=now.getTime();open.upStr=clockStr(now);open.totalMs=open.upAt-open.downAt;}renderDowntime();}catch(e){}}
+if(rName===curR)renderIfaces();try{renderRouters();}catch(e){}}
+function renderDowntime(){const tb=document.getElementById('downBody');if(!tb)return;if(!DOWNTIME.length){tb.innerHTML='<tr><td colspan="5" style="padding:10px;text-align:center;color:#64748b">Belum ada downtime. Device DOWN akan tercatat di sini.</td></tr>';return;}
+tb.innerHTML=DOWNTIME.slice(0,30).map(e=>{const live=!e.upAt;const tot=live?fmtDur(Date.now()-e.downAt)+' ⏳':fmtDur(e.totalMs||0);return `<tr style="border-top:1px solid #e0f2fe"><td style="padding:6px 10px;font-weight:700">${e.dev}</td><td style="padding:6px 10px">${e.downStr}</td><td style="padding:6px 10px">${live?'<span style="color:#b91c1c;font-weight:700">masih DOWN</span>':e.upStr}</td><td style="padding:6px 10px;font-weight:700">${tot}</td><td style="padding:6px 10px">${e.reason}</td></tr>`;}).join('');}
+function refreshDurations(){document.querySelectorAll('[data-dur]').forEach(el=>{const key=el.getAttribute('data-dur');const sep=key.indexOf('|');const r=key.slice(0,sep),n=key.slice(sep+1);const p=(DB[r]||[]).find(x=>x.n===n);if(!p)return;if(p.oper==='down'&&p.downSince){el.textContent='DOWN '+fmtDur(Date.now()-p.downSince);}else{el.textContent=p.admin+'/'+p.oper;}});}
+let chaosOn=false; window.chaosOn=false;
+function renderIfaces(){try{renderPortStrip();}catch(e){}refresh();}
 // ala PRTG: semua device SNMP dipoll background tiap 20 dtk (rate semua port + alarm down)
 setInterval(async()=>{
 for(const key in LIVE){
@@ -298,9 +229,6 @@ const c=cur();if(!c){document.getElementById('title').textContent='Netmon - Rout
 const down=c.oper==='down';
 document.getElementById('statusPill').textContent=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');
 document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.startsWith('sehat')?'#e0f2fe':'#fef9c3');
-const gd1=document.getElementById('gfDevName'),gd2=document.getElementById('gfDevDot');
-if(gd1)gd1.textContent=((LIVE[curR]&&LIVE[curR].identity?LIVE[curR].identity:curR))+(LIVE[curR]?' 🟢':' ⚪');
-if(gd2)gd2.style.color=down?'#f2495c':'#2fc26f';
 // TDR
 let tdr='';
 if(c.type==='copper'){
@@ -311,96 +239,13 @@ if(c.type==='copper'){
  else tdr=`<div class="kv"><span>Pair 1-2 / 3-6 / 4-5 / 7-8</span><b>${badge('OK semua','ok')}</b></div><div class="kv"><span>Panjang</span><b>~38m</b></div>`;
  tdr+=`<div class="kv"><span>PoE</span><b>${c.poe}</b></div><div class="kv"><span>Speed</span><b>${c.speed}</b></div>`;
 }else tdr=`<div class="kv"><span>Media</span><b>Fiber</b></div>`;
-// (TDR + SFP DDM & Error Counter dihapus dari dashboard — diganti panel Grafana-style)
+document.getElementById('tdr').innerHTML=tdr;
+// (SFP DDM & Error Counter dihapus dari dashboard)
 }
-// ---- GRAFANA-STYLE ENGINE: multi-interface traffic graph + legend Mean/Last/Max ----
-const GF_COLORS=['#73c8f7','#46a2f5','#5b8cff','#1f77b4','#2fc26f','#f2c744','#e7531f','#ff7ab0','#b16ff9','#36cfa5','#ffa630','#f75c7c'];
-let GFX={};            // per-device history: { 'DEV/IP': { t:[ts...], if:{ name: {rx:[mbps],tx:[mbps]}, ... } } }
-let gfChart=null;
-let gfRangeSec=1800;   // default last 30 min
-let gfRefreshMs=10000; // default 10s
-let gfTimer=null;
-function gfSetRange(sec){gfRangeSec=sec;try{gfDraw();}catch(e){}}
-function gfSetRefresh(ms){gfRefreshMs=+ms;gfStartPoller();}
-// ---- THEME TOGGLE: light (biru awan) / dark (pastel grafana) ----
-function gfTheme(){try{const cs=getComputedStyle(document.body);return{grid:(cs.getPropertyValue('--gf-chart-grid')||'#e0f2fe').trim()||'#e0f2fe',tick:(cs.getPropertyValue('--gf-chart-tick')||'#64748b').trim()||'#64748b'};}catch(e){return{grid:'#e0f2fe',tick:'#64748b'};}}
-function gfApplyChartTheme(){try{if(!gfChart)return;const th=gfTheme();gfChart.options.scales.x.ticks.color=th.tick;gfChart.options.scales.x.grid.color=th.grid;gfChart.options.scales.y.ticks.color=th.tick;gfChart.options.scales.y.grid.color=th.grid;}catch(e){}}
-function gfToggleTheme(){
-const b=document.body.classList.toggle('dark');
-try{localStorage.setItem('netmon-theme',b?'dark':'light');}catch(e){}
-const t1=document.getElementById('gfThemeBtn'),t2=document.getElementById('themeBtnGlobal');
-if(t1)t1.textContent=b?'☀ Light':'🌙 Dark';
-if(t2)t2.textContent=b?'☀ Light':'🌙 Dark';
-try{gfApplyChartTheme();gfDraw();gfChart&&gfChart.update('none');}catch(e){}
-}
-(function initTheme(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b1=document.getElementById('gfThemeBtn'),b2=document.getElementById('themeBtnGlobal');if(b1)b1.textContent='☀ Light';if(b2)b2.textContent='☀ Light';}}catch(e){}})();
-function gfMb(x){return +(x/1e6).toFixed(2);}
-function gfPush(dev,ifname,rx,tx){
-const d=(GFX[dev]=GFX[dev]||{t:[],if:{}});
-d.t.push(Date.now());
-const e=d.if[ifname]=(d.if[ifname]||{rx:[],tx:[]});
-e.rx.push(rx);e.tx.push(tx);
-const cutoff=Date.now()-Math.max(gfRangeSec*1000,30*60000);
-while(d.t[0]!==undefined&&d.t[0]<cutoff){d.t.shift();Object.keys(d.if).forEach(k=>{const f=d.if[k];if(f.rx.length)f.rx.shift();if(f.tx.length)f.tx.shift();});}
-}
-function gfDraw(){
-try{
-const cv=document.getElementById('gfChart');if(!cv)return;
-const dev=curR;
-const d=GFX[dev]||{t:[],if:{}};
-const ifn=Object.keys(d.if||{});
-if(!gfChart||typeof Chart==='undefined'){
-const th=gfTheme();
-gfChart=new Chart(cv,{type:'line',data:{labels:[],datasets:[]},options:{animation:false,responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{display:true,ticks:{color:th.tick,maxRotation:0,autoSkip:true,maxTicksLimit:6},grid:{color:th.grid}},y:{ticks:{color:th.tick,callback:function(v){return v+' M';}},grid:{color:th.grid}}}}});
-}else{gfApplyChartTheme();}
-const t=d.t||[];
-const labels=t.map(function(x){return new Date(x).toLocaleTimeString('id-ID',{hour12:false});});
-const ds=[];const lg=[];
-ifn.forEach(function(name,ix){
-const f=d.if[name];const col=GF_COLORS[ix%GF_COLORS.length];
-ds.push({label:name+' in',data:f.rx.map(function(v){return v==null?0:+v.toFixed(2);}),borderColor:col,backgroundColor:'transparent',fill:false,tension:.2,borderWidth:1.6,pointRadius:0});
-ds.push({label:name+' out',data:f.tx.map(function(v){return v==null?0:-+v.toFixed(2);}),borderColor:col,borderDash:[4,3],backgroundColor:'transparent',fill:false,tension:.2,borderWidth:1.2,pointRadius:0});
-const flat=[].concat(f.rx,f.tx).filter(function(v){return v!=null&&v>0;});
-const mean=flat.length?flat.reduce(function(a,b){return a+b;},0)/flat.length:0;
-const last=(f.rx[t.length-1]||0)+(f.tx[t.length-1]||0);
-const mx=flat.length?Math.max.apply(null,flat):0;
-lg.push('<div style="padding:8px 0;border-bottom:1px solid var(--gf-legend-line)"><div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:4px;background:'+col+';border-radius:2px"></span><b style="color:var(--gf-legend-text)">'+name+'</b></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;color:var(--gf-legend-sub);font-size:10px;margin-top:4px"><span style="font-weight:800">Mean</span><span style="font-weight:800">Last</span><span style="font-weight:800">Max</span><span>'+mean.toFixed(1)+' M</span><span>'+last.toFixed(1)+' M</span><span>'+mx.toFixed(1)+' M</span></div></div>');
-});
-gfChart.data.labels=labels;gfChart.data.datasets=ds;
-try{gfChart.update('none');}catch(e){}
-const lgEl=document.getElementById('gfLegend');
-if(lgEl)lgEl.innerHTML=lg.length?('<div style="display:grid;grid-template-columns:repeat(3,auto);gap:2px 10px;color:var(--gf-legend-sub);font-size:10px;font-weight:800;margin-bottom:2px"><span></span><span>Mean</span><span>Last</span><span>Max</span></div>'+lg.join('')):'<span style="color:var(--gf-legend-sub)">belum ada data — tunggu refresh '+(gfRefreshMs/1000)+'s</span>';
-const sub=document.getElementById('gfGraphSub');if(sub)sub.textContent=ifn.length+' interface • live';
-}catch(e){}
-}
-function gfStartPoller(){
-if(gfTimer){clearInterval(gfTimer);gfTimer=null;}
-gfTimer=setInterval(gfPoll,gfRefreshMs);
-gfPoll();
-}
-async function gfPoll(){
-try{
-const L=LIVE[curR];if(!L)return;
-const ifs=(DB[curR]||[]);
-for(const pp of ifs){
-try{
-const j=await collGet('/api/traffic?ip='+L.ip+'&iface='+encodeURIComponent(pp.n)+'&user='+encodeURIComponent(L.user||'')+'&pass='+encodeURIComponent(L.pass||'')+'&via='+encodeURIComponent(L.via||'')+'&community='+encodeURIComponent(L.community||''),9000);
-if(!j.ok)continue;
-const sw=(L.swap||{})[pp.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(pp.n)):!!(L.swap||{})[pp.n];
-const dl=sw?j.txMbps:j.rxMbps, ul=sw?j.rxMbps:j.txMbps;
-gfPush(L.ip,pp.n,dl||0,ul||0);
-L._rateAll=L._rateAll||{};L._rateAll[pp.n]={rx:dl||0,tx:ul||0};
-if(curI===pp.n){const sub=document.getElementById('gfIfaceSub');if(sub)sub.textContent=curR+' • '+pp.n+' — '+(dl||0).toFixed(1)+' Mbps ↓ '+(ul||0).toFixed(1)+' Mbps ↑';}
-L._err=0;
-}catch(e){}
-}
-gfDraw();
-try{renderPortStrip();}catch(e){}
-}catch(e){
-try{const L=LIVE[curR];if(L){L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+e.message+' (cek collector)');}}catch(_){}
-}
-}
-function tick(){try{refreshDurations();const c=cur();const pill=document.getElementById('statusPill');if(pill&&c){const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';else pill.textContent='● DUMMY';}}catch(e){}}
+const ctx=document.getElementById('chart');
+const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chart.update();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio DL:UL — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio DL:UL ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
 function uiModal(opts){
@@ -605,7 +450,17 @@ collHealth();setInterval(collHealth,15000);
 function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> DL/UL '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=DL':'Rx=DL')+')');}
 // tampilkan tombol swap hanya saat device live
 setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
-// (3s poller lama dihapus — diganti gfStartPoller di atas)
+setInterval(async()=>{try{
+const L=LIVE[curR];if(!L)return;const c=cur();if(!c||!c.live)return;
+const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&via=${encodeURIComponent(L.via||'')}&community=${encodeURIComponent(L.community||'')}`,9000);
+if(!j.ok)throw new Error(j.error||'traffic gagal');
+const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!(L.swap||{})[c.n];
+const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
+dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();chart.update();
+document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
+document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
+L._err=0;
+}catch(e){try{const L=LIVE[curR];if(L){L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+e.message+' (cek collector)');}}catch(_){}}},3000);
 // ---- REALTIME CONFIG SYNC: tiap 5 dtk tarik ulang interface semua device LIVE ----
 // Perubahan (port up/down, interface baru/hilang, nama) langsung masuk DB, lalu dashboard + topologi di-redraw.
 let _rtBusy=false;
@@ -707,12 +562,11 @@ function markAlarmsRead(){unreadCrit=0;updateBadge();}
 function setLogFilter(f){logFilter=f;renderAlarms();}
 function clearAlarms(){ALARMS=[];unreadCrit=0;updateBadge();renderAlarms();log('> alarm dibersihkan');}
 function beep(){if(!document.getElementById('alarmSound')?.checked)return;try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=0.08;o.start();o.stop(c.currentTime+0.25);}catch(e){}}
-function renderAlarms(){const el=document.getElementById('alarmList');if(!el)return;const rows=ALARMS.filter(a=>logFilter==='all'||a.sev===logFilter);if(!rows.length){el.innerHTML='<div style="font-size:13px;color:var(--gf-sub);background:var(--gf-log-bg);border:2px dashed var(--gf-border);border-radius:12px;padding:14px;text-align:center">Belum ada event. Gangguan / DOWN / diagnosa AI akan tercatat di sini.</div>';return;}el.innerHTML=rows.map(a=>{const bg=a.sev==='crit'?'#fee2e2':(a.sev==='warn'?'#fef9c3':'#e0f2fe');const fg=a.sev==='crit'?'#b91c1c':(a.sev==='warn'?'#a16207':'#0369a1');const ic=a.sev==='crit'?'🚨':(a.sev==='warn'?'⚠':'ℹ');return `<div style="background:${bg};color:${fg};border-radius:10px;padding:8px 12px;font-size:13px"><b>${ic} [${a.t}] ${a.dev}</b> — ${a.msg}</div>`;}).join('');}
-function renderDowntime(){const el=document.getElementById('downBody');if(!el)return;const sub=document.getElementById('downSub');const rows=DOWNTIME.slice(0,50);if(sub)sub.textContent=DOWNTIME.length+' kejadian';if(!rows.length){el.innerHTML='<tr><td colspan="5" style="padding:12px;color:var(--gf-sub);text-align:center">Belum ada downtime tercatat.</td></tr>';return;}el.innerHTML=rows.map(d=>{const dur=d.upAt?Math.round((d.upAt-d.downAt)/1000)+' dtk':'masih DOWN ⏳';return `<tr><td style="padding:6px 10px;font-weight:700;color:var(--gf-text)">${d.dev}</td><td style="padding:6px 10px">${d.downStr}</td><td style="padding:6px 10px">${d.upStr}</td><td style="padding:6px 10px;color:var(--gf-accent2)">${dur}</td><td style="padding:6px 10px;color:var(--gf-sub)">${d.reason||'—'}</td></tr>`;}).join('');}
+function renderAlarms(){const el=document.getElementById('alarmList');if(!el)return;const rows=ALARMS.filter(a=>logFilter==='all'||a.sev===logFilter);if(!rows.length){el.innerHTML='<div style="font-size:13px;color:#64748b;background:#f0f9ff;border:2px dashed #bae6fd;border-radius:12px;padding:14px;text-align:center">Belum ada event. Gangguan / DOWN / diagnosa AI akan tercatat di sini.</div>';return;}el.innerHTML=rows.map(a=>{const bg=a.sev==='crit'?'#fee2e2':(a.sev==='warn'?'#fef9c3':'#e0f2fe');const fg=a.sev==='crit'?'#b91c1c':(a.sev==='warn'?'#a16207':'#0369a1');const ic=a.sev==='crit'?'🚨':(a.sev==='warn'?'⚠':'ℹ');return `<div style="background:${bg};color:${fg};border-radius:10px;padding:8px 12px;font-size:13px"><b>${ic} [${a.t}] ${a.dev}</b> — ${a.msg}</div>`;}).join('');}
 // seed awal
 pushAlarm('info','sistem','Netmon - Router AI mulai.');
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'){DOWNTIME.push({dev:r+'/'+p.n,downAt:p.downSince||Date.now(),downStr:clockStr(new Date(p.downSince||Date.now())),upAt:null,upStr:'—',reason:p.fault||'awal'});}}}
-renderAlarms();renderDowntime();
+renderDowntime();
 // sambung tick → alarm otomatis tiap ada DOWN/loss tinggi (throttle 20 dtk per device)
 let lastAlarmAt={};
 function maybeAlarm(dev,sev,msg){const k=dev+sev;const now=Date.now();if(now-(lastAlarmAt[k]||0)<20000)return;lastAlarmAt[k]=now;pushAlarm(sev,dev,msg);}
@@ -751,11 +605,10 @@ if(DB[curR]&&DB[curR].length&&!DB[curR].find(x=>x.n===curI))curI=DB[curR][0].n;
 renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
-renderIfaces();setInterval(tick,1000);gfStartPoller();
-
+renderIfaces();setInterval(tick,1000);
 try{syncTopo();}catch(e){}
 try{setTimeout(pingIpNodes,4000);}catch(e){}
-setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderAlarms();}catch(e){}},5000);
+setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderDowntime();}catch(e){}},5000);
 async function persistTopo(manual){try{
 // anti-timpa: auto-save (termasuk pingIpNodes tiap 30 dtk) WAJIB mengalah kalau server punya LEBIH BANYAK layer (tab basi dilarang nimpa). Save manual (tombol 💾, import, hapus layer) tetap menang.
 if(!manual){try{const s=await collGet('/api/topo',8000);const nS=Object.keys((s&&s.layers)||{}).length,nL=Object.keys(LAYERS).length;
@@ -977,7 +830,25 @@ g.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();t
 g.addEventListener('click',()=>{if(window._delMode){delTopoNode(n.id);return;}if(window._cableFrom){cableDragFinish(window._cableFrom,n.id);return;}if(Date.now()-(window._topoDropAt||0)<250)return;const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){try{log('> "'+n.label+'" layer dummy — tidak dimonitoring');}catch(_){}return;}try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
 svg.appendChild(g);});
 document.getElementById('topoList').textContent=`${TOPO.length} perangkat • ${LINKS.length} link • klik node = monitoring • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
-// drawMiniTopo() dihapus — mini topologi digantikan oleh panel Grafana-style di tab dashboard
+try{drawMiniTopo();}catch(e){}
+}
+function drawMiniTopo(){
+const svg=document.getElementById('miniTopo');if(!svg)return;
+const hint=document.getElementById('miniTopoHint');
+if(!curLayer||!LAYERS[curLayer]){svg.setAttribute('viewBox','0 0 900 300');svg.innerHTML='';if(hint)hint.textContent='Belum ada layer.';return;}
+svg.setAttribute('viewBox',LAYERS[curLayer].vb||'0 0 900 400');
+svg.innerHTML='';
+if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',450);t.setAttribute('y',140);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','14');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer "'+(LAYERS[curLayer].label||curLayer)+'" masih kosong — tambah device di tab Topologi';svg.appendChild(t);if(hint)hint.textContent='';return;}
+LINKS.forEach(([a,b,med])=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bad=!!(B.db&&DB[B.db]&&DB[B.db].some(p=>p.oper==='down'));const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',bad?'#ef4444':(med==='fo'?'#fb923c':'#38bdf8'));l.setAttribute('stroke-width','3');if(!bad)l.setAttribute('class','cable-live');svg.appendChild(l);});
+TOPO.forEach(n=>{
+const st=topoSt(n);
+const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='pointer';
+const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');
+const sel=n.db&&n.db===curR;
+g.innerHTML=`<rect x="-52" y="-24" width="104" height="48" rx="14" fill="${fill}" stroke="${sel?'#0284c7':stroke}" stroke-width="${sel?4:2.5}"/><text y="4" text-anchor="middle" font-size="12" font-weight="800" fill="#0369a1">${(n.label||'').slice(0,14)}</text><text y="17" text-anchor="middle" font-size="9" fill="#64748b">${(n.sub||'').slice(0,18)}</text>`;
+g.addEventListener('click',()=>{try{const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){log('> layer dummy — tidak dimonitoring');return;}const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){}});
+svg.appendChild(g);});
+if(hint)hint.textContent=`${TOPO.length} perangkat • ${LINKS.length} link • ${LAYERS[curLayer].type==='dummy'?'layer dummy (tidak dimonitoring)':'klik node = pantau di sidebar + strip port'}`;
 }
 // refresh topologi otomatis (realtime) — skip saat user lagi drag / menu terbuka
 setInterval(()=>{try{if(window._topoDrag||window._cableFrom)return;if(document.getElementById('tab-topo')?.style.display==='flex'&&!document.getElementById('tmenu'))drawTopo();}catch(e){}},3000);

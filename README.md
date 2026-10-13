@@ -18,10 +18,8 @@ database tersimpan lokal di `data/topo.json`.
      Kabel langsung attach device-ke-device. Port mati = kabel merah.
    - **dummy** — ala Packet Tracer (tambah bebas, konek kabel = pilih port,
      traffic simulasi + animasi kabel).
-3. Tab Dashboard → klik nama device (sidebar) → tabel Interfaces muncul
-   (status UP/DOWN, MAC, rate live) → klik baris → traffic interface itu
-   masuk grafik multi-interface (legend Mean/Last/Max). Tema: 🌙/☀
-   toggle light (biru awan) / dark (pastel grafana).
+3. Tab Dashboard → klik nama device (sidebar) → port muncul di bawah grafik
+   → klik port → traffic port itu live. Mini topologi di bawah ikut sinkron.
 
 ## Aturan main
 

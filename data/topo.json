@@ -1,5 +1,5 @@
 {
- "at": "2026-10-13T11:16:28.040Z",
+ "at": "2026-10-13T15:33:09.765Z",
  "cur": "c30755",
  "layers": {
   "c50585": {
@@ -99,6 +99,293 @@
     }
    ],
    "links": []
+  },
+  "pu": {
+   "label": "Manage ICTel PU",
+   "type": "live",
+   "vb": "0 0 980 440",
+   "areas": [
+    {
+     "label": "Area Server ICTel",
+     "x": 5,
+     "y": 18,
+     "w": 280,
+     "h": 116
+    },
+    {
+     "label": "Area Server ICTel",
+     "x": 450,
+     "y": 178,
+     "w": 310,
+     "h": 116
+    },
+    {
+     "label": "Area Server President University",
+     "x": 300,
+     "y": 18,
+     "w": 450,
+     "h": 116
+    },
+    {
+     "label": "Area Publik / Kampus / Asrama",
+     "x": 100,
+     "y": 180,
+     "w": 330,
+     "h": 220
+    }
+   ],
+   "nodes": [
+    {
+     "id": "iforte",
+     "icon": "internet",
+     "label": "IForte / ISP",
+     "sub": "uplink 500M",
+     "x": 70,
+     "y": 70
+    },
+    {
+     "id": "swForte",
+     "icon": "switch",
+     "label": "Switch Iforte",
+     "sub": "ISP",
+     "x": 210,
+     "y": 70,
+     "db": "Switch Iforte"
+    },
+    {
+     "id": "swPu",
+     "icon": "switch",
+     "label": "Switch ICTel PU",
+     "sub": "area PU",
+     "x": 370,
+     "y": 70,
+     "db": "Switch ICTel PU"
+    },
+    {
+     "id": "rPu",
+     "icon": "router",
+     "label": "Router PU",
+     "sub": "BGP + IP publik",
+     "x": 520,
+     "y": 70,
+     "db": "Router PU"
+    },
+    {
+     "id": "rIctel",
+     "icon": "router",
+     "label": "Router Ictel",
+     "sub": "VLAN 31-40",
+     "x": 670,
+     "y": 70,
+     "db": "Router Ictel"
+    },
+    {
+     "id": "swCore",
+     "icon": "switch",
+     "label": "SW Ictel Core",
+     "sub": "server ICTel",
+     "x": 690,
+     "y": 230,
+     "db": "SW Ictel Core"
+    },
+    {
+     "id": "olt",
+     "icon": "olt",
+     "label": "Gepon / OLT",
+     "sub": "area ICTel",
+     "x": 520,
+     "y": 230,
+     "db": "GPON / OLT"
+    },
+    {
+     "id": "ontK",
+     "icon": "ont",
+     "label": "ONT Kampus",
+     "sub": "publik",
+     "x": 350,
+     "y": 230,
+     "db": "ONT Kampus"
+    },
+    {
+     "id": "swR",
+     "icon": "swpoe",
+     "label": "SW Ruijie PoE",
+     "sub": "ke AP",
+     "x": 180,
+     "y": 230,
+     "db": "SW Ruijie PoE"
+    },
+    {
+     "id": "apA",
+     "icon": "ap",
+     "label": "AP A4.1",
+     "sub": "flapping",
+     "x": 180,
+     "y": 350,
+     "db": "AP A4.1"
+    },
+    {
+     "id": "apP",
+     "icon": "ap",
+     "label": "AP Pavilion 1",
+     "sub": "asrama",
+     "x": 350,
+     "y": 350,
+     "db": "AP Pavilion 1"
+    }
+   ],
+   "links": [
+    [
+     "iforte",
+     "swForte",
+     "fo"
+    ],
+    [
+     "swForte",
+     "swPu",
+     "fo"
+    ],
+    [
+     "swPu",
+     "rPu",
+     "fo"
+    ],
+    [
+     "rPu",
+     "rIctel",
+     "fo"
+    ],
+    [
+     "rIctel",
+     "swCore",
+     "fo"
+    ],
+    [
+     "swCore",
+     "olt",
+     "fo"
+    ],
+    [
+     "olt",
+     "ontK",
+     "fo"
+    ],
+    [
+     "ontK",
+     "swR",
+     "lan"
+    ],
+    [
+     "swR",
+     "apA",
+     "lan"
+    ],
+    [
+     "swR",
+     "apP",
+     "lan"
+    ]
+   ]
+  },
+  "kij": {
+   "label": "ICTEL KIJ",
+   "type": "live",
+   "vb": "0 0 900 300",
+   "areas": [],
+   "nodes": [
+    {
+     "id": "isp",
+     "icon": "internet",
+     "label": "ISP",
+     "sub": "uplink KIJ",
+     "x": 90,
+     "y": 150
+    },
+    {
+     "id": "swK",
+     "icon": "switch",
+     "label": "Switch ICTel",
+     "sub": "inti KIJ",
+     "x": 290,
+     "y": 150,
+     "db": "Switch ICTel"
+    },
+    {
+     "id": "oltK",
+     "icon": "olt",
+     "label": "OLT",
+     "sub": "PON",
+     "x": 490,
+     "y": 150,
+     "db": "OLT KIJ"
+    },
+    {
+     "id": "ont1",
+     "icon": "ont",
+     "label": "ONT-01",
+     "sub": "fiber OK",
+     "x": 660,
+     "y": 80,
+     "db": "ONT-01"
+    },
+    {
+     "id": "ont2",
+     "icon": "ont",
+     "label": "ONT-02",
+     "sub": "fiber OK",
+     "x": 660,
+     "y": 220,
+     "db": "ONT-02"
+    },
+    {
+     "id": "ten1",
+     "icon": "pc",
+     "label": "Tenant A",
+     "sub": "user",
+     "x": 815,
+     "y": 80
+    },
+    {
+     "id": "ten2",
+     "icon": "pc",
+     "label": "Tenant B",
+     "sub": "user",
+     "x": 815,
+     "y": 220
+    }
+   ],
+   "links": [
+    [
+     "isp",
+     "swK",
+     "fo"
+    ],
+    [
+     "swK",
+     "oltK",
+     "fo"
+    ],
+    [
+     "oltK",
+     "ont1",
+     "fo"
+    ],
+    [
+     "oltK",
+     "ont2",
+     "fo"
+    ],
+    [
+     "ont1",
+     "ten1",
+     "lan"
+    ],
+    [
+     "ont2",
+     "ten2",
+     "lan"
+    ]
+   ]
   }
  }
 }
