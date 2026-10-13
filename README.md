@@ -1,8 +1,14 @@
-# NetMon Komersil — Router AI (standalone lokal)
+# Netmon — Router AI
 
 Monitoring jaringan + topologi + AI troubleshoot. Install di mana, dipakai di
 situ (ala PRTG): dashboard + collector jalan di mesin yang sama, topologi +
 database tersimpan lokal di `data/topo.json`.
+
+![Topologi layer LIVE — RUMAH](review/topologi-live-rumah.png)
+*Layer **live** (RUMAH): device asli terdeteksi via SNMP/ping, ikon sesuai jenis, status per node.*
+
+![Topologi layer DUMMY](review/topologi-dummy.png)
+*Layer **dummy** ala Packet Tracer: tambah bebas, tarik kabel, label teks, animasi traffic.*
 
 ## Jalanin
 
@@ -23,6 +29,11 @@ database tersimpan lokal di `data/topo.json`.
   semua) → tambah ke layer live aktif.
 - Kabel: klik node asal (Pasang kabel) → tarik → klik tujuan. Klik kabel =
   edit/hapus/pindah colok. Undo/redo + Rapikan tersedia.
+- Label teks ala draw.io: klik kanan node → **✎ Edit nama & sub-teks** +
+  ukuran font (A-/A/A+). Posisi node bebas di-drag.
+- Remote akses: klik kanan node → **🖥 Remote** — HTTPS/HTTP/Telnet/SSH/Winbox
+  langsung ke device (deteksi port otomatis via collector). Butuh handler
+  sekali saja: `scripts\install-remote-handlers.bat`.
 - Pindah mesin: copy `data/topo.json` (backup otomatis `data/topo.json.bak`).
   Export/Import JSON juga tersedia di tab Topologi.
 
