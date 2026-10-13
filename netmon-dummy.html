@@ -304,6 +304,7 @@ h+=`<button data-act="ok" style="border:0;background:#0284c7;color:#fff;border-r
 <button data-act="cancel" style="border:2px solid #e2e8f0;background:#fff;color:#475569;border-radius:10px;padding:8px 16px;font-weight:800;cursor:pointer">Batal</button></div>`;
 bx.innerHTML=h;ov.appendChild(bx);document.body.appendChild(ov);
 const choiceState={};
+F.forEach((f,i)=>{if(f.type==='choice'&&(f.choices||[]).length)choiceState[i]=(f.choices||[])[0].v;});
 ov.querySelectorAll('[data-fc]').forEach(el=>{el.onclick=()=>{const [i,j]=el.dataset.fc.split('-').map(Number);choiceState[i]=F[i].choices[j].v;const wrap=el.parentElement;wrap.querySelectorAll('[data-fc]').forEach(b=>{b.style.borderColor='#e0f2fe';b.style.background='#f8fafc';b.style.color='#475569';});el.style.borderColor='#0284c7';el.style.background='#e0f2fe';el.style.color='#0369a1';};});
 const close=r=>{document.removeEventListener('keydown',esc);document.body.removeChild(ov);};
 const esc=ev=>{if(ev.key==='Escape'){close('cancel');}};
@@ -572,7 +573,7 @@ function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swa
 setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
 setInterval(async()=>{try{
 const L=LIVE[curR];if(!L)return;const c=cur();if(!c||!c.live)return;
-const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&via=${encodeURIComponent(L.via||'')}&community=${encodeURIComponent(L.community||'')}`,9000);
+const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&via=${encodeURIComponent(L.via||'')}&community=${encodeURIComponent(L.community||'')}`,15000);
 if(!j.ok)throw new Error(j.error||'traffic gagal');
 const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!(L.swap||{})[c.n];
 const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
@@ -580,7 +581,7 @@ dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){
 document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
 document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
 L._err=0;
-}catch(e){try{const L=LIVE[curR];if(L){L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+e.message+' (cek collector)');}}catch(_){}}},3000);
+}catch(e){try{if(window._leaving)return;const L=LIVE[curR];if(L){const em=String((e&&e.message)||e);const abort=/abort/i.test(em);L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+(abort?'request timeout/dibatalkan (cek collector kalau berulang)':em)+' (cek collector)');}}catch(_){}}},3000);
 // ---- REALTIME CONFIG SYNC: tiap 5 dtk tarik ulang interface semua device LIVE ----
 // Perubahan (port up/down, interface baru/hilang, nama) langsung masuk DB, lalu dashboard + topologi di-redraw.
 let _rtBusy=false;
@@ -726,6 +727,7 @@ renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
 renderIfaces();setInterval(tick,1000);
+window.addEventListener('beforeunload',()=>{try{window._leaving=true;}catch(e){}});
 try{syncTopo();}catch(e){}
 try{setTimeout(pingIpNodes,4000);}catch(e){}
 setInterval(()=>{try{if(document.getElementById('tab-log')?.style.display==='flex')renderDowntime();}catch(e){}},5000);
