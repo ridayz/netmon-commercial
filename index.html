@@ -75,8 +75,8 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 <div class="grid2">
 <div class="panel"><h3>📈 Traffic Realtime</h3><canvas id="chart" height="130"></canvas>
-<div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio DL:UL — menunggu data...</div>
-<button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik DL/UL (port LAN)</button>
+<div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio Download : Upload — menunggu data...</div>
+<button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik Download/Upload (port LAN)</button>
 </div>
 <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
 <div class="log" id="log">> Netmon - Router AI siap. Klik node di topologi buat pantau.</div>
@@ -230,7 +230,7 @@ document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.s
 const ctx=document.getElementById('chart');
 const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
 function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chart.update();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
-try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio DL:UL — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio DL:UL ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
+try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
 function uiModal(opts){
@@ -432,7 +432,7 @@ if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
 async function collGet(path,timeoutMs){const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeoutMs||20000);try{const r=await fetch(COLL()+path,{signal:ctl.signal});return await r.json();}finally{clearTimeout(to);}}
 async function collHealth(){try{await collGet('/health',5000);const d=document.getElementById('collDot');if(d){d.textContent='🟢';d.title='collector nyambung';}}catch(e){const d=document.getElementById('collDot');if(d){d.textContent='🔴';d.title='collector MATI — jalankan node server.js di netmon-collector';}}}
 collHealth();setInterval(collHealth,15000);
-function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> DL/UL '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=DL':'Rx=DL')+')');}
+function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> Download/Upload '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=Download':'Rx=Download')+')');}
 // tampilkan tombol swap hanya saat device live
 setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
 setInterval(async()=>{try{
