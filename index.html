@@ -12,7 +12,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .sidebar{width:270px;background:#fff;border-right:2px solid #bae6fd;padding:20px;display:flex;flex-direction:column;gap:12px}
 .logo{background:linear-gradient(135deg,#bae6fd,#e0f2fe);border-radius:16px;padding:14px;text-align:center;font-weight:800;font-size:20px;color:#0369a1}
 .label{font-size:11px;font-weight:700;letter-spacing:.08em;color:#0284c7;text-transform:uppercase;margin-top:8px}
-.router-btn{border:2px solid #e0f2fe;background:#f0f9ff;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-weight:600;color:#075985}
+.router-btn{border:2px solid #e0f2fe;background:#f0f9ff;border-radius:10px;padding:6px 8px;cursor:pointer;text-align:left;font-weight:600;color:#075985;font-size:13px}
 .router-btn.active{background:#0284c7;color:#fff;border-color:#0284c7}
 .iface{border-radius:10px;padding:8px 10px;background:#f8fafc;border:1px solid #e0f2fe;display:flex;justify-content:space-between;cursor:pointer;font-size:14px}
 .iface.active{background:#bae6fd;border-color:#38bdf8;font-weight:700}
@@ -20,7 +20,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .dot.green{background:#22c55e}.dot.grey{background:#cbd5e1}.dot.red{background:#f87171}.dot.yellow{background:#facc15}
 .main{flex:1;padding:22px;display:flex;flex-direction:column;gap:14px}
 .topbar{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
-.topbar h1{margin:0;font-size:21px;color:#0369a1}
+.topbar h1{margin:0;font-size:16px;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
 .topbar p{margin:4px 0 0;color:#64748b;font-size:12px}
 .pill{background:#e0f2fe;color:#0369a1;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -175,6 +175,8 @@ const devs=topoDevs().filter(o=>o.layerKey===curLayer);
 if(!curLayer){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada layer — buat dulu di tab Topologi.</div>';return;}
 if(!isLive){el.innerHTML='<div style="font-size:12px;color:#64748b">Layer dummy — tidak dimonitoring.<br>Pindah ke layer live buat pantau port.</div>';return;}
 if(!devs.length){el.innerHTML='<div style="font-size:12px;color:#64748b">Layer live masih kosong — tambah device di tab Topologi.</div>';return;}
+const _sig=curLayer+'|'+curR+'|'+devs.map(o=>{const ps=DB[o.db]||[];return o.db+':'+ps.length+':'+ps.filter(p=>p.oper==='down').length+':'+(!!LIVE[o.db])+':'+devDot(o.db);}).join(',');
+if(el._sig===_sig)return;el._sig=_sig;
 el.innerHTML='';
 devs.forEach(o=>{const ps=DB[o.db]||[];const downs=ps.filter(p=>p.oper==='down').length;const live=!!LIVE[o.db];const b=document.createElement('div');b.className='router-btn'+(o.db===curR?' active':'');b.style.cssText+=';display:flex;gap:8px;align-items:flex-start;width:100%;'+(live?'':'background:#f1f5f9;border-color:#cbd5e1;color:#475569');b.innerHTML=`<span class="dot ${devDot(o.db)}" style="margin-top:4px"></span><span style="flex:1"><b>${o.db}</b> ${live?'🟢':'⚪'}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}</span></span>`;b.onclick=()=>pickDev(o.db);el.appendChild(b);});
 }
@@ -183,6 +185,8 @@ const box=document.getElementById('portStrip');if(!box)return;
 const nm=document.getElementById('portDevName');
 if(!curR||!DB[curR]||!DB[curR].length){if(nm)nm.textContent='belum ada device';box.style.color='#64748b';box.textContent='Pilih device live dulu (sidebar kiri / topologi bawah).';return;}
 if(nm)nm.textContent=curR+(LIVE[curR]?' 🟢':' ⚪');
+const _psig=curR+'|'+curI+'|'+(DB[curR]||[]).map(p=>p.n+':'+p.admin+':'+p.oper+':'+p.fault).join(',');
+if(box._sig===_psig)return;box._sig=_psig;
 box.innerHTML='';box.style.color='';
 DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';const b=document.createElement('button');b.style.cssText='border:2px solid '+(p.n===curI?'#0284c7':'#bae6fd')+';background:'+(p.n===curI?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';b.innerHTML=`<span class="dot ${dot}"></span>${p.n}`;b.title=p.admin+'/'+p.oper+' (klik kanan = disable/enable)';b.onclick=()=>{curI=p.n;renderIfaces();};b.oncontextmenu=(ev)=>{ev.preventDefault();curI=p.n;renderIfaces();showCtx(ev.clientX,ev.clientY);};box.appendChild(b);});
 }
@@ -227,9 +231,9 @@ function hideCtx(){document.getElementById('ctx')?.remove();}
 function setAdmin(s){hideCtx();const c=cur();c.admin=s;if(s==='down'){c.prevFault=c.fault;c.fault='disabled-human';setLink(curR,c,'down','disable manual');log('> kamu DISABLE '+c.n+' (klik kanan)');}else{c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';setLink(curR,c,'up','enable manual');log('> kamu ENABLE '+c.n+' manual');}renderIfaces();}
 function simUnplug(){hideCtx();const c=cur();c.admin='up';if(c.type==='sfp'){c.fault='no-light';}else{c.fault='putus-23m';c.poe='0W';}setLink(curR,c,'down','kabel dicabut (simulasi)');log('> simulasi kabel '+c.n+' DICABUT');renderIfaces();}
 function refresh(){
-const c=cur();if(!c){document.getElementById('title').textContent='Netmon - Router AI';return;}document.getElementById('title').textContent=`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`;
+const c=cur();const _tt=c?`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`:'Netmon - Router AI';const _te=document.getElementById('title');if(_te.textContent!==_tt)_te.textContent=_tt;if(!c)return;
 const down=c.oper==='down';
-document.getElementById('statusPill').textContent=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');
+const _pt=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');const _pe=document.getElementById('statusPill');if(_pe.textContent!==_pt)_pe.textContent=_pt;
 document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.startsWith('sehat')?'#e0f2fe':'#fef9c3');
 // (Panel TDR dihapus dari dashboard — character copper/fiber tetap di AI diagnosa)
 }
