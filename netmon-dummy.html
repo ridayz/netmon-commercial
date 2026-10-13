@@ -73,7 +73,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span>ke 8.8.8.8</span></div>
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
-<div class="panel"><h3>📈 Traffic Realtime</h3><canvas id="chart" height="130"></canvas>
+<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:300px;max-width:1150px"><canvas id="chart"></canvas></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;color:#0369a1;font-weight:700">
 <span>🔍 Window grafik</span>
 <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">Geser <input id="cwStart" type="range" min="0" max="0" value="0" oninput="cwOnInput()" style="flex:1;accent-color:#0284c7"></label>
@@ -234,7 +234,7 @@ document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.s
 // (Panel TDR dihapus dari dashboard — character copper/fiber tetap di AI diagnosa)
 }
 const ctx=document.getElementById('chart');
-const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
+const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
 // ---- WINDOW SLIDER grafik: geser + atur lebar tampil tanpa gerakkan data ----
 let cwLen=30, cwStart=0;
 function chartView(){try{
