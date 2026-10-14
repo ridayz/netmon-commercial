@@ -122,7 +122,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="topoZoom(0.8)" title="Mendekatkan (zoom in)">－</button>
 <button id="modePtr" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(false)" title="Mode normal: klik = pantau/pasang">👆 Pointer</button>
 <button id="modeDel" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(true)" title="Mode hapus: klik kabel = hapus kabel, klik device = hapus device">🗑 Hapus</button>
-<span style="color:#64748b">slider = geser view • drag node • klik kanan = menu • <b>2x klik = edit teks</b> • box-select / Ctrl+klik = pilih banyak • arrow = geser pilihan</span>
+<span style="color:#64748b">slider = geser view • drag node • klik kanan = menu • <b>2x klik = edit teks</b> • box-select / Ctrl+klik = pilih banyak (node+area) • arrow = geser pilihan</span>
 </div>
 <svg id="topoSvg" width="100%" height="460" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;margin-top:10px;touch-action:none"></svg>
 <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px">
@@ -804,7 +804,7 @@ document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(
 // ---- MARQUEE SELECT (bounding box ala draw.io): drag area kosong = seleksi ----
 (function(){
 const svg=document.getElementById('topoSvg');if(!svg)return;
-const pos=e=>{const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return{x:(e.clientX-r.left)*vb.width/r.width+vb.x,y:(e.clientY-r.top)*vb.height/r.height+vb.y};};
+const pos=e=>svgPt(svg,e);
 let mq=null;
 svg.addEventListener('pointerdown',e=>{
 if(e.pointerType==='mouse'&&e.button!==0)return;
@@ -823,11 +823,12 @@ const up=e2=>{svg.removeEventListener('pointermove',mv);window._topoDrag=false;t
 if(!mq)return;const wasDrag=mq.moved;let box=null;
 if(mq.el){const q=pos(e2);box={x:Math.min(mq.x0,q.x),y:Math.min(mq.y0,q.y),w:Math.abs(q.x-mq.x0),h:Math.abs(q.y-mq.y0)};mq.el.remove();}
 mq=null;
-if(!wasDrag){if(SEL.size){SEL.clear();drawTopo();}return;}
+if(!wasDrag){if(selCount()){SEL.clear();SELA.clear();drawTopo();}return;}
 if(!box||box.w<8||box.h<8)return;
-SEL.clear();
+SEL.clear();SELA.clear();
 TOPO.forEach(n=>{const hw=(n._w||124)/2;if(n.x+hw>=box.x&&n.x-hw<=box.x+box.w&&n.y+34>=box.y&&n.y-34<=box.y+box.h)SEL.add(n.id);});
-drawTopo();log('> marquee select: '+SEL.size+' node (drag / arrow keys = geser bareng)');};
+(LAYERS[curLayer].areas||[]).forEach(z=>{if(z.x<=box.x+box.w&&z.x+z.w>=box.x&&z.y<=box.y+box.h&&z.y+z.h>=box.y&&z.id)SELA.add(z.id);});
+drawTopo();log('> marquee select: '+selCount()+' objek ('+SEL.size+' node + '+SELA.size+' area) — drag / arrow keys = geser bareng');};
 svg.addEventListener('pointermove',mv);svg.addEventListener('pointerup',up,{once:true});});
 })();
 // ---- ARROW KEYS + Ctrl+A + Esc di kanvas topologi ----
@@ -835,12 +836,13 @@ document.addEventListener('keydown',ev=>{
 const t=(ev.target&&ev.target.tagName)||'';
 if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||(ev.target&&ev.target.isContentEditable))return;
 if(document.getElementById('tab-topo')?.style.display!=='flex')return;
-if(ev.key==='Escape'){if(window._cableFrom)return;if(SEL.size){SEL.clear();drawTopo();}return;}
-if((ev.ctrlKey||ev.metaKey)&&(ev.key==='a'||ev.key==='A')){ev.preventDefault();SEL.clear();TOPO.forEach(n=>SEL.add(n.id));drawTopo();log('> select semua ('+SEL.size+' node)');return;}
+if(ev.key==='Escape'){if(window._cableFrom)return;if(selCount()){SEL.clear();SELA.clear();drawTopo();}return;}
+if((ev.ctrlKey||ev.metaKey)&&(ev.key==='a'||ev.key==='A')){ev.preventDefault();SEL.clear();SELA.clear();TOPO.forEach(n=>SEL.add(n.id));(LAYERS[curLayer].areas||[]).forEach(z=>{if(z.id)SELA.add(z.id);});drawTopo();log('> select semua ('+selCount()+' objek)');return;}
 const arrows={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
-if(arrows[ev.key]&&SEL.size){ev.preventDefault();
+if(arrows[ev.key]&&selCount()){ev.preventDefault();
 const st=ev.shiftKey?1:10,dd=arrows[ev.key];
 SEL.forEach(id=>{const n=topoNode(id);if(n&&TOPO.indexOf(n)>=0){n.x+=dd[0]*st;n.y+=dd[1]*st;}});
+SELA.forEach(id=>{const z=(LAYERS[curLayer].areas||[]).find(q=>q.id===id);if(z){z.x+=dd[0]*st;z.y+=dd[1]*st;}});
 drawTopo();clearTimeout(window._selSaveT);window._selSaveT=setTimeout(()=>{try{saveTopo();}catch(_){}},600);}
 });
 // zoom via scroll
@@ -954,7 +956,7 @@ drawTopo();saveTopo(true);
 log(`> topologi dirapikan otomatis (${TOPO.length} node, undo tersedia)`);
 try{pushAlarm('info','topologi','Auto-rapikan '+TOPO.length+' node');}catch(e){}
 }
-function setLayer(l){if(!l||!LAYERS[l])l=firstLayerKey();curLayer=l||'';TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];if(!DB[curR]||!DB[curR].length){const td=topoDevs().filter(o=>o.layerKey===curLayer);if(td.length){curR=td[0].db;if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}}renderLayerBtns();try{renderRouters();renderIfaces();}catch(e){}if(curLayer)log('> layer topologi: '+LAYERS[curLayer].label);SEL.clear();drawTopo();}
+function setLayer(l){if(!l||!LAYERS[l])l=firstLayerKey();curLayer=l||'';TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];if(!DB[curR]||!DB[curR].length){const td=topoDevs().filter(o=>o.layerKey===curLayer);if(td.length){curR=td[0].db;if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}}renderLayerBtns();try{renderRouters();renderIfaces();}catch(e){}if(curLayer)log('> layer topologi: '+LAYERS[curLayer].label);SEL.clear();SELA.clear();drawTopo();}
 // ---- MULTI-SELECT node: box-select / Ctrl+klik, drag bareng, arrow keys ----
 const SEL=new Set();
 function toggleSel(id){if(SEL.has(id))SEL.delete(id);else SEL.add(id);drawTopo();}
@@ -973,24 +975,27 @@ const svg=document.getElementById('topoSvg');const W=svg.clientWidth||900;
 svg.setAttribute('viewBox',LAYERS[curLayer].vb);
 svg.innerHTML='';
 if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');const vb0=svg.viewBox.baseVal;const cx0=(vb0&&vb0.width)?vb0.width/2:450;t.setAttribute('x',cx0);t.setAttribute('y',150);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','15');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer kosong — klik 🔍 Discover buat scan perangkat satu jaringan';svg.appendChild(t);const t2=document.createElementNS('http://www.w3.org/2000/svg','text');t2.setAttribute('x',cx0);t2.setAttribute('y',172);t2.setAttribute('text-anchor','middle');t2.setAttribute('font-size','12');t2.setAttribute('fill','#64748b');t2.textContent='cth: 192.168.18.6 → langsung kebaca + live';svg.appendChild(t2);}
+window._areaEls={};
 (LAYERS[curLayer].areas||[]).forEach((a,ai)=>{if(!a.id)a.id='a-'+curLayer+'-'+ai;
-const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.style.cursor='grab';
-const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',a.x);r.setAttribute('y',a.y);r.setAttribute('width',a.w);r.setAttribute('height',a.h);r.setAttribute('rx',16);r.setAttribute('fill','rgba(255,255,255,.45)');r.setAttribute('stroke','#0284c7');r.setAttribute('stroke-width','1.6');r.setAttribute('stroke-dasharray','8 5');g.appendChild(r);
+const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.style.cursor='grab';g.dataset.aid=a.id;
+const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',a.x);r.setAttribute('y',a.y);r.setAttribute('width',a.w);r.setAttribute('height',a.h);r.setAttribute('rx',16);r.setAttribute('fill','rgba(255,255,255,.45)');r.setAttribute('stroke',SELA.has(a.id)?'#f59e0b':'#0284c7');r.setAttribute('stroke-width',SELA.has(a.id)?'2.5':'1.6');r.setAttribute('stroke-dasharray','8 5');g.appendChild(r);
 const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',a.x+14);t.setAttribute('y',a.y+18);t.setAttribute('font-size',a.fs||11);t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent=a.label;t.style.pointerEvents='none';g.appendChild(t);
 const hz=8,hd=document.createElementNS('http://www.w3.org/2000/svg','rect');hd.setAttribute('x',a.x+a.w-hz);hd.setAttribute('y',a.y+a.h-hz);hd.setAttribute('width',hz*2);hd.setAttribute('height',hz*2);hd.setAttribute('rx',4);hd.setAttribute('fill','#0284c7');hd.setAttribute('stroke','#fff');hd.setAttribute('stroke-width',2);hd.style.cursor='nwse-resize';g.appendChild(hd);
 svg.appendChild(g);
-const toSvg=e2=>{const rr=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return{x:(e2.clientX-rr.left)*vb.width/rr.width,y:(e2.clientY-rr.top)*vb.height/rr.height};};
+const toSvg=e2=>svgPt(svg,e2);
 const paint=()=>{r.setAttribute('x',a.x);r.setAttribute('y',a.y);r.setAttribute('width',a.w);r.setAttribute('height',a.h);t.setAttribute('x',a.x+14);t.setAttribute('y',a.y+18);hd.setAttribute('x',a.x+a.w-hz);hd.setAttribute('y',a.y+a.h-hz);};
-hd.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();window._topoDrag=true;try{hd.setPointerCapture(ev.pointerId);}catch(e){}
+window._areaEls=window._areaEls||{};window._areaEls[a.id]={paint};
+hd.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();window._topoDrag=true;if(!ev.ctrlKey&&!ev.metaKey&&!SELA.has(a.id)){SEL.clear();SELA.clear();}try{hd.setPointerCapture(ev.pointerId);}catch(e){}
 const p0=toSvg(ev);const offW=(a.x+a.w)-p0.x,offH=(a.y+a.h)-p0.y;
 const mv=e2=>{const p=toSvg(e2);a.w=Math.max(80,Math.round(p.x+offW-a.x));a.h=Math.max(50,Math.round(p.y+offH-a.y));paint();};
 const up=()=>{hd.removeEventListener('pointermove',mv);window._topoDrag=false;try{hd.releasePointerCapture(ev.pointerId);}catch(e){}drawTopo();saveTopo();};
 hd.addEventListener('pointermove',mv);hd.addEventListener('pointerup',up,{once:true});hd.addEventListener('pointercancel',()=>{window._topoDrag=false;},{once:true});
 });
-r.addEventListener('pointerdown',ev=>{ev.preventDefault();window._topoDrag=true;const p0=toSvg(ev);const ox=a.x-p0.x,oy=a.y-p0.y;let moved=false;const sx=ev.clientX,sy=ev.clientY;try{r.setPointerCapture(ev.pointerId);}catch(e){}
-const mv=e2=>{if(Math.abs(e2.clientX-sx)+Math.abs(e2.clientY-sy)>6)moved=true;if(!moved)return;const p=toSvg(e2);a.x=Math.round(p.x+ox);a.y=Math.round(p.y+oy);paint();};
-const up=()=>{r.removeEventListener('pointermove',mv);window._topoDrag=false;try{r.releasePointerCapture(ev.pointerId);}catch(e){}if(!moved)return;drawTopo();saveTopo();};
+r.addEventListener('pointerdown',ev=>{ev.preventDefault();window._topoDrag=true;if(!ev.ctrlKey&&!ev.metaKey&&!SELA.has(a.id)){SEL.clear();SELA.clear();}const p0=toSvg(ev);const ox=a.x-p0.x,oy=a.y-p0.y;let moved=false;const sx=ev.clientX,sy=ev.clientY;try{r.setPointerCapture(ev.pointerId);}catch(e){}
+const mv=e2=>{if(Math.abs(e2.clientX-sx)+Math.abs(e2.clientY-sy)>6)moved=true;if(!moved)return;const p=toSvg(e2);const nx=Math.round(p.x+ox),ny=Math.round(p.y+oy);const dx=nx-a.x,dy=ny-a.y;a.x=nx;a.y=ny;paint();if(SELA.has(a.id)&&selCount()>1){SEL.forEach(id=>{const m=topoNode(id);if(!m||TOPO.indexOf(m)<0)return;m.x+=dx;m.y+=dy;try{const gg=svg.querySelector('g[data-nid="'+id+'"]');if(gg)gg.setAttribute('transform',`translate(${m.x},${m.y})`);}catch(_){}});SELA.forEach(id=>{if(id===a.id)return;const o=(LAYERS[curLayer].areas||[]).find(z=>z.id===id);if(!o)return;o.x+=dx;o.y+=dy;try{const oe=(window._areaEls||{})[id];if(oe)oe.paint();}catch(_){}});}};
+const up=()=>{r.removeEventListener('pointermove',mv);window._topoDrag=false;try{r.releasePointerCapture(ev.pointerId);}catch(e){}if(!moved)return;try{window._areaDropAt=Date.now();}catch(_){}drawTopo();saveTopo();};
 r.addEventListener('pointermove',mv);r.addEventListener('pointerup',up,{once:true});r.addEventListener('pointercancel',()=>{window._topoDrag=false;},{once:true});
+r.addEventListener('click',ev=>{if(Date.now()-(window._areaDropAt||0)<250)return;if(ev.ctrlKey||ev.metaKey){toggleSelA(a.id);log('> select '+selCount()+' objek');return;}SELA.clear();SEL.clear();SELA.add(a.id);drawTopo();});
 });
 });
 LINKS.forEach(([a,b,med,pa,pb],li)=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bDown=!!(B.db&&DB[B.db]&&DB[B.db].some(p=>p.oper==='down'));const bad=bDown;const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',bad?'#ef4444':(med==='fo'?'#fb923c':'#38bdf8'));l.setAttribute('stroke-width',bad?'4':'3');if(!bad)l.setAttribute('class','cable-live');l.dataset.a=a;l.dataset.b=b;l.style.cursor='pointer';l.addEventListener('click',ev=>{ev.stopPropagation();if(window._delMode){delCable(li);return;}cableMenu(ev.clientX,ev.clientY,li);});l.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();delCable(li);});svg.appendChild(l);if(pa||pb){const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;const lt=document.createElementNS('http://www.w3.org/2000/svg','text');lt.setAttribute('x',mx);lt.setAttribute('y',my-8);lt.setAttribute('text-anchor','middle');lt.setAttribute('font-size','9');lt.setAttribute('font-weight','700');lt.setAttribute('fill','#475569');lt.setAttribute('stroke','#fff');lt.setAttribute('stroke-width','3');lt.setAttribute('paint-order','stroke');lt.dataset.a=a;lt.dataset.b=b;lt.textContent=(pa||'')+(pa||pb?'↔':'')+(pb||'');svg.appendChild(lt);}});
@@ -1003,23 +1008,24 @@ const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribut
 const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');const isSel=SEL.has(n.id);
 g.innerHTML=`<rect x="${-n._w/2}" y="-30" width="${n._w}" height="60" rx="16" fill="${fill}" stroke="${isSel?'#f59e0b':stroke}" stroke-width="${isSel?4:2.5}"${isSel?' stroke-dasharray="7 4"':''}/>${VECICON.includes(n.icon)?iconSvg(n.icon):`<text y="0" text-anchor="middle" font-size="22">${ICONS[n.icon]||'📦'}</text>`}<text y="16" text-anchor="middle" font-size="${Math.round(11*(n.fs||1))}" font-weight="800" fill="#0369a1">${n.label}</text><text y="26" text-anchor="middle" font-size="${Math.round(9*(n.fs||1))}" fill="#64748b">${n.sub||''}</text>`;
 g.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();window._topoDrag=true;const sx=ev.clientX,sy=ev.clientY;let moved=false;
-// simpan offset grabs: jarak pointer terhadap pusat node saat klik
-const r0=svg.getBoundingClientRect();const vb0=svg.viewBox.baseVal;
-const px0=(ev.clientX-r0.left)*vb0.width/r0.width;
-const py0=(ev.clientY-r0.top)*vb0.height/r0.height;
-const offX=n.x-px0,offY=n.y-py0;
+// simpan offset grabs: jarak pointer terhadap pusat node saat klik (CTM-presisi)
+const _p0=svgPt(svg,ev);
+const offX=n.x-_p0.x,offY=n.y-_p0.y;
+if(!ev.ctrlKey&&!ev.metaKey&&!SEL.has(n.id)){SEL.clear();SELA.clear();}
 try{g.setPointerCapture(ev.pointerId);}catch(e){}
-const move=e2=>{if(Math.abs(e2.clientX-sx)+Math.abs(e2.clientY-sy)>6)moved=true;if(!moved)return;const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;
-const px=(e2.clientX-r.left)*vb.width/r.width;
-const py=(e2.clientY-r.top)*vb.height/r.height;
+const move=e2=>{if(Math.abs(e2.clientX-sx)+Math.abs(e2.clientY-sy)>6)moved=true;if(!moved)return;const _pp=svgPt(svg,e2);
+const px=_pp.x;
+const py=_pp.y;
 const nx=Math.round(px+offX),ny=Math.round(py+offY);
 const dx=nx-n.x,dy=ny-n.y;n.x=nx;n.y=ny;
 g.setAttribute('transform',`translate(${n.x},${n.y})`);
 // drag bareng: semua node terseleksi ikut geser (kabel ngikut via update di bawah)
 if(SEL.has(n.id)&&SEL.size>1){SEL.forEach(id=>{if(id===n.id)return;const m=topoNode(id);if(!m||TOPO.indexOf(m)<0)return;m.x+=dx;m.y+=dy;try{const gg=svg.querySelector('g[data-nid="'+id+'"]');if(gg)gg.setAttribute('transform',`translate(${m.x},${m.y})`);}catch(_){}});}
-// kabel ngikut live: geser ujung line + label port yang nyambung ke node ini
+if(SEL.has(n.id)&&SELA.size){SELA.forEach(id=>{const o=(LAYERS[curLayer].areas||[]).find(z=>z.id===id);if(!o)return;o.x+=dx;o.y+=dy;});}
+// kabel ngikut live: geser ujung line + label port yang nyambung (semua line ikut data terbaru)
 try{svg.querySelectorAll('line[data-a]').forEach(l=>{const A=topoNode(l.dataset.a),B=topoNode(l.dataset.b);if(!A||!B)return;l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);});
-svg.querySelectorAll('text[data-a]').forEach(t=>{const A=topoNode(t.dataset.a),B=topoNode(t.dataset.b);if(!A||!B)return;t.setAttribute('x',(A.x+B.x)/2);t.setAttribute('y',(A.y+B.y)/2-8);});}catch(_){}};
+svg.querySelectorAll('text[data-a]').forEach(t=>{const A=topoNode(t.dataset.a),B=topoNode(t.dataset.b);if(!A||!B)return;t.setAttribute('x',(A.x+B.x)/2);t.setAttribute('y',(A.y+B.y)/2-8);});}catch(_){}
+if(SEL.has(n.id)&&SELA.size){SELA.forEach(id=>{const o=(LAYERS[curLayer].areas||[]).find(z=>z.id===id);if(!o)return;try{const oe=(window._areaEls||{})[id];if(oe)oe.paint();}catch(_){}});}};
 const up=()=>{g.removeEventListener('pointermove',move);g.removeEventListener('pointercancel',cancel);window._topoDrag=false;try{g.releasePointerCapture(ev.pointerId);}catch(e){}if(!moved)return;window._topoDropAt=Date.now();drawTopo();saveTopo();};
 const cancel=()=>{g.removeEventListener('pointermove',move);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',cancel);window._topoDrag=false;try{g.releasePointerCapture(ev.pointerId);}catch(e){}};
 g.addEventListener('pointermove',move);g.addEventListener('pointerup',up,{once:true});g.addEventListener('pointercancel',cancel,{once:true});});
@@ -1105,6 +1111,11 @@ body.innerHTML=`<div style="font-size:12px;margin-bottom:6px">via ${j.via} • $
 }
 async function editTopoText(id){const n=topoNode(id);if(!n)return;document.getElementById('tmenu')?.remove();const v=await uiModal({title:'Edit teks node',msg:n.label,fields:[{name:'nama',type:'text',label:'Nama perangkat',value:n.label},{name:'sub',type:'text',label:'Sub-teks (cth: IP / VLAN)',value:n.sub||''}]});if(!v)return;n.label=v.nama.text.trim()||n.label;n.sub=v.sub.text.trim();drawTopo();saveTopo();log('> teks node diubah: '+n.label);}
 function setTopoFont(id,s){const n=topoNode(id);if(!n)return;n.fs=s;document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
+// presisi CTM: client→svg memperhitungkan letterbox viewBox (marquee/drag pas nempel kursor)
+function svgPt(svg,e){try{const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const m=svg.getScreenCTM();if(m){const p=pt.matrixTransform(m.inverse());return{x:p.x,y:p.y};}}catch(_){}const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return{x:(e.clientX-r.left)*vb.width/r.width+vb.x,y:(e.clientY-r.top)*vb.height/r.height+vb.y};}
+const SELA=new Set();
+function toggleSelA(id){if(SELA.has(id))SELA.delete(id);else SELA.add(id);drawTopo();}
+function selCount(){return SEL.size+SELA.size;}
 function topoSvgPos(ev){const svg=document.getElementById('topoSvg');const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return {x:Math.round((ev.clientX-r.left)*vb.width/r.width),y:Math.round((ev.clientY-r.top)*vb.height/r.height)};}
 // ---- ZOOM tombol +/- & PAN via slider horizontal/vertical (scroll dihapus) ----
 function topoVbArr(){const L=LAYERS[curLayer];if(!L||!L.vb)return[0,0,900,400];return String(L.vb).split(' ').map(Number);}
@@ -1179,7 +1190,7 @@ async function editAreaText(aid){const a=(LAYERS[curLayer].areas||[]).find(x=>x.
 function setAreaFont(aid,s){const a=(LAYERS[curLayer].areas||[]).find(x=>x.id===aid);if(!a)return;a.fs=s;document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
 function setAreaSize(aid,w,h){const a=(LAYERS[curLayer].areas||[]).find(x=>x.id===aid);if(!a)return;a.w=w;a.h=h;document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
 function topoDblEdit(ev){const p=topoSvgPos(ev);const n=TOPO.find(n=>Math.abs(n.x-p.x)<((n._w||124)/2+6)&&Math.abs(n.y-p.y)<34);if(n){editTopoText(n.id);return;}const a=areaAt(curLayer,p.x,p.y);if(a)editAreaText(a.id);}
-function delArea(aid){LAYERS[curLayer].areas=(LAYERS[curLayer].areas||[]).filter(x=>x.id!==aid);document.getElementById('tmenu')?.remove();drawTopo();saveTopo();log('> area dihapus');}
+function delArea(aid){LAYERS[curLayer].areas=(LAYERS[curLayer].areas||[]).filter(x=>x.id!==aid);try{SELA.delete(aid);}catch(e){}document.getElementById('tmenu')?.remove();drawTopo();saveTopo();log('> area dihapus');}
 async function addAreaAt(x,y){const v=await uiModal({title:'Area baru',fields:[{name:'nama',type:'text',label:'Nama area',value:'Area Baru'}]});if(!v)return;const nama=v.nama.text.trim();if(!nama)return;document.getElementById('tmenu')?.remove();(LAYERS[curLayer].areas=LAYERS[curLayer].areas||[]).push({id:'a'+Date.now()%100000,label:nama,x:x-130,y:y-70,w:260,h:140});drawTopo();saveTopo();log('> area baru: '+nama);}
 function addNodeAt(x,y){document.getElementById('tmenu')?.remove();addManualByIp(x,y);}
 function guessIcon(identity,descr){
