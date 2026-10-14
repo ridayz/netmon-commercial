@@ -124,7 +124,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <div class="cards">
 <div class="card"><small>DOWNLOAD</small><h2 id="dl">-</h2><span id="dlSub">-</span></div>
 <div class="card"><small>UPLOAD</small><h2 id="ul">-</h2><span id="ulSub">-</span></div>
-<div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span>ke 8.8.8.8</span></div>
+<div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span id="pingSub">ke 8.8.8.8</span></div>
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
 <div class="grid2">
@@ -359,7 +359,7 @@ const lb=document.getElementById('cwLab');if(lb)lb.textContent='tampil '+cwLen+'
 }catch(e){}}
 function cwOnInput(){const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');if(s2)cwLen=+s2.value||30;if(s1)cwStart=+s1.value||0;chartView();}
 function cwReset(){cwLen=30;cwStart=0;chartView();}
-function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chartView();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){const sim=c.oper!=='down'?simTick(c.n):{dl:0,ul:0};dl.push(sim.dl);dl.shift();ul.push(sim.ul);ul.shift();try{chartView();}catch(e){}if(c.oper!=='down'&&sim.dl>0){document.getElementById('dl').textContent=sim.dl.toFixed(1)+' Mbps ~';document.getElementById('ul').textContent=sim.ul.toFixed(1)+' Mbps ~';}else{document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';}document.getElementById('ping').textContent=c.oper==='down'?'—':(3+Math.round(Math.random()*6));document.getElementById('loss').textContent=c.oper==='down'?'—':(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0');try{setCardSubs(sim.dl,sim.ul);}catch(_){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';try{setCardSubs();}catch(_){}}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
@@ -660,6 +660,61 @@ if(b&&!isVerify){b.disabled=false;b.textContent='⚡ AI Troubleshoot';}
 async function collGet(path,timeoutMs){const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeoutMs||20000);try{const r=await fetch(COLL()+path,{signal:ctl.signal});return await r.json();}finally{clearTimeout(to);}}
 async function collHealth(){try{await collGet('/health',5000);const d=document.getElementById('collDot');if(d){d.textContent='🟢';d.title='collector nyambung';}}catch(e){const d=document.getElementById('collDot');if(d){d.textContent='🔴';d.title='collector MATI — jalankan node server.js di netmon-collector';}}}
 collHealth();setInterval(collHealth,15000);
+// ---- SIMULASI TRAFIK: device DUMMY (tanpa collector) tetap hidup kayak asli ----
+// Per-port profil: isp/wan = beban besar, sfp/l2uplink = menengah, lainnya kecil. Noise mulus (target berubah tiap 4-9 dtk, drift per tick)
+// + spike + dropout sesaat + rasio DL/UL ISP timpang khas link komersil.
+const _simNoise={};
+function simProfile(n){const s=String(n||'').toLowerCase();if(/isp|wan|upstream|bgp|internet/i.test(s))return{dl:[20,140],ul:[0.8,4]};if(/sfp|l2uplink/i.test(s))return{dl:[8,60],ul:[4,12]};if(/guest/i.test(s))return{dl:[2,14],ul:[0.5,3]};return{dl:[0.5,8],ul:[0.1,1.5]};}
+function simTick(n){
+const key=curR+'|'+n;const pr=simProfile(n);
+let st=_simNoise[key];
+if(!st||Math.random()<0.08){ // target baru tiap 4-9 dtk
+st={dl:pr.dl[0]+Math.random()*(pr.dl[1]-pr.dl[0]),ul:pr.ul[0]+Math.random()*(pr.ul[1]-pr.ul[0])};
+st.dlT=st.dl;st.ulT=st.ul;
+_simNoise[key]=st;
+}else{ // drift halus menuju target
+if(st.dlT===undefined){st.dlT=st.dl;st.ulT=st.ul;}
+st.dl+=(st.dlT-st.dl)*0.35+((Math.random()-0.5)*Math.max(0.4,(st.dlT-st.dl)*0.1));
+st.ul+=(st.ulT-st.ul)*0.35+((Math.random()-0.5)*Math.max(0.1,(st.ulT-st.ul)*0.1));
+}
+// spike & dropout sesaat
+let dl=st.dl,ul=st.ul;
+if(Math.random()<0.05){dl*=1.8+Math.random();} // spike download
+if(Math.random()<0.03){dl=Math.min(dl,0.2);ul=Math.min(ul,0.2);} // dropout sesaat
+dl=Math.max(0,dl);ul=Math.max(0,ul);
+return{dl,ul};
+}
+function setCardSubs(dlVal,ulVal){
+try{
+const cc=cur();if(!cc)return;
+const live=!!(LIVE[curR]&&cc.live);
+const isDown=cc.oper==='down';
+const dlSub=document.getElementById('dlSub');
+if(dlSub){
+if(isDown)dlSub.textContent='device down';
+else if(!live)dlSub.textContent='simulasi (dummy)';
+else{const v=dlVal||0;dlSub.textContent=v>60?'▲ beban tinggi':(v>10?'▲ stabil':'— kecil, cek queue');}
+}
+const ulSub=document.getElementById('ulSub');
+if(ulSub){
+if(isDown)ulSub.textContent='device down';
+else if(!live)ulSub.textContent='simulasi (dummy)';
+else{const v=ulVal||0;ulSub.textContent=v>4?'▲ wajar ISP':(v>0.5?'— kecil':'⚠ hampir nol');}
+}
+const pingSub=document.getElementById('pingSub');
+if(pingSub){
+if(isDown)pingSub.textContent='tidak ada koneksi';
+else if(live)pingSub.textContent='ke 8.8.8.8';
+else pingSub.textContent=(3+Math.round(Math.random()*6))+' ms • simulasi';
+}
+const lossSub=document.getElementById('lossSub');
+if(lossSub){
+if(isDown)lossSub.textContent='tidak ada koneksi';
+else if(live)lossSub.textContent='ke 8.8.8.8';
+else lossSub.textContent=(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0')+'% • aman';
+}
+}catch(_){}
+}
 function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> Download/Upload '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=Download':'Rx=Download')+')');}
 // tampilkan tombol swap hanya saat device live
 setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
@@ -672,6 +727,7 @@ const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
 dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){}
 document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
 document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
+try{setCardSubs(dMb,uMb);}catch(_){}
 L._err=0;
 }catch(e){try{if(window._leaving)return;const L=LIVE[curR];if(L){const em=String((e&&e.message)||e);const abort=/abort/i.test(em);L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+(abort?'request timeout/dibatalkan (cek collector kalau berulang)':em)+' (cek collector)');}}catch(_){}}},3000);
 // ---- REALTIME CONFIG SYNC: tiap 5 dtk tarik ulang interface semua device LIVE ----
