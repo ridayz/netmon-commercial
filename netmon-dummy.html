@@ -49,6 +49,47 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .ai-btn.ghost{background:#fff;color:#0284c7;border:2px solid #bae6fd}
 .log{background:#0c4a6e;color:#e0f2fe;border-radius:12px;padding:10px;font-family:monospace;font-size:12px;height:150px;overflow:auto;margin-top:8px}
 .bar{height:8px;background:#e0f2fe;border-radius:99px;overflow:hidden;margin-top:4px}
+/* ===== DARK NAVY THEME (toggle 🌙, default terang) ===== */
+body.dark{background:#070b14;color:#e6eaf5}
+body.dark .sidebar{background:#0b1120}
+body.dark .nm-brand{color:#a78bfa}
+body.dark .nm-mi{color:#8b93b0}
+body.dark .nm-mi:hover{background:#1a2342;color:#fff}
+body.dark .nm-mi.on{background:#1a2342;color:#fff}
+body.dark .nm-mini{background:#111830;color:#8b93b0}
+body.dark .nm-mini b{color:#fff}
+body.dark .panel{background:#111830;border-color:#232c4a}
+body.dark .panel h3{color:#a78bfa}
+body.dark .card{background:#111830;border-color:#232c4a}
+body.dark .card small{color:#a78bfa}
+body.dark .card h2{color:#fff}
+body.dark .card span{color:#8b93b0}
+body.dark .topbar{background:#111830;border-color:#232c4a}
+body.dark .topbar h1{color:#e6eaf5}
+body.dark .pill{background:#0f2c1e;color:#4ade80}
+body.dark .log{background:#0a0f1e;border:1px solid #232c4a;color:#8b93b0}
+body.dark .router-btn{background:#141b36;border-color:#232c4a;color:#c7d0ee}
+body.dark .router-btn.active{background:#0284c7;color:#fff;border-color:#0284c7}
+body.dark .ai-btn.ghost{background:#1a2342;color:#e6eaf5;border-color:#2b3763}
+body.dark .kv{border-color:#232c4a}
+body.dark .kv b{color:#e6eaf5}
+body.dark .ok{background:rgba(52,211,153,.15);color:#4ade80}
+body.dark .warn{background:rgba(251,191,36,.15);color:#fbbf24}
+body.dark .bad{background:rgba(248,113,113,.15);color:#f87171}
+body.dark .info{background:#1a2342;color:#a78bfa}
+body.dark input[type=text],body.dark input[type=password],body.dark input:not([type]){background:#0e1530!important;border-color:#2b3763!important;color:#e6eaf5!important}
+body.dark #topoSvg{background:#0b1120!important}
+body.dark [style*="background:#fff"]{background-color:#141b36!important}
+body.dark [style*="background:#f0f9ff"]{background-color:#141b36!important}
+body.dark [style*="background:#f8fafc"]{background-color:#111830!important}
+body.dark [style*="background:#e0f2fe"]{background-color:#1a2342!important}
+body.dark [style*="color:#0c4a6e"]{color:#e6eaf5!important}
+body.dark [style*="color:#0369a1"]{color:#a78bfa!important}
+body.dark [style*="color:#64748b"]{color:#8b93b0!important}
+body.dark [style*="color:#475569"]{color:#8b93b0!important}
+body.dark [style*="color:#075985"]{color:#c7d0ee!important}
+body.dark [style*="border:2px solid #bae6fd"]{border-color:#2b3763!important}
+body.dark #themeBtn{background:#1a2342!important;border-color:#2b3763!important}
 .bar i{display:block;height:100%;background:#0284c7}
 @keyframes cableFlow{from{stroke-dashoffset:18;}to{stroke-dashoffset:0;}}
 .cable-live{stroke-dasharray:10 8;animation:cableFlow 1s linear infinite;}
@@ -69,6 +110,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 <div class="main">
 <div class="topbar"><div><h1 id="title">-</h1></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="statusPill">●</div>
+<button id="themeBtn" onclick="toggleTheme()" title="Mode gelap/terang" style="border:2px solid #bae6fd;background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:14px">🌙</button>
 </div></div>
 <div id="collBanner" style="display:none;background:#fee2e2;border:2px solid #f87171;color:#b91c1c;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700">⚠ Collector offline — topologi tampil dari cache, fitur live nonaktif. Nyalakan collector (start-netmon.bat) lalu refresh.</div>
 <div id="tab-dash" style="display:flex;flex-direction:column;gap:14px">
@@ -770,6 +812,9 @@ renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
 renderIfaces();setInterval(tick,1000);
+function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');chart.options.plugins.legend.labels.color=dark?'#a78bfa':'#0369a1';chart.options.scales.y.ticks.color=dark?'#8b93b0':'#666';chart.options.scales.y.grid.color=dark?'#232c4a':'#e0f2fe';chart.update();}catch(e){}}
+function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);try{localStorage.setItem('netmon-theme',dark?'dark':'light');}catch(e){}const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'☀️':'🌙';applyChartTheme();}
+(function(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b=document.getElementById('themeBtn');if(b)b.textContent='☀️';}}catch(e){}try{applyChartTheme();}catch(e){}})();
 window.addEventListener('beforeunload',()=>{try{window._leaving=true;}catch(e){}});
 try{syncTopo();}catch(e){}
 try{setTimeout(pingIpNodes,4000);}catch(e){}
