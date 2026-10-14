@@ -122,7 +122,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="topoZoom(0.8)" title="Mendekatkan (zoom in)">－</button>
 <button id="modePtr" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(false)" title="Mode normal: klik = pantau/pasang">👆 Pointer</button>
 <button id="modeDel" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(true)" title="Mode hapus: klik kabel = hapus kabel, klik device = hapus device">🗑 Hapus</button>
-<span style="color:#64748b">slider = geser view • drag node • klik kanan = menu • <b>2x klik = edit teks</b></span>
+<span style="color:#64748b">slider = geser view • drag node • klik kanan = menu • <b>2x klik = edit teks</b> • box-select / Ctrl+klik = pilih banyak • arrow = geser pilihan</span>
 </div>
 <svg id="topoSvg" width="100%" height="460" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;margin-top:10px;touch-action:none"></svg>
 <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px">
@@ -801,6 +801,48 @@ log('> view original dibuka ('+TOPO.length+' node) — tinggal screenshot');
 renderLayerBtns();
 document.getElementById('topoSvg').addEventListener('contextmenu',ev=>{if(ev.defaultPrevented)return;ev.preventDefault();topoCanvasMenu(ev);});
 document.getElementById('topoSvg').addEventListener('dblclick',ev=>{topoDblEdit(ev);});
+// ---- MARQUEE SELECT (bounding box ala draw.io): drag area kosong = seleksi ----
+(function(){
+const svg=document.getElementById('topoSvg');if(!svg)return;
+const pos=e=>{const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return{x:(e.clientX-r.left)*vb.width/r.width+vb.x,y:(e.clientY-r.top)*vb.height/r.height+vb.y};};
+let mq=null;
+svg.addEventListener('pointerdown',e=>{
+if(e.pointerType==='mouse'&&e.button!==0)return;
+if(e.target!==svg||window._cableFrom||window._delMode)return;
+const p=pos(e);mq={x0:p.x,y0:p.y,cx:e.clientX,cy:e.clientY,moved:false,el:null};
+window._topoDrag=true;
+try{svg.setPointerCapture(e.pointerId);}catch(_){}
+const mv=e2=>{if(!mq)return;
+if(!mq.moved&&Math.abs(e2.clientX-mq.cx)+Math.abs(e2.clientY-mq.cy)<6)return;
+mq.moved=true;
+if(!mq.el){mq.el=document.createElementNS('http://www.w3.org/2000/svg','rect');mq.el.setAttribute('fill','rgba(2,132,199,.08)');mq.el.setAttribute('stroke','#0284c7');mq.el.setAttribute('stroke-width','1.5');mq.el.setAttribute('stroke-dasharray','6 4');mq.el.style.pointerEvents='none';svg.appendChild(mq.el);}
+const q=pos(e2);
+mq.el.setAttribute('x',Math.min(mq.x0,q.x));mq.el.setAttribute('y',Math.min(mq.y0,q.y));
+mq.el.setAttribute('width',Math.abs(q.x-mq.x0));mq.el.setAttribute('height',Math.abs(q.y-mq.y0));};
+const up=e2=>{svg.removeEventListener('pointermove',mv);window._topoDrag=false;try{svg.releasePointerCapture(e.pointerId);}catch(_){}
+if(!mq)return;const wasDrag=mq.moved;let box=null;
+if(mq.el){const q=pos(e2);box={x:Math.min(mq.x0,q.x),y:Math.min(mq.y0,q.y),w:Math.abs(q.x-mq.x0),h:Math.abs(q.y-mq.y0)};mq.el.remove();}
+mq=null;
+if(!wasDrag){if(SEL.size){SEL.clear();drawTopo();}return;}
+if(!box||box.w<8||box.h<8)return;
+SEL.clear();
+TOPO.forEach(n=>{const hw=(n._w||124)/2;if(n.x+hw>=box.x&&n.x-hw<=box.x+box.w&&n.y+34>=box.y&&n.y-34<=box.y+box.h)SEL.add(n.id);});
+drawTopo();log('> marquee select: '+SEL.size+' node (drag / arrow keys = geser bareng)');};
+svg.addEventListener('pointermove',mv);svg.addEventListener('pointerup',up,{once:true});});
+})();
+// ---- ARROW KEYS + Ctrl+A + Esc di kanvas topologi ----
+document.addEventListener('keydown',ev=>{
+const t=(ev.target&&ev.target.tagName)||'';
+if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||(ev.target&&ev.target.isContentEditable))return;
+if(document.getElementById('tab-topo')?.style.display!=='flex')return;
+if(ev.key==='Escape'){if(window._cableFrom)return;if(SEL.size){SEL.clear();drawTopo();}return;}
+if((ev.ctrlKey||ev.metaKey)&&(ev.key==='a'||ev.key==='A')){ev.preventDefault();SEL.clear();TOPO.forEach(n=>SEL.add(n.id));drawTopo();log('> select semua ('+SEL.size+' node)');return;}
+const arrows={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
+if(arrows[ev.key]&&SEL.size){ev.preventDefault();
+const st=ev.shiftKey?1:10,dd=arrows[ev.key];
+SEL.forEach(id=>{const n=topoNode(id);if(n&&TOPO.indexOf(n)>=0){n.x+=dd[0]*st;n.y+=dd[1]*st;}});
+drawTopo();clearTimeout(window._selSaveT);window._selSaveT=setTimeout(()=>{try{saveTopo();}catch(_){}},600);}
+});
 // zoom via scroll
 // (zoom via scroll dihapus — ganti dengan slider horizontal/vertical di bawah kanvas)
 // (canvas pan dihapus — geser kanvas hanya via slider X/Y di bawah kanvas)
@@ -912,7 +954,10 @@ drawTopo();saveTopo(true);
 log(`> topologi dirapikan otomatis (${TOPO.length} node, undo tersedia)`);
 try{pushAlarm('info','topologi','Auto-rapikan '+TOPO.length+' node');}catch(e){}
 }
-function setLayer(l){if(!l||!LAYERS[l])l=firstLayerKey();curLayer=l||'';TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];if(!DB[curR]||!DB[curR].length){const td=topoDevs().filter(o=>o.layerKey===curLayer);if(td.length){curR=td[0].db;if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}}renderLayerBtns();try{renderRouters();renderIfaces();}catch(e){}if(curLayer)log('> layer topologi: '+LAYERS[curLayer].label);drawTopo();}
+function setLayer(l){if(!l||!LAYERS[l])l=firstLayerKey();curLayer=l||'';TOPO=curLayer?LAYERS[curLayer].nodes:[];LINKS=curLayer?LAYERS[curLayer].links:[];if(!DB[curR]||!DB[curR].length){const td=topoDevs().filter(o=>o.layerKey===curLayer);if(td.length){curR=td[0].db;if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}}renderLayerBtns();try{renderRouters();renderIfaces();}catch(e){}if(curLayer)log('> layer topologi: '+LAYERS[curLayer].label);SEL.clear();drawTopo();}
+// ---- MULTI-SELECT node: box-select / Ctrl+klik, drag bareng, arrow keys ----
+const SEL=new Set();
+function toggleSel(id){if(SEL.has(id))SEL.delete(id);else SEL.add(id);drawTopo();}
 function topoNode(id){return TOPO.find(n=>n.id===id);}
 const VECICON=['router','ap','ont','olt','switch','swpoe'];
 function topoSt(n){if(!n.db||!DB[n.db])return n.st||'ok';const ps=DB[n.db];if(ps.some(p=>p.oper==='down'))return 'bad';if(ps.some(p=>p.fault!=='sehat'&&p.fault!=='sehat-sfp'))return 'warn';return 'ok';}
@@ -921,7 +966,7 @@ if(!curLayer||!LAYERS[curLayer]){const svg0=document.getElementById('topoSvg');i
 if(!Array.isArray(LAYERS[curLayer].nodes)){LAYERS[curLayer].nodes=[];LAYERS[curLayer].links=[];}TOPO=LAYERS[curLayer].nodes;LINKS=LAYERS[curLayer].links;
 // anti-kedip: refresh 3-detik di-skip kalau tidak ada yang berubah (posisi/status/label/link/view/seleksi sama)
 try{const _svg0=document.getElementById('topoSvg');
-const _ts=curLayer+'|'+curR+'|'+(LAYERS[curLayer].vb||'')+'|'+TOPO.map(n=>n.id+':'+n.x+','+n.y+':'+topoSt(n)+':'+(n.label||'')+':'+(n.sub||'')+':'+(n.fs||1)+':'+(n.icon||'')).join(';')+'|'+LINKS.map(l=>l.join(',')).join(';')+'|'+TOPO.map(n=>n.db&&DB[n.db]?DB[n.db].map(p=>p.admin+'/'+p.oper).join(','):'').join(';')+'|'+(LAYERS[curLayer].areas||[]).map(a=>a.id+':'+a.x+','+a.y+','+a.w+','+a.h+':'+(a.label||'')+':'+(a.fs||11)).join(';');
+const _ts=curLayer+'|'+curR+'|'+(LAYERS[curLayer].vb||'')+'|'+TOPO.map(n=>n.id+':'+n.x+','+n.y+':'+topoSt(n)+':'+(n.label||'')+':'+(n.sub||'')+':'+(n.fs||1)+':'+(n.icon||'')).join(';')+'|'+LINKS.map(l=>l.join(',')).join(';')+'|'+TOPO.map(n=>n.db&&DB[n.db]?DB[n.db].map(p=>p.admin+'/'+p.oper).join(','):'').join(';')+'|'+(LAYERS[curLayer].areas||[]).map(a=>a.id+':'+a.x+','+a.y+','+a.w+','+a.h+':'+(a.label||'')+':'+(a.fs||11)).join(';')+'|sel:'+[...SEL].sort().join(',');
 if(_svg0&&_svg0._ts===_ts)return;if(_svg0)_svg0._ts=_ts;}catch(_){}
 try{syncTopoSliders();}catch(_){}
 const svg=document.getElementById('topoSvg');const W=svg.clientWidth||900;
@@ -954,9 +999,9 @@ const st=topoSt(n);
 const nfs=n.fs||1;
 const maxlen=Math.max((n.label||'').length,(n.sub||'').length*0.92);
 const nw=Math.min(240,Math.max(112,Math.round(26+7.6*maxlen*nfs)));n._w=nw;
-const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='grab';
-const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');
-g.innerHTML=`<rect x="${-n._w/2}" y="-30" width="${n._w}" height="60" rx="16" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/>${VECICON.includes(n.icon)?iconSvg(n.icon):`<text y="0" text-anchor="middle" font-size="22">${ICONS[n.icon]||'📦'}</text>`}<text y="16" text-anchor="middle" font-size="${Math.round(11*(n.fs||1))}" font-weight="800" fill="#0369a1">${n.label}</text><text y="26" text-anchor="middle" font-size="${Math.round(9*(n.fs||1))}" fill="#64748b">${n.sub||''}</text>`;
+const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='grab';g.dataset.nid=n.id;
+const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');const isSel=SEL.has(n.id);
+g.innerHTML=`<rect x="${-n._w/2}" y="-30" width="${n._w}" height="60" rx="16" fill="${fill}" stroke="${isSel?'#f59e0b':stroke}" stroke-width="${isSel?4:2.5}"${isSel?' stroke-dasharray="7 4"':''}/>${VECICON.includes(n.icon)?iconSvg(n.icon):`<text y="0" text-anchor="middle" font-size="22">${ICONS[n.icon]||'📦'}</text>`}<text y="16" text-anchor="middle" font-size="${Math.round(11*(n.fs||1))}" font-weight="800" fill="#0369a1">${n.label}</text><text y="26" text-anchor="middle" font-size="${Math.round(9*(n.fs||1))}" fill="#64748b">${n.sub||''}</text>`;
 g.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();window._topoDrag=true;const sx=ev.clientX,sy=ev.clientY;let moved=false;
 // simpan offset grabs: jarak pointer terhadap pusat node saat klik
 const r0=svg.getBoundingClientRect();const vb0=svg.viewBox.baseVal;
@@ -967,8 +1012,11 @@ try{g.setPointerCapture(ev.pointerId);}catch(e){}
 const move=e2=>{if(Math.abs(e2.clientX-sx)+Math.abs(e2.clientY-sy)>6)moved=true;if(!moved)return;const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;
 const px=(e2.clientX-r.left)*vb.width/r.width;
 const py=(e2.clientY-r.top)*vb.height/r.height;
-n.x=Math.round(px+offX);n.y=Math.round(py+offY);
+const nx=Math.round(px+offX),ny=Math.round(py+offY);
+const dx=nx-n.x,dy=ny-n.y;n.x=nx;n.y=ny;
 g.setAttribute('transform',`translate(${n.x},${n.y})`);
+// drag bareng: semua node terseleksi ikut geser (kabel ngikut via update di bawah)
+if(SEL.has(n.id)&&SEL.size>1){SEL.forEach(id=>{if(id===n.id)return;const m=topoNode(id);if(!m||TOPO.indexOf(m)<0)return;m.x+=dx;m.y+=dy;try{const gg=svg.querySelector('g[data-nid="'+id+'"]');if(gg)gg.setAttribute('transform',`translate(${m.x},${m.y})`);}catch(_){}});}
 // kabel ngikut live: geser ujung line + label port yang nyambung ke node ini
 try{svg.querySelectorAll('line[data-a]').forEach(l=>{const A=topoNode(l.dataset.a),B=topoNode(l.dataset.b);if(!A||!B)return;l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);});
 svg.querySelectorAll('text[data-a]').forEach(t=>{const A=topoNode(t.dataset.a),B=topoNode(t.dataset.b);if(!A||!B)return;t.setAttribute('x',(A.x+B.x)/2);t.setAttribute('y',(A.y+B.y)/2-8);});}catch(_){}};
@@ -976,7 +1024,7 @@ const up=()=>{g.removeEventListener('pointermove',move);g.removeEventListener('p
 const cancel=()=>{g.removeEventListener('pointermove',move);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',cancel);window._topoDrag=false;try{g.releasePointerCapture(ev.pointerId);}catch(e){}};
 g.addEventListener('pointermove',move);g.addEventListener('pointerup',up,{once:true});g.addEventListener('pointercancel',cancel,{once:true});});
 g.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();topoMenu(ev.clientX,ev.clientY,n.id);});
-g.addEventListener('click',()=>{if(window._delMode){delTopoNode(n.id);return;}if(window._cableFrom){cableDragFinish(window._cableFrom,n.id);return;}if(Date.now()-(window._topoDropAt||0)<250)return;const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){try{log('> "'+n.label+'" layer dummy — tidak dimonitoring');}catch(_){}return;}try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
+g.addEventListener('click',(ev)=>{if(window._delMode){delTopoNode(n.id);return;}if(window._cableFrom){cableDragFinish(window._cableFrom,n.id);return;}if(ev.ctrlKey||ev.metaKey){toggleSel(n.id);log('> select '+SEL.size+' node');return;}if(Date.now()-(window._topoDropAt||0)<250)return;if(!SEL.has(n.id)||SEL.size!==1){SEL.clear();SEL.add(n.id);drawTopo();}const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){try{log('> "'+n.label+'" layer dummy — tidak dimonitoring');}catch(_){}return;}try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
 svg.appendChild(g);});
 document.getElementById('topoList').textContent=`${TOPO.length} perangkat • ${LINKS.length} link • klik node = monitoring • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
 }
@@ -1425,6 +1473,7 @@ try{log(on?'> mode HAPUS: klik kabel/device buat hapus (Undo tersedia)':'> mode 
 }
 function delTopoNode(id){
 if(!curLayer||!LAYERS[curLayer])return;
+try{SEL.delete(id);}catch(e){}
 LAYERS[curLayer].nodes=(LAYERS[curLayer].nodes||[]).filter(n=>n.id!==id);
 LAYERS[curLayer].links=(LAYERS[curLayer].links||[]).filter(([a,b])=>a!==id&&b!==id);
 TOPO=LAYERS[curLayer].nodes;LINKS=LAYERS[curLayer].links;
