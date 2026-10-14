@@ -90,6 +90,8 @@ body.dark [style*="color:#475569"]{color:#8b93b0!important}
 body.dark [style*="color:#075985"]{color:#c7d0ee!important}
 body.dark [style*="border:2px solid #bae6fd"]{border-color:#2b3763!important}
 body.dark #themeBtn{background:#1a2342!important;border-color:#2b3763!important}
+body.dark #portStrip button{background:#141b36!important;border-color:#2b3763!important;color:#c7d0ee!important}
+body.dark #portStrip button.active{background:#1c2450!important;border-color:#8b7cf6!important;color:#fff!important}
 .bar i{display:block;height:100%;background:#0284c7}
 @keyframes cableFlow{from{stroke-dashoffset:18;}to{stroke-dashoffset:0;}}
 @keyframes cableBlink{0%,100%{opacity:1;}50%{opacity:.4;}}
@@ -139,13 +141,15 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio Download : Upload — menunggu data...</div>
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik Download/Upload (port LAN)</button>
 </div>
+<div class="panel"><h3>🔌 Interfaces <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3>
+<div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div>
+</div>
+</div>
 <div class="panel"><h3>🧾 Log</h3>
 <div class="log" id="log">> Netmon - Router AI siap. Klik node di topologi buat pantau.</div>
 <div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
 <div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
 </div>
-</div>
-<div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
 </div><!-- /tab-dash -->
 <div id="tab-dev" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🖥 Perangkat</h3>
@@ -287,10 +291,22 @@ const box=document.getElementById('portStrip');if(!box)return;
 const nm=document.getElementById('portDevName');
 if(!curR||!DB[curR]||!DB[curR].length){if(nm)nm.textContent='belum ada device';box.style.color='#64748b';box.textContent='Pilih device live dulu (sidebar kiri / topologi bawah).';return;}
 if(nm)nm.textContent=curR+(LIVE[curR]?' 🟢':' ⚪');
-const _psig=curR+'|'+curI+'|'+(DB[curR]||[]).map(p=>p.n+':'+p.admin+':'+p.oper+':'+p.fault).join(',');
+const _psig=curR+'|'+curI+'|'+(DB[curR]||[]).map(p=>p.n+':'+p.admin+':'+p.oper+':'+p.fault+':'+(LIVE[curR]?1:0)).join(',');
 if(box._sig===_psig)return;box._sig=_psig;
 box.innerHTML='';box.style.color='';
-DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';const b=document.createElement('button');b.style.cssText='border:2px solid '+(p.n===curI?'#0284c7':'#bae6fd')+';background:'+(p.n===curI?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';b.innerHTML=`<span class="dot ${dot}"></span>${p.n}`;b.title=p.admin+'/'+p.oper+' (klik kanan = disable/enable)';b.onclick=()=>{curI=p.n;renderIfaces();};b.oncontextmenu=(ev)=>{ev.preventDefault();curI=p.n;renderIfaces();showCtx(ev.clientX,ev.clientY);};box.appendChild(b);});
+const dark=document.body.classList.contains('dark');
+DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';
+const active=p.n===curI;
+const rate=(LIVE[curR]&&p.n===curI&&p.rate!==undefined&&p.rate!==null)?' '+p.rate+' Mbps':'';
+const b=document.createElement('button');
+b.style.cssText=dark
+?'border:2px solid '+(active?'#8b7cf6':'#2b3763')+';background:'+(active?'#1c2450':'#141b36')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#c7d0ee'
+:'border:2px solid '+(active?'#0284c7':'#bae6fd')+';background:'+(active?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';
+b.innerHTML=`<span class="dot ${dot}"></span>${p.n}${active&&rate?' <span style="opacity:.7;font-size:11px">'+rate+'</span>':''}`;
+b.title=p.admin+'/'+p.oper+' (klik kanan = disable/enable)';
+b.onclick=()=>{curI=p.n;renderIfaces();};
+b.oncontextmenu=(ev)=>{ev.preventDefault();curI=p.n;renderIfaces();showCtx(ev.clientX,ev.clientY);};
+box.appendChild(b);});
 }
 function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
 function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
@@ -724,10 +740,12 @@ const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&
 if(!j.ok)throw new Error(j.error||'traffic gagal');
 const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!(L.swap||{})[c.n];
 const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
+try{const _pp=DB[curR]&&DB[curR].find(x=>x.n===c.n);if(_pp)_pp.rate=(dMb||0).toFixed(1);}catch(_){}
 dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){}
 document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
 document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
 try{setCardSubs(dMb,uMb);}catch(_){}
+try{renderPortStrip();}catch(_){}
 L._err=0;
 }catch(e){try{if(window._leaving)return;const L=LIVE[curR];if(L){const em=String((e&&e.message)||e);const abort=/abort/i.test(em);L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+(abort?'request timeout/dibatalkan (cek collector kalau berulang)':em)+' (cek collector)');}}catch(_){}}},3000);
 // ---- REALTIME CONFIG SYNC: tiap 5 dtk tarik ulang interface semua device LIVE ----
