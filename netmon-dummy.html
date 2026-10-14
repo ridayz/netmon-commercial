@@ -124,11 +124,17 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button id="modeDel" class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="setDelMode(true)" title="Mode hapus: klik kabel = hapus kabel, klik device = hapus device">🗑 Hapus</button>
 <span style="color:#64748b">slider = geser view • drag node • klik kanan = menu • <b>2x klik = edit teks</b> • box-select / Ctrl+klik = pilih banyak (node+area) • arrow = geser pilihan</span>
 </div>
-<svg id="topoSvg" width="100%" height="460" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;margin-top:10px;touch-action:none"></svg>
+<div style="display:flex;gap:8px;align-items:stretch;margin-top:10px">
+<svg id="topoSvg" width="100%" height="600" style="flex:1;min-width:0;background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;touch-action:none"></svg>
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px" title="Geser atas-bawah">
+<span style="font-size:11px;color:#475569">▲</span>
+<input id="sliderY" type="range" oninput="sliderMove()" style="writing-mode:vertical-lr;direction:ltr;width:26px;flex:1;min-height:140px;accent-color:#0284c7">
+<span style="font-size:11px;color:#475569">▼</span>
+</div>
+</div>
 <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px">
 <span style="font-size:12px;font-weight:800;color:#0369a1">⇄ Geser view</span>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569">Kiri→Kanan <input id="sliderX" type="range" oninput="sliderMove()" style="width:180px;accent-color:#0284c7"></label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569">Atas→Bawah <input id="sliderY" type="range" oninput="sliderMove()" style="width:180px;accent-color:#0284c7"></label>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569">Kiri→Kanan <input id="sliderX" type="range" oninput="sliderMove()" style="width:min(520px,50vw);accent-color:#0284c7"></label>
 <button onclick="resetTopoView()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px" title="Kembali ke frame semua node">↺ Reset view</button>
 </div>
 <div id="topoList" style="font-size:12px;color:#475569;margin-top:8px"></div>
