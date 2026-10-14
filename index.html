@@ -101,7 +101,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 </div><!-- /tab-dash -->
 <div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
-<div class="panel"><h3>🗺 Topologi layer aktif — klik node = pantau device</h3><svg id="miniTopo" width="100%" height="300" style="background:linear-gradient(180deg,#e0f2fe,#fff);border:2px solid #bae6fd;border-radius:14px;touch-action:none"></svg><div id="miniTopoHint" style="font-size:12px;color:#475569;margin-top:6px"></div></div>
 </div><!-- /main -->
 <div id="tab-topo" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🗺 Topologi</h3>
@@ -959,25 +958,6 @@ g.addEventListener('contextmenu',ev=>{ev.preventDefault();ev.stopPropagation();t
 g.addEventListener('click',()=>{if(window._delMode){delTopoNode(n.id);return;}if(window._cableFrom){cableDragFinish(window._cableFrom,n.id);return;}if(Date.now()-(window._topoDropAt||0)<250)return;const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){try{log('> "'+n.label+'" layer dummy — tidak dimonitoring');}catch(_){}return;}try{const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){try{log('> klik gagal: '+String(e.message||e).slice(0,80));}catch(_){}}});
 svg.appendChild(g);});
 document.getElementById('topoList').textContent=`${TOPO.length} perangkat • ${LINKS.length} link • klik node = monitoring • kanan-klik node untuk ganti icon • live refresh tiap 3 dtk`;
-try{drawMiniTopo();}catch(e){}
-}
-function drawMiniTopo(){
-const svg=document.getElementById('miniTopo');if(!svg)return;
-const hint=document.getElementById('miniTopoHint');
-if(!curLayer||!LAYERS[curLayer]){svg.setAttribute('viewBox','0 0 900 300');svg.innerHTML='';if(hint)hint.textContent='Belum ada layer.';return;}
-svg.setAttribute('viewBox',LAYERS[curLayer].vb||'0 0 900 400');
-svg.innerHTML='';
-if(!TOPO.length){const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',450);t.setAttribute('y',140);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','14');t.setAttribute('font-weight','800');t.setAttribute('fill','#0369a1');t.textContent='Layer "'+(LAYERS[curLayer].label||curLayer)+'" masih kosong — tambah device di tab Topologi';svg.appendChild(t);if(hint)hint.textContent='';return;}
-LINKS.forEach(([a,b,med])=>{const A=topoNode(a),B=topoNode(b);if(!A||!B)return;const bad=!!(B.db&&DB[B.db]&&DB[B.db].some(p=>p.oper==='down'));const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('stroke',bad?'#ef4444':(med==='fo'?'#fb923c':'#38bdf8'));l.setAttribute('stroke-width','3');if(!bad)l.setAttribute('class','cable-live');svg.appendChild(l);});
-TOPO.forEach(n=>{
-const st=topoSt(n);
-const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='pointer';
-const fill=st==='bad'?'#fee2e2':(st==='warn'?'#fef9c3':'#ffffff');const stroke=st==='bad'?'#f87171':(st==='warn'?'#f59e0b':'#7dd3fc');
-const sel=n.db&&n.db===curR;
-g.innerHTML=`<rect x="-52" y="-24" width="104" height="48" rx="14" fill="${fill}" stroke="${sel?'#0284c7':stroke}" stroke-width="${sel?4:2.5}"/><text y="4" text-anchor="middle" font-size="12" font-weight="800" fill="#0369a1">${(n.label||'').slice(0,14)}</text><text y="17" text-anchor="middle" font-size="9" fill="#64748b">${(n.sub||'').slice(0,18)}</text>`;
-g.addEventListener('click',()=>{try{const isLiveLayer=!!(curLayer&&LAYERS[curLayer]&&LAYERS[curLayer].type==='live');if(!isLiveLayer){log('> layer dummy — tidak dimonitoring');return;}const db=ensureNodeDb(n,LINKS);if(db)pickDev(db);}catch(e){}});
-svg.appendChild(g);});
-if(hint)hint.textContent=`${TOPO.length} perangkat • ${LINKS.length} link • ${LAYERS[curLayer].type==='dummy'?'layer dummy (tidak dimonitoring)':'klik node = pantau di sidebar + strip port'}`;
 }
 // refresh topologi otomatis (realtime) — skip saat user lagi drag / menu terbuka
 setInterval(()=>{try{if(window._topoDrag||window._cableFrom)return;if(document.getElementById('tab-topo')?.style.display==='flex'&&!document.getElementById('tmenu'))drawTopo();}catch(e){}},3000);
