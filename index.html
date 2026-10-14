@@ -9,7 +9,16 @@
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
 body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .app{display:flex;min-height:100vh}
-.sidebar{width:270px;background:#fff;border-right:2px solid #bae6fd;padding:20px;display:flex;flex-direction:column;gap:12px}
+.sidebar{width:248px;background:#171a26;border-right:0;padding:18px 14px;display:flex;flex-direction:column;gap:10px;color:#e6e9f2}
+.nm-brand{padding:4px 6px 10px;font-weight:800;color:#7c8aff;font-size:15px}
+.nm-mi{display:flex;gap:10px;align-items:center;padding:10px 12px;font-size:13.5px;font-weight:600;color:#aab0c5;border-radius:10px;cursor:pointer;border:0;background:transparent;width:100%;text-align:left}
+.nm-mi:hover{background:#20263a;color:#fff}
+.nm-mi.on{background:#232842;color:#fff;box-shadow:inset 3px 0 0 #7c8aff}
+.nm-badge{margin-left:auto;background:#f2495c;color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:1px 8px;display:none}
+.nm-mini{margin-top:auto;background:#20263a;border-radius:10px;padding:10px 12px;font-size:11px;color:#aab0c5}
+.nm-mini div{display:flex;justify-content:space-between;padding:2px 0}
+.nm-mini b{color:#fff}
+.nm-search{width:100%;background:#20263a;border:1px solid #2e3550;color:#e6e9f2;border-radius:8px;padding:8px 10px;font-size:12px}
 .logo{background:linear-gradient(135deg,#bae6fd,#e0f2fe);border-radius:16px;padding:14px;text-align:center;font-weight:800;font-size:20px;color:#0369a1}
 .label{font-size:11px;font-weight:700;letter-spacing:.08em;color:#0284c7;text-transform:uppercase;margin-top:8px}
 .router-btn{border:2px solid #e0f2fe;background:#f0f9ff;border-radius:10px;padding:6px 8px;cursor:pointer;text-align:left;font-weight:600;color:#075985;font-size:13px}
@@ -49,32 +58,18 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <body>
 <div class="app">
 <div class="sidebar">
-<div class="logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><span style="display:inline-flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M13 1 L4 14 h6 l-1 9 9-13 h-6 z" fill="#fde047" stroke="#b45309" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>Netmon - Router AI</span></div>
-<div class="label">Device terpantau</div><div id="routers"></div>
-<div class="label">Legenda</div>
-<div style="font-size:12px;color:#64748b">🟢 up &nbsp; 🔴 gangguan &nbsp; ⚪ down / disable</div>
-<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-top:4px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" onchange="window.chaosOn=this.checked" style="width:15px;height:15px;margin-top:1px"> <span>Simulasi realistis — device kadang down sendiri lalu pulih</span></label>
-<div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
-<input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
-<div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
-<div class="label">AI NOC <span id="aiDot" title="status AI">⚪</span></div>
-<div style="font-size:11px;color:#64748b" id="aiStatus">tanpa key — mode lokal</div>
-<input id="aiKey" type="password" placeholder="AI key (9Router / OpenAI-compatible)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
-<input id="aiBase" placeholder="http://localhost:20128/v1" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
-<input id="aiModel" placeholder="nine-router/auto-failover" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
-<div style="display:flex;gap:6px;margin-top:6px">
-<button onclick="testAiKey()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px">Cek API</button>
-<button onclick="aiToggleLocal()" id="aiLocalBtn" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px">Mode: auto</button>
-</div>
-<label style="display:flex;gap:6px;align-items:center;font-size:11px;color:#64748b;margin-top:4px;cursor:pointer"><input type="checkbox" id="aiAlwaysLocal" onchange="aiSetAlwaysLocal(this.checked)" style="width:14px;height:14px"> selalu mode lokal (tanpa key)</label>
+<div class="nm-brand">◉ Netmon</div>
+<button class="nm-mi on" id="m-dash" onclick="showTab('dash')">📊 Dashboard</button>
+<button class="nm-mi" id="m-dev" onclick="showTab('dev')">🖥 Perangkat</button>
+<button class="nm-mi" id="m-topo" onclick="showTab('topo')">🗺 Topologi</button>
+<button class="nm-mi" id="m-log" onclick="showTab('log')">🔔 Peringatan <span class="nm-badge" id="alarmBadge">0</span></button>
+<button class="nm-mi" id="m-rep" onclick="showTab('rep')">📄 Laporan</button>
+<button class="nm-mi" id="m-set" onclick="showTab('set')">⚙ Pengaturan</button>
+<div class="nm-mini"><div><span><span class="dot up"></span>Up</span><b id="nmUp">-</b></div><div><span><span class="dot down"></span>Down</span><b id="nmDown">-</b></div><div><span>Device</span><b id="nmDev">-</b></div></div>
 </div>
 <div class="main">
 <div class="topbar"><div><h1 id="title">-</h1></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="statusPill">●</div>
-<div style="background:#e0f2fe;border-radius:12px;padding:4px;display:flex;gap:4px">
-<button id="tabBtnDash" onclick="showTab('dash')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#0284c7;color:#fff">Dashboard</button>
-<button id="tabBtnTopo" onclick="showTab('topo')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#fff;color:#0369a1">Topologi</button>
-<button id="tabBtnLog" onclick="showTab('log')" style="border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;background:#fff;color:#0369a1">🔔 Log/Alarm <span id="alarmBadge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:4px">0</span></button>
-</div></div></div>
+</div></div>
 <div id="collBanner" style="display:none;background:#fee2e2;border:2px solid #f87171;color:#b91c1c;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700">⚠ Collector offline — topologi tampil dari cache, fitur live nonaktif. Nyalakan collector (start-netmon.bat) lalu refresh.</div>
 <div id="tab-dash" style="display:flex;flex-direction:column;gap:14px">
 <div class="cards">
@@ -103,6 +98,39 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 </div>
 <div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
 </div><!-- /tab-dash -->
+<div id="tab-dev" style="display:none;flex-direction:column;gap:12px">
+<div class="panel"><h3>🖥 Perangkat</h3>
+<input id="devSearch" class="nm-search" placeholder="🔍 Cari device / IP…" oninput="window._devFilter=this.value;try{renderRouters();}catch(e){}" style="background:#f0f9ff;border:2px solid #bae6fd;color:#0c4a6e;margin-bottom:10px">
+<div id="routers" style="display:flex;flex-direction:column;gap:8px"></div>
+<div style="font-size:12px;color:#64748b;margin-top:10px">🟢 up &nbsp; 🔴 gangguan &nbsp; ⚪ down / disable — klik device = pantau di Dashboard</div>
+</div>
+</div>
+<div id="tab-rep" style="display:none;flex-direction:column;gap:12px">
+<div class="panel"><h3>📄 Laporan — Riwayat Downtime</h3>
+<div style="overflow:auto"><table style="width:100%;font-size:12.5px;border-collapse:collapse;background:#f8fafc;border-radius:10px;overflow:hidden">
+<thead><tr style="background:#e0f2fe;color:#0369a1"><th style="text-align:left;padding:7px 10px">Perangkat</th><th style="text-align:left;padding:7px 10px">DOWN jam</th><th style="text-align:left;padding:7px 10px">UP lagi jam</th><th style="text-align:left;padding:7px 10px">Total down</th><th style="text-align:left;padding:7px 10px">Sebab</th></tr></thead>
+<tbody id="downBody"></tbody></table></div>
+</div>
+</div>
+<div id="tab-set" style="display:none;flex-direction:column;gap:12px">
+<div class="panel"><h3>⚙ Pengaturan — Collector</h3>
+<div class="label">Collector (live) <span id="collDot" title="status collector">⚪</span></div>
+<input id="collUrl" placeholder="http://localhost:8932" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px" onchange="try{localStorage.setItem('netmon-coll',this.value);}catch(e){}">
+<div style="font-size:11px;color:#64748b;margin-top:2px">device 🟢 = live dari collector</div>
+<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-top:8px;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" onchange="window.chaosOn=this.checked" style="width:15px;height:15px;margin-top:1px"> <span>Simulasi realistis — device kadang down sendiri lalu pulih</span></label>
+</div>
+<div class="panel"><h3>🤖 Pengaturan — AI NOC <span id="aiDot" title="status AI">⚪</span></h3>
+<div style="font-size:11px;color:#64748b" id="aiStatus">tanpa key — mode lokal</div>
+<input id="aiKey" type="password" placeholder="AI key (9Router / OpenAI-compatible)" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
+<input id="aiBase" placeholder="http://localhost:20128/v1" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
+<input id="aiModel" placeholder="nine-router/auto-failover" style="width:100%;border:2px solid #bae6fd;border-radius:10px;padding:7px 10px;font-size:12px;margin-top:4px" onchange="persistAiFields()">
+<div style="display:flex;gap:6px;margin-top:6px">
+<button onclick="testAiKey()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px">Cek API</button>
+<button onclick="aiToggleLocal()" id="aiLocalBtn" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px">Mode: auto</button>
+</div>
+<label style="display:flex;gap:6px;align-items:center;font-size:11px;color:#64748b;margin-top:4px;cursor:pointer"><input type="checkbox" id="aiAlwaysLocal" onchange="aiSetAlwaysLocal(this.checked)" style="width:14px;height:14px"> selalu mode lokal (tanpa key)</label>
+</div>
+</div>
 <div id="tab-topo" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🗺 Topologi</h3>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;margin-bottom:8px">
@@ -153,10 +181,6 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <button class="ai-btn ghost" style="width:auto;padding:7px 12px" onclick="clearAlarms()">🧹 Bersihkan</button>
 </div>
 <div id="alarmList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:300px;overflow:auto"></div>
-<h3 style="margin:14px 0 6px">📋 Riwayat Downtime (dummy)</h3>
-<div style="overflow:auto"><table style="width:100%;font-size:12.5px;border-collapse:collapse;background:#f8fafc;border-radius:10px;overflow:hidden">
-<thead><tr style="background:#e0f2fe;color:#0369a1"><th style="text-align:left;padding:7px 10px">Perangkat</th><th style="text-align:left;padding:7px 10px">DOWN jam</th><th style="text-align:left;padding:7px 10px">UP lagi jam</th><th style="text-align:left;padding:7px 10px">Total down</th><th style="text-align:left;padding:7px 10px">Sebab</th></tr></thead>
-<tbody id="downBody"></tbody></table></div>
 </div>
 </div>
 </div><!-- /main -->
@@ -192,10 +216,22 @@ const devs=topoDevs().filter(o=>o.layerKey===curLayer);
 if(!curLayer){el.innerHTML='<div style="font-size:12px;color:#64748b">Belum ada layer — buat dulu di tab Topologi.</div>';return;}
 if(!isLive){el.innerHTML='<div style="font-size:12px;color:#64748b">Layer dummy — tidak dimonitoring.<br>Pindah ke layer live buat pantau port.</div>';return;}
 if(!devs.length){el.innerHTML='<div style="font-size:12px;color:#64748b">Layer live masih kosong — tambah device di tab Topologi.</div>';return;}
-const _sig=curLayer+'|'+curR+'|'+devs.map(o=>{const ps=DB[o.db]||[];return o.db+':'+ps.length+':'+ps.filter(p=>p.oper==='down').length+':'+(!!LIVE[o.db])+':'+devDot(o.db);}).join(',');
+const q=(window._devFilter||'').toLowerCase();
+const shown=q?devs.filter(o=>(o.db||'').toLowerCase().includes(q)):devs;
+const _sig=curLayer+'|'+curR+'|'+q+'|'+devs.map(o=>{const ps=DB[o.db]||[];return o.db+':'+ps.length+':'+ps.filter(p=>p.oper==='down').length+':'+(!!LIVE[o.db])+':'+devDot(o.db);}).join(',');
 if(el._sig===_sig)return;el._sig=_sig;
 el.innerHTML='';
-devs.forEach(o=>{const ps=DB[o.db]||[];const downs=ps.filter(p=>p.oper==='down').length;const live=!!LIVE[o.db];const b=document.createElement('div');b.className='router-btn'+(o.db===curR?' active':'');b.style.cssText+=';display:flex;gap:8px;align-items:flex-start;width:100%;'+(live?'':'background:#f1f5f9;border-color:#cbd5e1;color:#475569');b.innerHTML=`<span class="dot ${devDot(o.db)}" style="margin-top:4px"></span><span style="flex:1"><b>${o.db}</b> ${live?'🟢':'⚪'}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}</span></span>`;b.onclick=()=>pickDev(o.db);el.appendChild(b);});
+if(!shown.length){el.innerHTML='<div style="font-size:12px;color:#64748b">Tidak cocok dengan pencarian.</div>';return;}
+shown.forEach(o=>{const ps=DB[o.db]||[];const downs=ps.filter(p=>p.oper==='down').length;const live=!!LIVE[o.db];const b=document.createElement('div');b.className='router-btn'+(o.db===curR?' active':'');b.style.cssText+=';display:flex;gap:8px;align-items:flex-start;width:100%;'+(live?'':'background:#f1f5f9;border-color:#cbd5e1;color:#475569');b.innerHTML=`<span class="dot ${devDot(o.db)}" style="margin-top:4px"></span><span style="flex:1"><b>${o.db}</b> ${live?'🟢':'⚪'}<br><span style="font-weight:400;font-size:11px;opacity:.85">${ps.length} port${downs?' • '+downs+' DOWN':''}</span></span>`;b.onclick=()=>pickDev(o.db);el.appendChild(b);});
+try{renderMiniStats();}catch(e){}
+}
+function renderMiniStats(){
+let up=0,down=0,dev=0;
+Object.keys(DB).forEach(db=>{const ps=DB[db]||[];if(!ps.length)return;dev++;if(ps.some(p=>p.oper==='down'))down++;else up++;});
+const sig=up+'/'+down+'/'+dev;
+if(renderMiniStats._s===sig)return;renderMiniStats._s=sig;
+const a=document.getElementById('nmUp'),b=document.getElementById('nmDown'),c=document.getElementById('nmDev');
+if(a)a.textContent=up;if(b)b.textContent=down;if(c)c.textContent=dev;
 }
 function renderPortStrip(){
 const box=document.getElementById('portStrip');if(!box)return;
@@ -274,7 +310,7 @@ const lb=document.getElementById('cwLab');if(lb)lb.textContent='tampil '+cwLen+'
 }catch(e){}}
 function cwOnInput(){const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');if(s2)cwLen=+s2.value||30;if(s1)cwStart=+s1.value||0;chartView();}
 function cwReset(){cwLen=30;cwStart=0;chartView();}
-function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chartView();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){dl.push(0);dl.shift();ul.push(0);ul.shift();try{chartView();}catch(e){}document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';document.getElementById('ping').textContent='—';document.getElementById('loss').textContent='—';}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
@@ -700,7 +736,7 @@ let lastAlarmAt={};
 function maybeAlarm(dev,sev,msg){const k=dev+sev;const now=Date.now();if(now-(lastAlarmAt[k]||0)<20000)return;lastAlarmAt[k]=now;pushAlarm(sev,dev,msg);}
 const _tick=tick;
 // ---- TABS ----
-function showTab(w){const tabs={dash:'tab-dash',topo:'tab-topo',log:'tab-log'};for(const k in tabs){document.getElementById(tabs[k]).style.display=(k===w)?'flex':'none';}const btns={dash:'tabBtnDash',topo:'tabBtnTopo',log:'tabBtnLog'};for(const k in btns){const on=(k===w);document.getElementById(btns[k]).style.background=on?'#0284c7':'#fff';document.getElementById(btns[k]).style.color=on?'#fff':'#0369a1';}if(w==='topo'){renderLayerBtns();drawTopo();}if(w==='log'){renderAlarms();renderDowntime();markAlarmsRead();}}
+function showTab(w){const tabs={dash:'tab-dash',dev:'tab-dev',topo:'tab-topo',log:'tab-log',rep:'tab-rep',set:'tab-set'};for(const k in tabs){const el=document.getElementById(tabs[k]);if(el)el.style.display=(k===w)?'flex':'none';}const btns={dash:'m-dash',dev:'m-dev',topo:'m-topo',log:'m-log',rep:'m-rep',set:'m-set'};for(const k in btns){const b=document.getElementById(btns[k]);if(b)b.classList.toggle('on',(k===w));}if(w==='topo'){renderLayerBtns();drawTopo();}if(w==='log'){renderAlarms();markAlarmsRead();}if(w==='rep'){renderDowntime();}if(w==='dev'){try{renderRouters();}catch(e){}}}
 // ---- TOPOLOGI DUMMY (archify-style pastel) ----
 const ICONS={router:'📡',switch:'🔀',swpoe:'🔀⚡',ont:'📟',olt:'🖧',ap:'📶',pc:'🖥',server:'🗄',firewall:'🧱',internet:'🌐'};
 function iconSvg(t){
