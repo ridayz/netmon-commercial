@@ -28,18 +28,19 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
 .dot.green{background:#22c55e}.dot.grey{background:#cbd5e1}.dot.red{background:#f87171}.dot.yellow{background:#facc15}
 .main{flex:1;padding:22px;display:flex;flex-direction:column;gap:14px}
-.topbar{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+.topbar{background:#fff;border:1px solid #bae6fd;border-radius:14px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
 .topbar h1{margin:0;font-size:16px;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
 .topbar p{margin:4px 0 0;color:#64748b;font-size:12px}
 .pill{background:#e0f2fe;color:#0369a1;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .card{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:14px}
-.card small{color:#0284c7;font-weight:700}
-.card h2{margin:6px 0;font-size:22px}
-.card span{font-size:12px;color:#64748b}
+.card small{color:#0284c7;font-weight:800;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.card h2{margin:6px 0;font-size:24px;font-weight:800}
+.card h2 .u{font-size:12px;color:#64748b;font-weight:400;margin-left:4px}
+.card span{font-size:11.5px;color:#64748b}
 .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
 .panel{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:16px}
-.panel h3{margin:0 0 10px;color:#0369a1;font-size:16px}
+.panel h3{margin:0 0 10px;color:#0369a1;font-size:15px;font-weight:800}
 .kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed #e0f2fe}
 .kv b{color:#0c4a6e}
 .badge{padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700}
@@ -130,7 +131,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
 <div class="grid2">
-<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:300px;width:100%"><canvas id="chart"></canvas></div>
+<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:380px;width:100%"><canvas id="chart"></canvas></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;color:#0369a1;font-weight:700">
 <span>🔍 Window grafik</span>
 <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">Geser <input id="cwStart" type="range" min="0" max="0" value="0" oninput="cwOnInput()" style="flex:1;accent-color:#0284c7"></label>
@@ -138,11 +139,11 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <button onclick="cwReset()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px" title="Kembali ke 30 titik live">⟲ Live</button>
 <span id="cwLab" style="color:#64748b;font-weight:400"></span>
 </div>
-<div id="ratioBox" style="margin-top:8px;font-size:13px;font-weight:700;background:#f0f9ff;border:2px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1">Rasio Download : Upload — menunggu data...</div>
+<div id="ratioBox" style="margin-top:10px;font-size:12.5px;font-weight:800;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:9px 14px;color:#0369a1">Rasio Download : Upload — menunggu data...</div>
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik Download/Upload (port LAN)</button>
 </div>
 <div class="panel"><h3>🔌 Interfaces <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3>
-<div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div>
+<div id="portStrip" style="font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div>
 </div>
 </div>
 <div class="panel"><h3>🧾 Log</h3>
@@ -289,25 +290,38 @@ if(a)a.textContent=up;if(b)b.textContent=down;if(c)c.textContent=dev;
 function renderPortStrip(){
 const box=document.getElementById('portStrip');if(!box)return;
 const nm=document.getElementById('portDevName');
-if(!curR||!DB[curR]||!DB[curR].length){if(nm)nm.textContent='belum ada device';box.style.color='#64748b';box.textContent='Pilih device live dulu (sidebar kiri / topologi bawah).';return;}
+if(!curR||!DB[curR]||!DB[curR].length){if(nm)nm.textContent='belum ada device';box.style.color='#64748b';box.innerHTML='<div style="font-size:12.5px;color:#64748b;padding:8px 0">Pilih device live dulu (sidebar kiri / topologi bawah).</div>';return;}
 if(nm)nm.textContent=curR+(LIVE[curR]?' 🟢':' ⚪');
-const _psig=curR+'|'+curI+'|'+(DB[curR]||[]).map(p=>p.n+':'+p.admin+':'+p.oper+':'+p.fault+':'+(LIVE[curR]?1:0)).join(',');
+const isLive=!!LIVE[curR];
+const _psig=curR+'|'+curI+'|'+(DB[curR]||[]).map(p=>p.n+':'+p.admin+':'+p.oper+':'+p.fault+':'+(isLive?1:0)+':'+(p.rate||'')).join(',');
 if(box._sig===_psig)return;box._sig=_psig;
 box.innerHTML='';box.style.color='';
 const dark=document.body.classList.contains('dark');
-DB[curR].forEach(p=>{let dot='green';if(p.admin==='down'||p.oper==='down')dot='grey';else if(p.fault!=='sehat'&&p.fault!=='sehat-sfp')dot='red';
+let rows='';
+(DB[curR]||[]).forEach(p=>{
+const up=p.admin!=='down'&&p.oper!=='down';
 const active=p.n===curI;
-const rate=(LIVE[curR]&&p.n===curI&&p.rate!==undefined&&p.rate!==null)?' '+p.rate+' Mbps':'';
-const b=document.createElement('button');
-b.style.cssText=dark
-?'border:2px solid '+(active?'#8b7cf6':'#2b3763')+';background:'+(active?'#1c2450':'#141b36')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#c7d0ee'
-:'border:2px solid '+(active?'#0284c7':'#bae6fd')+';background:'+(active?'#bae6fd':'#fff')+';border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;color:#0c4a6e';
-b.innerHTML=`<span class="dot ${dot}"></span>${p.n}${active&&rate?' <span style="opacity:.7;font-size:11px">'+rate+'</span>':''}`;
-b.title=p.admin+'/'+p.oper+' (klik kanan = disable/enable)';
-b.onclick=()=>{curI=p.n;renderIfaces();};
-b.oncontextmenu=(ev)=>{ev.preventDefault();curI=p.n;renderIfaces();showCtx(ev.clientX,ev.clientY);};
-box.appendChild(b);});
+const rate=(isLive&&up&&p.rate!==undefined&&p.rate!==null)?p.rate:'—';
+const pillCls=up?'ok':'bad';
+const activeStyle=active?(dark?'background:#1c2450!important':'background:#e0f2fe!important'):'';
+rows+='<tr style="border-top:1px solid '+(dark?'#1b2340':'#e0f2fe')+';cursor:pointer;'+activeStyle+'" data-pn="'+p.n+'" oncontextmenu="renderIfacesCtx(event,'+JSON.stringify(p.n)+')">'
++'<td style="padding:8px 10px;font-weight:600">'+p.n+'</td>'
++'<td style="padding:8px 10px"><span class="'+pillCls+'" style="padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800">'+(up?'UP':'DOWN')+'</span></td>'
++'<td style="padding:8px 10px;color:'+(up?'#15803d':(dark?'#8b93b0':'#64748b'))+';font-weight:700">'+(rate!=='—'?rate+' Mbps':'—')+'</td>'
++'</tr>';
+});
+box.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
++'<thead><tr style="background:'+(dark?'#1a2342':'#e0f2fe')+';color:'+(dark?'#a78bfa':'#0369a1')+';font-size:11px;letter-spacing:.5px">'
++'<th style="text-align:left;padding:8px 10px">PORT</th>'
++'<th style="text-align:left;padding:8px 10px">STATUS</th>'
++'<th style="text-align:left;padding:8px 10px">RATE</th>'
++'</tr></thead><tbody>'+rows+'</tbody></table>';
+box.querySelectorAll('tr[data-pn]').forEach(tr=>{
+tr.onclick=()=>{curI=tr.getAttribute('data-pn');renderIfaces();};
+});
 }
+function renderIfacesCtx(ev,pn){ev.preventDefault();curI=pn;renderIfaces();showCtx(ev.clientX,ev.clientY);}
+window.onDarkToggle=()=>{try{const b=document.getElementById('portStrip');if(b)b._sig=null;}catch(_){}try{renderPortStrip();}catch(_){}};
 function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));const m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+' jam '+(m%60)+' mnt';if(m>0)return m+' mnt '+(s%60)+' dtk';return s+' dtk';}
 function clockStr(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
 function setLink(rName,p,oper,reason){reason=reason||'otomatis';
@@ -356,7 +370,7 @@ document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.s
 // (Panel TDR dihapus dari dashboard — character copper/fiber tetap di AI diagnosa)
 }
 const ctx=document.getElementById('chart');
-const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#0284c7',backgroundColor:'rgba(186,230,253,.5)',fill:true,tension:.4},{label:'Upload',data:ul,borderColor:'#38bdf8',borderDash:[6,4],fill:false,tension:.4}]},options:{animation:false,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'}},x:{display:false}}}}):{update(){}};
+const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#8b7cf6',backgroundColor:'rgba(139,124,246,.25)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0},{label:'Upload',data:ul,borderColor:'#4ade80',borderDash:[6,4],fill:false,tension:.4,borderWidth:1.5,pointRadius:0}]},options:{animation:false,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'},ticks:{color:'#64748b'}},x:{display:false}}}}):{update(){}};
 // ---- WINDOW SLIDER grafik: geser + atur lebar tampil tanpa gerakkan data ----
 let cwLen=30, cwStart=0;
 function chartView(){try{
@@ -893,8 +907,8 @@ renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
 renderIfaces();setInterval(tick,1000);
-function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');chart.options.plugins.legend.labels.color=dark?'#a78bfa':'#0369a1';chart.options.scales.y.ticks.color=dark?'#8b93b0':'#666';chart.options.scales.y.grid.color=dark?'#232c4a':'#e0f2fe';chart.update();}catch(e){}}
-function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);try{localStorage.setItem('netmon-theme',dark?'dark':'light');}catch(e){}const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'☀️':'🌙';applyChartTheme();}
+function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');chart.options.plugins.legend.labels.color=dark?'#a78bfa':'#0369a1';chart.options.scales.y.ticks.color=dark?'#8b93b0':'#64748b';chart.options.scales.y.grid.color=dark?'#232c4a':'#e0f2fe';chart.data.datasets[0].borderColor=dark?'#8b7cf6':'#8b7cf6';chart.data.datasets[0].backgroundColor=dark?'rgba(139,124,246,.25)':'rgba(139,124,246,.25)';chart.data.datasets[1].borderColor='#4ade80';chart.update();}catch(e){}}
+function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);try{localStorage.setItem('netmon-theme',dark?'dark':'light');}catch(e){}const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'☀️':'🌙';applyChartTheme();try{if(window.onDarkToggle)window.onDarkToggle();}catch(_){}}
 (function(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b=document.getElementById('themeBtn');if(b)b.textContent='☀️';}}catch(e){}try{applyChartTheme();}catch(e){}})();
 window.addEventListener('beforeunload',()=>{try{window._leaving=true;}catch(e){}});
 try{syncTopo();}catch(e){}
