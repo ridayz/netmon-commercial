@@ -937,7 +937,8 @@ svg.appendChild(g);
 const toSvg=e2=>{const rr=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;return{x:(e2.clientX-rr.left)*vb.width/rr.width,y:(e2.clientY-rr.top)*vb.height/rr.height};};
 const paint=()=>{r.setAttribute('x',a.x);r.setAttribute('y',a.y);r.setAttribute('width',a.w);r.setAttribute('height',a.h);t.setAttribute('x',a.x+14);t.setAttribute('y',a.y+18);hd.setAttribute('x',a.x+a.w-hz);hd.setAttribute('y',a.y+a.h-hz);};
 hd.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();window._topoDrag=true;try{hd.setPointerCapture(ev.pointerId);}catch(e){}
-const mv=e2=>{const p=toSvg(e2);a.w=Math.max(80,Math.round(p.x-a.x));a.h=Math.max(50,Math.round(p.y-a.y));paint();};
+const p0=toSvg(ev);const offW=(a.x+a.w)-p0.x,offH=(a.y+a.h)-p0.y;
+const mv=e2=>{const p=toSvg(e2);a.w=Math.max(80,Math.round(p.x+offW-a.x));a.h=Math.max(50,Math.round(p.y+offH-a.y));paint();};
 const up=()=>{hd.removeEventListener('pointermove',mv);window._topoDrag=false;try{hd.releasePointerCapture(ev.pointerId);}catch(e){}drawTopo();saveTopo();};
 hd.addEventListener('pointermove',mv);hd.addEventListener('pointerup',up,{once:true});hd.addEventListener('pointercancel',()=>{window._topoDrag=false;},{once:true});
 });
