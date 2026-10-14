@@ -1351,6 +1351,7 @@ function cableDragStart(id){
 document.getElementById('tmenu')?.remove();remoteClose();
 const n=topoNode(id);if(!n)return;
 window._cableFrom=id;window._rewireLi=null;
+SEL.clear();SELA.clear();drawTopo();
 cableListenOnce();
 log('> tarik kabel dari "'+n.label+'" → klik node tujuan (Esc batal)');
 drawCableGhost(null);
@@ -1394,6 +1395,7 @@ log('✔ kabel: '+A.label+(pa?':'+pa:'')+' ↔ '+B.label+(pb?':'+pb:''));
 function cableMenu(x,y,li){
 document.getElementById('tmenu')?.remove();
 const l=LINKS[li];if(!l)return;
+if(selCount()){SEL.clear();SELA.clear();drawTopo();}
 const A=topoNode(l[0]),B=topoNode(l[1]);
 const m=document.createElement('div');m.id='tmenu';
 m.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:8px;z-index:99;box-shadow:0 8px 24px rgba(2,132,199,.25);min-width:210px`;
@@ -1411,6 +1413,7 @@ const l=LINKS[li];document.getElementById('tmenu')?.remove();if(!l)return;
 const keepA=confirm('Tahan ujung ASAL "'+((topoNode(l[0])||{}).label||l[0])+'"?\nOK = tahan asal, ganti tujuan\nBatal = tahan tujuan, ganti asal');
 const keep=keepA?l[0]:l[1];
 window._rewireLi=li;window._rewireEnd=keepA?1:0;window._cableFrom=keep;
+SEL.clear();SELA.clear();drawTopo();
 cableListenOnce();
 const n=topoNode(keep);
 log('> pindah colok: "'+(n?n.label:keep)+'" ditahan → klik node tujuan baru (Esc batal)');
@@ -1475,7 +1478,7 @@ log('> '+n.label+' pindah ke layer '+t.label);
 function setTopoIcon(id,icon){const n=topoNode(id);if(n){n.icon=icon;}document.getElementById('tmenu')?.remove();drawTopo();saveTopo();}
 function setDelMode(on){
 window._delMode=!!on;
-if(on)cableDragCancel();
+if(on){cableDragCancel();if(selCount()){SEL.clear();SELA.clear();drawTopo();}}
 const p=document.getElementById('modePtr'),d=document.getElementById('modeDel');
 if(p){p.style.background=on?'#fff':'#0284c7';p.style.color=on?'#0284c7':'#fff';}
 if(d){d.style.background=on?'#ef4444':'#fff';d.style.color=on?'#fff':'#0284c7';d.style.borderColor=on?'#ef4444':'#bae6fd';}
