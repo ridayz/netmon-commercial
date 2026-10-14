@@ -921,7 +921,7 @@ if(!curLayer||!LAYERS[curLayer]){const svg0=document.getElementById('topoSvg');i
 if(!Array.isArray(LAYERS[curLayer].nodes)){LAYERS[curLayer].nodes=[];LAYERS[curLayer].links=[];}TOPO=LAYERS[curLayer].nodes;LINKS=LAYERS[curLayer].links;
 // anti-kedip: refresh 3-detik di-skip kalau tidak ada yang berubah (posisi/status/label/link/view/seleksi sama)
 try{const _svg0=document.getElementById('topoSvg');
-const _ts=curLayer+'|'+curR+'|'+(LAYERS[curLayer].vb||'')+'|'+TOPO.map(n=>n.id+':'+n.x+','+n.y+':'+topoSt(n)+':'+(n.label||'')+':'+(n.sub||'')+':'+(n.fs||1)+':'+(n.icon||'')).join(';')+'|'+LINKS.map(l=>l.join(',')).join(';')+'|'+TOPO.map(n=>n.db&&DB[n.db]?DB[n.db].map(p=>p.admin+'/'+p.oper).join(','):'').join(';');
+const _ts=curLayer+'|'+curR+'|'+(LAYERS[curLayer].vb||'')+'|'+TOPO.map(n=>n.id+':'+n.x+','+n.y+':'+topoSt(n)+':'+(n.label||'')+':'+(n.sub||'')+':'+(n.fs||1)+':'+(n.icon||'')).join(';')+'|'+LINKS.map(l=>l.join(',')).join(';')+'|'+TOPO.map(n=>n.db&&DB[n.db]?DB[n.db].map(p=>p.admin+'/'+p.oper).join(','):'').join(';')+'|'+(LAYERS[curLayer].areas||[]).map(a=>a.id+':'+a.x+','+a.y+','+a.w+','+a.h+':'+(a.label||'')+':'+(a.fs||11)).join(';');
 if(_svg0&&_svg0._ts===_ts)return;if(_svg0)_svg0._ts=_ts;}catch(_){}
 try{syncTopoSliders();}catch(_){}
 const svg=document.getElementById('topoSvg');const W=svg.clientWidth||900;
