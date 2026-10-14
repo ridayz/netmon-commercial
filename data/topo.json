@@ -1,6 +1,6 @@
 {
- "at": "2026-10-13T17:39:35.144Z",
- "cur": "c50585",
+ "at": "2026-10-14T16:28:46.335Z",
+ "cur": "pu",
  "layers": {
   "c50585": {
    "label": "RUMAH",
@@ -10,8 +10,8 @@
     {
      "id": "a91975",
      "label": "Area Baru",
-     "x": 172,
-     "y": -69,
+     "x": -50,
+     "y": 66,
      "w": 260,
      "h": 140
     }
@@ -127,10 +127,10 @@
   "pu": {
    "label": "Manage ThirdParty",
    "type": "live",
-   "vb": "0 0 980 440",
+   "vb": "213.7 -12.6 854 491.2",
    "areas": [
     {
-     "label": "Area Server ICTel",
+     "label": "Data Center",
      "x": 5,
      "y": 18,
      "w": 280,
@@ -139,24 +139,24 @@
     },
     {
      "label": "Area Server ICTel",
-     "x": 450,
-     "y": 178,
+     "x": 579,
+     "y": 266,
      "w": 310,
      "h": 116,
      "id": "a-pu-1"
     },
     {
-     "label": "Area Server President University",
-     "x": 300,
-     "y": 18,
-     "w": 450,
-     "h": 116,
+     "label": "Area Customer",
+     "x": 299,
+     "y": 14,
+     "w": 673,
+     "h": 123,
      "id": "a-pu-2"
     },
     {
      "label": "Area Publik / Kampus / Asrama",
-     "x": 100,
-     "y": 180,
+     "x": 229,
+     "y": 268,
      "w": 330,
      "h": 220,
      "id": "a-pu-3"
@@ -166,60 +166,60 @@
     {
      "id": "iforte",
      "icon": "internet",
-     "label": "IForte / ISP",
-     "sub": "uplink 500M",
+     "label": "Internet",
+     "sub": "500Mbs",
      "x": 70,
      "y": 70,
-     "db": "IForte / ISP",
-     "_w": 117
+     "db": "Internet",
+     "_w": 112
     },
     {
      "id": "swForte",
-     "icon": "switch",
-     "label": "Switch Iforte",
-     "sub": "ISP",
+     "icon": "router",
+     "label": "Router Core ISP",
+     "sub": "",
      "x": 210,
      "y": 70,
-     "db": "Switch Iforte",
-     "_w": 125
+     "db": "Router Core ISP",
+     "_w": 140
     },
     {
      "id": "swPu",
      "icon": "switch",
-     "label": "Switch ICTel PU",
-     "sub": "area PU",
-     "x": 370,
-     "y": 70,
-     "db": "Switch ICTel PU",
-     "_w": 140
+     "label": "Switch Core Customer",
+     "sub": "",
+     "x": 401,
+     "y": 71,
+     "db": "Switch Core Customer",
+     "_w": 178
     },
     {
      "id": "rPu",
      "icon": "router",
-     "label": "Router PU",
+     "label": "Router A",
      "sub": "BGP + IP publik",
-     "x": 520,
-     "y": 70,
+     "x": 623,
+     "y": 69,
      "db": "Router PU",
      "_w": 131
     },
     {
      "id": "rIctel",
      "icon": "router",
-     "label": "Router Ictel",
-     "sub": "VLAN 31-40",
-     "x": 670,
-     "y": 70,
+     "label": "Router B",
+     "sub": "Backup Link",
+     "x": 896,
+     "y": 66,
      "db": "Router Ictel",
-     "_w": 117
+     "_w": 112
     },
     {
      "id": "swCore",
      "icon": "switch",
      "label": "SW Ictel Core",
      "sub": "server ICTel",
-     "x": 690,
-     "y": 230,
+     "x": 819,
+     "y": 318,
      "db": "SW Ictel Core",
      "_w": 125
     },
@@ -228,8 +228,8 @@
      "icon": "olt",
      "label": "Gepon / OLT",
      "sub": "area ICTel",
-     "x": 520,
-     "y": 230,
+     "x": 649,
+     "y": 318,
      "db": "Gepon / OLT",
      "_w": 112
     },
@@ -238,8 +238,8 @@
      "icon": "ont",
      "label": "ONT Kampus",
      "sub": "publik",
-     "x": 350,
-     "y": 230,
+     "x": 479,
+     "y": 318,
      "db": "ONT Kampus",
      "_w": 112
     },
@@ -248,8 +248,8 @@
      "icon": "swpoe",
      "label": "SW Ruijie PoE",
      "sub": "ke AP",
-     "x": 180,
-     "y": 230,
+     "x": 309,
+     "y": 318,
      "db": "SW Ruijie PoE",
      "_w": 125
     },
@@ -258,8 +258,8 @@
      "icon": "ap",
      "label": "AP A4.1",
      "sub": "flapping",
-     "x": 180,
-     "y": 350,
+     "x": 309,
+     "y": 438,
      "db": "AP A4.1",
      "_w": 112
     },
@@ -268,8 +268,8 @@
      "icon": "ap",
      "label": "AP Pavilion 1",
      "sub": "asrama",
-     "x": 350,
-     "y": 350,
+     "x": 479,
+     "y": 438,
      "db": "AP Pavilion 1",
      "_w": 125
     }
@@ -324,6 +324,13 @@
      "swR",
      "apP",
      "lan"
+    ],
+    [
+     "rIctel",
+     "rPu",
+     "fo",
+     "mgmt",
+     "mgmt"
     ]
    ]
   },
