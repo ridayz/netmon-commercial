@@ -83,6 +83,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div class="card"><small>LATENCY</small><h2 id="ping">-</h2><span>ke 8.8.8.8</span></div>
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
+<div class="grid2">
 <div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:300px;width:100%"><canvas id="chart"></canvas></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;color:#0369a1;font-weight:700">
 <span>🔍 Window grafik</span>
@@ -99,8 +100,9 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 <div id="aiActions" style="display:flex;flex-direction:column;gap:6px"></div>
 <div id="aiResult" style="display:none;background:#fff;border:2px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.65;color:#0c4a6e"></div>
 </div>
-</div><!-- /tab-dash -->
+</div>
 <div class="panel"><h3>🔌 Port — <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3><div id="portStrip" style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div></div>
+</div><!-- /tab-dash -->
 </div><!-- /main -->
 <div id="tab-topo" style="display:none;flex-direction:column;gap:12px">
 <div class="panel"><h3>🗺 Topologi</h3>
@@ -240,7 +242,7 @@ function hideCtx(){document.getElementById('ctx')?.remove();}
 function setAdmin(s){hideCtx();const c=cur();c.admin=s;if(s==='down'){c.prevFault=c.fault;c.fault='disabled-human';setLink(curR,c,'down','disable manual');log('> kamu DISABLE '+c.n+' (klik kanan)');}else{c.fault=c.prevFault&&c.prevFault!=='disabled-human'?c.prevFault:'sehat';setLink(curR,c,'up','enable manual');log('> kamu ENABLE '+c.n+' manual');}renderIfaces();}
 function simUnplug(){hideCtx();const c=cur();c.admin='up';if(c.type==='sfp'){c.fault='no-light';}else{c.fault='putus-23m';c.poe='0W';}setLink(curR,c,'down','kabel dicabut (simulasi)');log('> simulasi kabel '+c.n+' DICABUT');renderIfaces();}
 function refresh(){
-const c=cur();const _tt=c?`${curR} — ${c.n} (${c.type.toUpperCase()})${LIVE[curR]?' 🟢 LIVE':' ⚪ DUMMY (simulasi)'}`:'Netmon - Router AI';const _te=document.getElementById('title');if(_te.textContent!==_tt)_te.textContent=_tt;if(!c)return;
+const c=cur();const _tt=c?`${curR} — ${c.n} (${c.type.toUpperCase()})`:'Netmon - Router AI';const _te=document.getElementById('title');if(_te.textContent!==_tt)_te.textContent=_tt;if(!c)return;
 const down=c.oper==='down';
 const _pt=down?'● DOWN':(c.fault.startsWith('sehat')?'● ONLINE':'● DEGRADED');const _pe=document.getElementById('statusPill');if(_pe.textContent!==_pt)_pe.textContent=_pt;
 document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.startsWith('sehat')?'#e0f2fe':'#fef9c3');
