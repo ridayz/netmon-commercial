@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Netmon - Router AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-*{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box;font-family:'Inter','Segoe UI',system-ui,sans-serif}
 body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .app{display:flex;min-height:100vh}
 .sidebar{width:248px;background:#171a26;border-right:0;padding:18px 14px;display:flex;flex-direction:column;gap:10px;color:#e6e9f2}
@@ -371,7 +374,7 @@ document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.s
 // (Panel TDR dihapus dari dashboard — character copper/fiber tetap di AI diagnosa)
 }
 const ctx=document.getElementById('chart');
-const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#8b7cf6',backgroundColor:'rgba(139,124,246,.28)',fill:true,tension:.15,borderWidth:2.5,pointRadius:0,pointHoverRadius:3},{label:'Upload',data:ul,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.06)',borderDash:[5,4],fill:true,tension:.15,borderWidth:1.8,pointRadius:0,pointHoverRadius:3}]},options:{animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>' '+c.dataset.label+': '+(+c.parsed.y).toFixed(1)+' Mbps'}}},scales:{y:{beginAtZero:true,suggestedMax:10,grid:{color:'#e0f2fe'},ticks:{color:'#64748b',maxTicksLimit:6}},x:{display:false,grid:{display:false}}}}}):{update(){}};
+const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#8b7cf6',backgroundColor:'rgba(139,124,246,.28)',fill:true,tension:.15,borderWidth:2.5,pointRadius:0,pointHoverRadius:3},{label:'Upload',data:ul,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.06)',borderDash:[5,4],fill:true,tension:.15,borderWidth:1.8,pointRadius:0,pointHoverRadius:3}]},options:{animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>' '+c.dataset.label+': '+(+c.parsed.y).toFixed(1)+' Mbps'}}},scales:{y:{beginAtZero:true,suggestedMax:10,grid:{display:false},ticks:{color:'#64748b',maxTicksLimit:6}},x:{display:false,grid:{display:false}}}}}):{update(){}};
 // ---- WINDOW SLIDER grafik: geser + atur lebar tampil tanpa gerakkan data ----
 let cwLen=30, cwStart=0;
 function chartView(){try{
@@ -925,7 +928,7 @@ renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
 renderIfaces();setInterval(tick,1000);
-function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');if(chart.options.plugins&&chart.options.plugins.legend)chart.options.plugins.legend.display=false;chart.options.scales.y.ticks.color=dark?'#8b93b0':'#64748b';chart.options.scales.y.grid.color=dark?'rgba(35,44,74,.7)':'#e0f2fe';chart.options.scales.y.ticks.maxTicksLimit=6;chart.data.datasets[0].borderColor='#8b7cf6';chart.data.datasets[0].backgroundColor=dark?'rgba(139,124,246,.28)':'rgba(139,124,246,.28)';chart.data.datasets[1].borderColor='#4ade80';chart.update();}catch(e){}}
+function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');if(chart.options.plugins&&chart.options.plugins.legend)chart.options.plugins.legend.display=false;chart.options.scales.y.ticks.color=dark?'#8b93b0':'#64748b';chart.options.scales.y.grid.display=false;if(chart.options.scales.x&&chart.options.scales.x.grid)chart.options.scales.x.grid.display=false;chart.options.scales.y.ticks.maxTicksLimit=6;chart.data.datasets[0].borderColor='#8b7cf6';chart.data.datasets[0].backgroundColor=dark?'rgba(139,124,246,.28)':'rgba(139,124,246,.28)';chart.data.datasets[1].borderColor='#4ade80';chart.update();}catch(e){}}
 function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);try{localStorage.setItem('netmon-theme',dark?'dark':'light');}catch(e){}const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'☀️':'🌙';applyChartTheme();try{if(window.onDarkToggle)window.onDarkToggle();}catch(_){}}
 (function(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b=document.getElementById('themeBtn');if(b)b.textContent='☀️';}}catch(e){}try{applyChartTheme();}catch(e){}})();
 window.addEventListener('beforeunload',()=>{try{window._leaving=true;}catch(e){}});
