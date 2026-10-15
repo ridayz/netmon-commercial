@@ -1,11 +1,11 @@
 {
- "at": "2026-10-14T16:28:46.335Z",
- "cur": "pu",
+ "at": "2026-10-15T02:08:40.260Z",
+ "cur": "c30755",
  "layers": {
   "c50585": {
    "label": "RUMAH",
    "type": "live",
-   "vb": "-192 -150 1096 520",
+   "vb": "-192 -85 1096 520",
    "areas": [
     {
      "id": "a91975",
@@ -25,7 +25,7 @@
      "ip": "60.60.60.1",
      "x": 82,
      "y": 151,
-     "db": "IP 60.60.60.1",
+     "db": "Mikrotik-Doncul",
      "_w": 236
     },
     {
@@ -127,7 +127,7 @@
   "pu": {
    "label": "Manage ThirdParty",
    "type": "live",
-   "vb": "213.7 -12.6 854 491.2",
+   "vb": "95 -61 1122.5 590",
    "areas": [
     {
      "label": "Data Center",
@@ -138,27 +138,19 @@
      "id": "a-pu-0"
     },
     {
-     "label": "Area Server ICTel",
-     "x": 579,
-     "y": 266,
-     "w": 310,
-     "h": 116,
-     "id": "a-pu-1"
-    },
-    {
      "label": "Area Customer",
-     "x": 299,
-     "y": 14,
-     "w": 673,
-     "h": 123,
+     "x": 295,
+     "y": 4,
+     "w": 693,
+     "h": 212,
      "id": "a-pu-2"
     },
     {
-     "label": "Area Publik / Kampus / Asrama",
-     "x": 229,
-     "y": 268,
-     "w": 330,
-     "h": 220,
+     "label": "Area Gedung",
+     "x": 402,
+     "y": 231,
+     "w": 381,
+     "h": 268,
      "id": "a-pu-3"
     }
    ],
@@ -188,8 +180,8 @@
      "icon": "switch",
      "label": "Switch Core Customer",
      "sub": "",
-     "x": 401,
-     "y": 71,
+     "x": 659,
+     "y": 64,
      "db": "Switch Core Customer",
      "_w": 178
     },
@@ -198,9 +190,9 @@
      "icon": "router",
      "label": "Router A",
      "sub": "BGP + IP publik",
-     "x": 623,
-     "y": 69,
-     "db": "Router PU",
+     "x": 871,
+     "y": 166,
+     "db": "Router A",
      "_w": 131
     },
     {
@@ -208,70 +200,60 @@
      "icon": "router",
      "label": "Router B",
      "sub": "Backup Link",
-     "x": 896,
-     "y": 66,
-     "db": "Router Ictel",
+     "x": 409,
+     "y": 169,
+     "db": "Router B",
      "_w": 112
-    },
-    {
-     "id": "swCore",
-     "icon": "switch",
-     "label": "SW Ictel Core",
-     "sub": "server ICTel",
-     "x": 819,
-     "y": 318,
-     "db": "SW Ictel Core",
-     "_w": 125
     },
     {
      "id": "olt",
      "icon": "olt",
      "label": "Gepon / OLT",
-     "sub": "area ICTel",
-     "x": 649,
-     "y": 318,
+     "sub": "",
+     "x": 656,
+     "y": 172,
      "db": "Gepon / OLT",
      "_w": 112
     },
     {
      "id": "ontK",
      "icon": "ont",
-     "label": "ONT Kampus",
+     "label": "ONT Gedung",
      "sub": "publik",
-     "x": 479,
-     "y": 318,
-     "db": "ONT Kampus",
+     "x": 655,
+     "y": 294,
+     "db": "ONT Gedung",
      "_w": 112
     },
     {
      "id": "swR",
      "icon": "swpoe",
-     "label": "SW Ruijie PoE",
+     "label": "Switch Manage PoE",
      "sub": "ke AP",
-     "x": 309,
-     "y": 318,
-     "db": "SW Ruijie PoE",
-     "_w": 125
+     "x": 485,
+     "y": 294,
+     "db": "Switch Manage PoE",
+     "_w": 155
     },
     {
      "id": "apA",
      "icon": "ap",
-     "label": "AP A4.1",
-     "sub": "flapping",
-     "x": 309,
-     "y": 438,
-     "db": "AP A4.1",
+     "label": "AP-Office",
+     "sub": "Vlan 10",
+     "x": 485,
+     "y": 414,
+     "db": "AP-Office",
      "_w": 112
     },
     {
      "id": "apP",
      "icon": "ap",
-     "label": "AP Pavilion 1",
-     "sub": "asrama",
-     "x": 479,
-     "y": 438,
-     "db": "AP Pavilion 1",
-     "_w": 125
+     "label": "AP-Room Meeting",
+     "sub": "Vlan 20",
+     "x": 655,
+     "y": 414,
+     "db": "AP-Room Meeting",
+     "_w": 140
     }
    ],
    "links": [
@@ -288,21 +270,6 @@
     [
      "swPu",
      "rPu",
-     "fo"
-    ],
-    [
-     "rPu",
-     "rIctel",
-     "fo"
-    ],
-    [
-     "rIctel",
-     "swCore",
-     "fo"
-    ],
-    [
-     "swCore",
-     "olt",
      "fo"
     ],
     [
@@ -327,7 +294,21 @@
     ],
     [
      "rIctel",
+     "swPu",
+     "fo",
+     "mgmt",
+     "mgmt"
+    ],
+    [
      "rPu",
+     "olt",
+     "fo",
+     "mgmt",
+     "mgmt"
+    ],
+    [
+     "rIctel",
+     "olt",
      "fo",
      "mgmt",
      "mgmt"
@@ -344,7 +325,7 @@
      "id": "isp",
      "icon": "internet",
      "label": "ISP",
-     "sub": "uplink KIJ",
+     "sub": "",
      "x": 90,
      "y": 150,
      "db": "ISP",
@@ -353,12 +334,12 @@
     {
      "id": "swK",
      "icon": "switch",
-     "label": "Switch ICTel",
-     "sub": "inti KIJ",
+     "label": "Switch Core",
+     "sub": "",
      "x": 290,
      "y": 150,
-     "db": "Switch ICTel",
-     "_w": 117
+     "db": "Switch Core",
+     "_w": 112
     },
     {
      "id": "oltK",
@@ -443,6 +424,26 @@
      "lan"
     ]
    ]
+  },
+  "srvlokal": {
+   "label": "Server Lokal",
+   "type": "live",
+   "vb": "0 0 900 400",
+   "areas": [],
+   "nodes": [
+    {
+     "id": "srv8042",
+     "icon": "server",
+     "label": "INDONET-RIDWAN",
+     "sub": "127.0.0.1 • LIVE host",
+     "ip": "127.0.0.1",
+     "x": 450,
+     "y": 200,
+     "db": "SERVER-LOKAL",
+     "_w": 173
+    }
+   ],
+   "links": []
   }
  }
 }

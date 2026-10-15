@@ -144,6 +144,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">Geser <input id="cwStart" type="range" min="0" max="0" value="0" oninput="cwOnInput()" style="flex:1;accent-color:#0284c7"></label>
 <label style="display:flex;align-items:center;gap:6px">Lebar <input id="cwLen" type="range" min="10" max="30" value="30" oninput="cwOnInput()" style="width:120px;accent-color:#0284c7"></label>
 <button onclick="cwReset()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px" title="Kembali ke 30 titik live">⟲ Live</button>
+<label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#0369a1;font-weight:700;cursor:pointer" title="Kalau mati, traffic dummy berhenti (chart datar) — buat demo/promosi"><input id="simTrafficChk" type="checkbox" checked onchange="setSimTraffic(this.checked)" style="width:15px;height:15px;accent-color:#0284c7"> Simulasi dummy</label>
 <span id="cwLab" style="color:#64748b;font-weight:400"></span>
 </div>
 <div id="ratioBox">Rasio Download : Upload — menunggu data...</div>
@@ -398,7 +399,9 @@ const lb=document.getElementById('cwLab');if(lb)lb.textContent='tampil '+cwLen+'
 }catch(e){}}
 function cwOnInput(){const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');if(s2)cwLen=+s2.value||30;if(s1)cwStart=+s1.value||0;chartView();}
 function cwReset(){cwLen=30;cwStart=0;chartView();}
-function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){const sim=c.oper!=='down'?simTick(c.n):{dl:0,ul:0};dl.push(sim.dl);dl.shift();ul.push(sim.ul);ul.shift();try{chartView();}catch(e){}if(c.oper!=='down'&&sim.dl>0){try{setCards(sim.dl,sim.ul,true);}catch(_){}}else{try{setCards(null,null);}catch(_){}}if(c.oper==='down'){try{setPingLoss(null,null);}catch(_){}}else{try{setPingLoss((3+Math.round(Math.random()*6))+' <span class="u">ms</span>',(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0')+' <span class="u">%</span>');}catch(_){}}try{setCardSubs(sim.dl,sim.ul);}catch(_){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';try{setCardSubs();}catch(_){}}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+function setSimTraffic(on){window._simTraffic=on!==false;try{localStorage.setItem('netmon-sim-traffic',window._simTraffic?'1':'0');}catch(e){}const c=document.getElementById('simTrafficChk');if(c)c.checked=window._simTraffic;log('> simulasi dummy '+(window._simTraffic?'NYALA 🟢':'MATI (chart dummy datar)'));}
+(function(){try{window._simTraffic=localStorage.getItem('netmon-sim-traffic')!=='0';}catch(e){window._simTraffic=true;}const c=document.getElementById('simTrafficChk');if(c)c.checked=window._simTraffic;})();
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){const simOn=window._simTraffic!==false;const sim=(simOn&&c.oper!=='down')?simTick(c.n):{dl:0,ul:0};dl.push(sim.dl);dl.shift();ul.push(sim.ul);ul.shift();try{chartView();}catch(e){}if(c.oper!=='down'&&sim.dl>0){try{setCards(sim.dl,sim.ul,true);}catch(_){}}else{try{setCards(null,null);}catch(_){}}if(c.oper==='down'||!simOn){try{setPingLoss(null,null);}catch(_){}}else{try{setPingLoss((3+Math.round(Math.random()*6))+' <span class="u">ms</span>',(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0')+' <span class="u">%</span>');}catch(_){}}try{setCardSubs(sim.dl,sim.ul);}catch(_){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';try{setCardSubs();}catch(_){}}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+r.toFixed(1)+' : 1 — '+(timpang?'<span style="color:#f87171">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#4ade80">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');if(!el)return;try{const t=String(m);const esc=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');let cls='g';if(/DOWN|gagal|putus|TIMPANG|🔧|redam|flap/i.test(t))cls='r';else if(/⚠|cek|Cek|tunggu|menunggu|kecil|hampir/i.test(t))cls='y';let body=esc;if(body.indexOf('&gt;')===0)body=body.slice(4);const d=document.createElement('div');d.innerHTML='<span class="'+cls+'">&gt;</span> '+body;el.appendChild(d);el.scrollTop=el.scrollHeight;}catch(_){try{el.textContent+=String(m)+'\n';el.scrollTop=el.scrollHeight;}catch(__){}}}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
@@ -744,26 +747,26 @@ const isDown=cc.oper==='down';
 const dlSub=document.getElementById('dlSub');
 if(dlSub){
 if(isDown)dlSub.textContent='device down';
-else if(!live)dlSub.textContent='simulasi (dummy)';
+else if(!live)dlSub.textContent=(window._simTraffic===false?'simulasi off':'simulasi (dummy)');
 else{const v=dlVal||0;dlSub.textContent=v>60?'▲ beban tinggi':(v>10?'▲ stabil':'— kecil, cek queue');}
 }
 const ulSub=document.getElementById('ulSub');
 if(ulSub){
 if(isDown)ulSub.textContent='device down';
-else if(!live)ulSub.textContent='simulasi (dummy)';
+else if(!live)ulSub.textContent=(window._simTraffic===false?'simulasi off':'simulasi (dummy)');
 else{const v=ulVal||0;ulSub.textContent=v>4?'▲ wajar ISP':(v>0.5?'— kecil':'⚠ hampir nol');}
 }
 const pingSub=document.getElementById('pingSub');
 if(pingSub){
 if(isDown)pingSub.textContent='tidak ada koneksi';
 else if(live)pingSub.textContent='ke 8.8.8.8';
-else pingSub.textContent=(3+Math.round(Math.random()*6))+' ms • simulasi';
+else pingSub.textContent=(window._simTraffic===false?'simulasi off':(3+Math.round(Math.random()*6))+' ms • simulasi');
 }
 const lossSub=document.getElementById('lossSub');
 if(lossSub){
 if(isDown)lossSub.textContent='tidak ada koneksi';
 else if(live)lossSub.textContent='ke 8.8.8.8';
-else lossSub.textContent=(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0')+'% • aman';
+else lossSub.textContent=(window._simTraffic===false?'simulasi off':(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0')+'% • aman');
 }
 }catch(_){}
 }
@@ -934,6 +937,14 @@ function saveTopo(manual){snapTopo();persistTopo(manual);try{renderLayerBtns();}
 restoreLive();
 // bangun ulang DB port untuk node topologi yang belum punya (misal hasil import GNS3)
 try{Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(!n.db||!DB[n.db])ensureNodeDb(n,LAYERS[k].links||[]);});});}catch(e){}
+// auto-adopt SERVER-LOKAL: tiap browser (termasuk Firefox) langsung pantau mesin ini tanpa klik apa-apa
+(async function(){try{
+let need=false;Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db==='SERVER-LOKAL'&&!(DB['SERVER-LOKAL']&&DB['SERVER-LOKAL'].length))need=true;});});
+if(!need)return;
+await ensureServerLokalDb(true);
+try{renderRouters();renderIfaces();drawTopo();}catch(e){}
+log('✔ SERVER LOKAL auto-aktif — klik node-nya di layer Server Lokal → speed tampil di dashboard 🟢');
+}catch(e){}})();
 // pastikan device yang dibuka valid (navigator sekarang ikut topologi)
 if(!DB[curR]||!DB[curR].length){const td=topoDevs();if(td.length){curR=td[0].db;}else{const ks=Object.keys(DB);curR=ks.length?ks[0]:'';}}
 if(DB[curR]&&DB[curR].length&&!DB[curR].find(x=>x.n===curI))curI=DB[curR][0].n;
@@ -1529,26 +1540,39 @@ try{pingIpNodes();}catch(_){}
 });
 }
 // ---- SERVER LOKAL: pantau mesin ini sendiri (NIC asli via collector, traffic realtime beneran) ----
-async function addLocalServer(px,py){
+async function ensureServerLokalDb(silent){
 const key='SERVER-LOKAL';
-if(DB[key]&&DB[key].length){pickDev(key);return;}
+if(DB[key]&&DB[key].length)return {key,cached:true};
 let j;
 try{
-log('> baca NIC server lokal via collector '+COLL()+' ...');
+if(!silent)log('> baca NIC server lokal via collector '+COLL()+' ...');
 j=await collGet('/api/host',12000);
 if(!j||!j.ok||!(j.interfaces||[]).length)throw new Error((j&&j.error)||'tidak ada NIC terbaca');
-}catch(e){log('> server lokal gagal: '+String(e.message||e).slice(0,100));return;}
+}catch(e){if(!silent)log('> server lokal gagal: '+String(e.message||e).slice(0,100));throw e;}
 const ifs=j.interfaces.map(x=>({n:x.name,type:'copper',admin:'up',oper:'up',fault:'sehat',live:true,poe:'-',speed:'-'}));
 DB[key]=ifs;LIVE[key]={ip:'127.0.0.1',via:'host',ifaces:JSON.parse(JSON.stringify(ifs)),identity:j.identity||'server-lokal'};persistLive();
-const g=typeof ensureDetectGroup==='function'?ensureDetectGroup():null;if(g&&!g.devs.includes(key))g.devs.push(key);
-let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
+try{const g=typeof ensureDetectGroup==='function'?ensureDetectGroup():null;if(g&&!g.devs.includes(key))g.devs.push(key);}catch(_){}
+return {key,j};
+}
+function ensureServerLokalNode(j){
+if(!LAYERS['srvlokal'])LAYERS['srvlokal']={label:'Server Lokal',type:'live',vb:'0 0 900 400',areas:[],nodes:[],links:[]};
+for(const k of Object.keys(LAYERS)){const f=(LAYERS[k].nodes||[]).find(n=>n.db==='SERVER-LOKAL');if(f)return {layer:k,id:f.id};}
 const id='srv'+Date.now()%100000;
-TOPO.push({id,icon:'server',label:j.identity||'server-lokal',sub:'127.0.0.1 • LIVE host',ip:'127.0.0.1',x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py,db:key});
-if(best)LINKS.push([best.id,id,'lan','',(ifs[0]||{}).n||'']);
+LAYERS['srvlokal'].nodes.push({id,icon:'server',label:(j&&j.identity)||'server-lokal',sub:'127.0.0.1 • LIVE host',ip:'127.0.0.1',x:450,y:200,db:'SERVER-LOKAL'});
+return {layer:'srvlokal',id};
+}
+async function addLocalServer(px,py){
+const key='SERVER-LOKAL';
+if(DB[key]&&DB[key].length){try{setLayer('srvlokal');}catch(_){}try{showTab('topo');}catch(_){}log('> klik node '+(LIVE[key].identity||key)+' → speed tampil di dashboard');return;}
+let r;try{r=await ensureServerLokalDb(false);}catch(e){return;}
+ensureServerLokalNode(r.j);
 curR=key;curI=DB[key][0].n;
-renderRouters();renderIfaces();drawTopo();saveTopo();showTab('dash');
-log('✔ SERVER LOKAL: '+(j.identity||'')+' • '+ifs.length+' NIC ('+ifs.map(i=>i.n).join(', ')+') — traffic realtime asli 🟢');
-try{pushAlarm('info','server-lokal','LIVE host: '+ifs.length+' NIC');}catch(e){}
+try{renderLayerBtns();}catch(_){}
+try{setLayer('srvlokal');}catch(_){}
+try{showTab('topo');}catch(_){}
+saveTopo();
+log('✔ SERVER LOKAL: '+((r.j&&r.j.identity)||'')+' • '+DB[key].length+' NIC ('+DB[key].map(i=>i.n).join(', ')+') — klik node-nya → speed tampil di dashboard 🟢');
+try{pushAlarm('info','server-lokal','LIVE host: '+DB[key].length+' NIC');}catch(e){}
 }
 function simAdd(clean){
 const lo=parseInt(clean.split('.').pop(),10);
