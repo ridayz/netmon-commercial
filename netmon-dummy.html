@@ -6,10 +6,10 @@
 <title>Netmon - Router AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-*{box-sizing:border-box;font-family:'Inter','Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box;font-family:'Plus Jakarta Sans','Inter','Segoe UI',system-ui,sans-serif}
 body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .app{display:flex;min-height:100vh}
 .sidebar{width:230px;background:#171a26;border-right:0;padding:18px 14px;display:flex;flex-direction:column;gap:6px;color:#e6e9f2}
@@ -28,7 +28,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .router-btn.active{background:#0284c7;color:#fff;border-color:#0284c7}
 .iface{border-radius:10px;padding:8px 10px;background:#f8fafc;border:1px solid #e0f2fe;display:flex;justify-content:space-between;cursor:pointer;font-size:14px}
 .iface.active{background:#bae6fd;border-color:#38bdf8;font-weight:700}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
 .dot.green{background:#22c55e}.dot.grey{background:#cbd5e1}.dot.red{background:#f87171}.dot.yellow{background:#facc15}
 .main{flex:1;padding:22px;display:flex;flex-direction:column;gap:14px}
 .topbar{background:#fff;border:1px solid #bae6fd;border-radius:14px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
@@ -38,7 +38,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .card{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:14px}
 .card small{color:#0284c7;font-weight:800;font-size:10px;letter-spacing:1px;text-transform:uppercase}
-.card h2{margin:6px 0;font-size:24px;font-weight:800}
+.card h2{margin:6px 0;font-size:24px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .card h2 .u{font-size:12px;color:#64748b;font-weight:400;margin-left:4px}
 .card span{font-size:11.5px;color:#64748b}
 .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
@@ -53,6 +53,8 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .ai-btn.ghost{background:#fff;color:#0284c7;border:2px solid #bae6fd}
 .log{background:#0c4a6e;color:#e0f2fe;border-radius:12px;padding:10px;font-family:monospace;font-size:12px;height:150px;overflow:auto;margin-top:8px}
 .log .g{color:#4ade80}.log .y{color:#fbbf24}.log .r{color:#f87171}
+#ratioBox{margin-top:10px;font-size:12.5px;font-weight:700;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 12px;color:#0369a1}
+body.dark #ratioBox{background:#141b36;border-color:#2b3763;color:#c7d0ee}
 .bar{height:8px;background:#e0f2fe;border-radius:99px;overflow:hidden;margin-top:4px}
 /* ===== DARK NAVY THEME (toggle 🌙, default terang) ===== */
 body.dark{background:#070b14;color:#e6eaf5}
@@ -63,9 +65,9 @@ body.dark .nm-mi:hover{background:#1a2342;color:#fff}
 body.dark .nm-mi.on{background:#1a2342;color:#fff}
 body.dark .nm-mini{background:#111830;border-color:#232c4a;color:#8b93b0}
 body.dark .nm-mini b{color:#fff}
-body.dark .panel{background:#111830;border-color:#232c4a}
-body.dark .panel h3{color:#a78bfa}
-body.dark .card{background:#111830;border-color:#232c4a}
+body.dark .panel{background:#111830;border-color:#232c4a;border-width:1px;border-radius:14px}
+body.dark .panel h3{color:#a78bfa;font-size:14px}
+body.dark .card{background:#111830;border-color:#232c4a;border-width:1px;border-radius:14px;padding:14px 16px}
 body.dark .card small{color:#8b93b0}
 body.dark .card h2{color:#fff}
 body.dark .card span{color:#4ade80}
@@ -143,7 +145,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <button onclick="cwReset()" class="ai-btn ghost" style="width:auto;padding:6px 12px;font-size:12px" title="Kembali ke 30 titik live">⟲ Live</button>
 <span id="cwLab" style="color:#64748b;font-weight:400"></span>
 </div>
-<div id="ratioBox" style="margin-top:10px;font-size:12.5px;font-weight:800;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:9px 14px;color:#0369a1">Rasio Download : Upload — menunggu data...</div>
+<div id="ratioBox">Rasio Download : Upload — menunggu data...</div>
 <button id="swapBtn" onclick="toggleSwap()" class="ai-btn ghost" style="display:none;width:auto;padding:6px 12px;margin-top:6px;font-size:12px">⇄ Balik Download/Upload (port LAN)</button>
 </div>
 <div class="panel"><h3>🔌 Interfaces <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3>
@@ -317,7 +319,7 @@ rows+='<tr style="border-top:1px solid '+(dark?'#1b2340':'#e0f2fe')+';cursor:poi
 +'</tr>';
 });
 box.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
-+'<thead><tr style="background:'+(dark?'#1a2342':'#e0f2fe')+';color:'+(dark?'#a78bfa':'#0369a1')+';font-size:11px;letter-spacing:.5px">'
++'<thead><tr style="background:'+(dark?'#1a2342':'#e0f2fe')+';color:'+(dark?'#a78bfa':'#0369a1')+';font-size:10.5px;letter-spacing:.5px">'
 +'<th style="text-align:left;padding:8px 10px">PORT</th>'
 +'<th style="text-align:left;padding:8px 10px">STATUS</th>'
 +'<th style="text-align:left;padding:8px 10px">RATE</th>'
