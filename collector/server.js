@@ -932,6 +932,61 @@ function aiProg(id, stage) {
       const ok = /TTL=|ttl=|bytes (from|von)/i.test(out.stdout);
       return send(res, 200, { ok, ip: q.ip, ms: m ? Number(m[1]) : null, raw: out.stdout.split('\n').slice(-3).join(' ').slice(0, 120) });
     }
+// ---- HOST (server lokal(netmon) sendiri): daftar NIC + traffic realtime ----
+// Windows: Get-NetAdapterStatistics (bytes per NIC). Linux: /proc/net/dev.
+function hostCounters() {
+  const { execFileSync } = require('child_process');
+  const out = [];
+  if (process.platform === 'win32') {
+    const ps = 'Get-NetAdapterStatistics | Select-Object Name,ReceivedBytes,SentBytes | ConvertTo-Json -Compress';
+    const raw = execFileSync('powershell', ['-NoProfile', '-Command', ps], { timeout: 10000, encoding: 'utf8', windowsHide: true });
+    let arr;
+    try { arr = JSON.parse(raw); } catch { throw new Error('parse Get-NetAdapterStatistics gagal'); }
+    if (!Array.isArray(arr)) arr = arr ? [arr] : [];
+    for (const r of arr) {
+      if (!r || !r.Name) continue;
+      out.push({ name: String(r.Name), inOct: Number(r.ReceivedBytes) || 0, outOct: Number(r.SentBytes) || 0 });
+    }
+  } else {
+    const fs = require('fs');
+    const txt = fs.readFileSync('/proc/net/dev', 'utf8').split('\n').slice(2);
+    for (const ln of txt) {
+      const m = ln.trim().match(/^([^:]+):\s*(.+)$/);
+      if (!m) continue;
+      const f = m[2].trim().split(/\s+/).map(Number);
+      if (f.length < 9 || isNaN(f[0])) continue;
+      out.push({ name: m[1].trim(), inOct: f[0] || 0, outOct: f[8] || 0 });
+    }
+  }
+  return out.filter(r => r.name && r.name.toLowerCase() !== 'loopback pseudo-interface 1' && r.name !== 'lo');
+}
+async function hostInfo() {
+  const os = require('os');
+  const all = hostCounters();
+  return {
+    ok: true, via: 'host', ip: '127.0.0.1',
+    identity: os.hostname() || 'server-lokal',
+    interfaces: all.map(i => ({ name: i.name, admin: 'up', oper: 'up' })),
+  };
+}
+async function hostTraffic(iface) {
+  if (!iface) throw new Error('param iface wajib');
+  const once = () => {
+    const all = hostCounters();
+    const f = all.find(i => i.name === iface);
+    if (!f) throw new Error('NIC tidak ketemu: ' + iface + ' (ada: ' + all.map(i => i.name).slice(0, 6).join(', ') + ')');
+    return f;
+  };
+  const t0 = Date.now();
+  const a = once();
+  await sleep(1200);
+  const b = once();
+  const dt = Math.max(0.5, (Date.now() - t0) / 1000);
+  const rx = Math.max(0, b.inOct - a.inOct) * 8 / dt, tx = Math.max(0, b.outOct - a.outOct) * 8 / dt;
+  return { ok: true, ip: '127.0.0.1', iface, src: 'host', rxBps: Math.round(rx), txBps: Math.round(tx), rxMbps: +(rx / 1e6).toFixed(2), txMbps: +(tx / 1e6).toFixed(2) };
+}
+    if (u.pathname === '/api/host') return send(res, 200, await hostInfo());
+    if (u.pathname === '/api/host-traffic') return send(res, 200, await hostTraffic(q.iface));
     if (u.pathname === '/api/localnets') {
       const os = require('os');
       const nets = [];

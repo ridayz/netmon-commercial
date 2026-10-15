@@ -198,6 +198,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 </div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px">
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="discoverModal()" title="Scan perangkat satu jaringan dengan laptop ini">🔍 Discover</button>
+<button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="addLocalServer()" title="Pantau mesin ini (NIC Wi-Fi/LAN via collector) + traffic realtime asli">🖥 ＋ Server lokal</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="addTopoNode()">＋ Tambah perangkat</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="autoLayout()" title="Susun node otomatis biar rapi (undo tersedia)">✨ Rapikan</button>
 <button class="ai-btn ghost" style="width:auto;padding:8px 14px" onclick="topoZoom(1.25)" title="Menjauhkan (zoom out)">＋</button>
@@ -753,6 +754,19 @@ function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swa
 setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
 setInterval(async()=>{try{
 const L=LIVE[curR];if(!L)return;const c=cur();if(!c||!c.live)return;
+if(L.via==='host'){
+const j=await collGet(`/api/host-traffic?iface=${encodeURIComponent(c.n)}`,15000);
+if(!j.ok)throw new Error(j.error||'host-traffic gagal');
+const dMb=j.rxMbps,uMb=j.txMbps;
+try{const _pp=DB[curR]&&DB[curR].find(x=>x.n===c.n);if(_pp)_pp.rate=(dMb||0).toFixed(1);}catch(_){}
+dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){}
+document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
+document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
+try{setCardSubs(dMb,uMb);}catch(_){}
+try{renderPortStrip();}catch(_){}
+L._err=0;
+return;
+}
 const j=await collGet(`/api/traffic?ip=${L.ip}&iface=${encodeURIComponent(c.n)}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&via=${encodeURIComponent(L.via||'')}&community=${encodeURIComponent(L.community||'')}`,15000);
 if(!j.ok)throw new Error(j.error||'traffic gagal');
 const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!(L.swap||{})[c.n];
@@ -775,6 +789,7 @@ async function realtimeSync(){
   try{
     for(const key of Object.keys(LIVE)){
       const L=LIVE[key];if(!L||!L.ip)continue;
+      if(L.via==='host')continue; // server lokal: NIC dibaca on-demand via /api/host-traffic, bukan discover
       let j;
       try{j=await collGet(`/api/discover?ip=${L.ip}&user=${encodeURIComponent(L.user||'')}&pass=${encodeURIComponent(L.pass||'')}&community=${encodeURIComponent(L.community||'')}`,15000);}catch(e){continue;}
       if(!j||!j.ok||!(j.interfaces||[]).length)continue;
@@ -1496,6 +1511,28 @@ drawTopo();saveTopo();
 log('> discover gagal ('+String(e.message||e).slice(0,80)+') — cek ping...');
 try{pingIpNodes();}catch(_){}
 });
+}
+// ---- SERVER LOKAL: pantau mesin ini sendiri (NIC asli via collector, traffic realtime beneran) ----
+async function addLocalServer(px,py){
+const key='SERVER-LOKAL';
+if(DB[key]&&DB[key].length){pickDev(key);return;}
+let j;
+try{
+log('> baca NIC server lokal via collector '+COLL()+' ...');
+j=await collGet('/api/host',12000);
+if(!j||!j.ok||!(j.interfaces||[]).length)throw new Error((j&&j.error)||'tidak ada NIC terbaca');
+}catch(e){log('> server lokal gagal: '+String(e.message||e).slice(0,100));return;}
+const ifs=j.interfaces.map(x=>({n:x.name,type:'copper',admin:'up',oper:'up',fault:'sehat',live:true,poe:'-',speed:'-'}));
+DB[key]=ifs;LIVE[key]={ip:'127.0.0.1',via:'host',ifaces:JSON.parse(JSON.stringify(ifs)),identity:j.identity||'server-lokal'};persistLive();
+const g=typeof ensureDetectGroup==='function'?ensureDetectGroup():null;if(g&&!g.devs.includes(key))g.devs.push(key);
+let best=null,bd=1e12;TOPO.forEach(n=>{const d=(n.x-450)*(n.x-450)+(n.y-200)*(n.y-200);if(d<bd){bd=d;best=n;}});
+const id='srv'+Date.now()%100000;
+TOPO.push({id,icon:'server',label:j.identity||'server-lokal',sub:'127.0.0.1 • LIVE host',ip:'127.0.0.1',x:px===undefined?Math.round(200+Math.random()*400):px,y:py===undefined?Math.round(120+Math.random()*160):py,db:key});
+if(best)LINKS.push([best.id,id,'lan','',(ifs[0]||{}).n||'']);
+curR=key;curI=DB[key][0].n;
+renderRouters();renderIfaces();drawTopo();saveTopo();showTab('dash');
+log('✔ SERVER LOKAL: '+(j.identity||'')+' • '+ifs.length+' NIC ('+ifs.map(i=>i.n).join(', ')+') — traffic realtime asli 🟢');
+try{pushAlarm('info','server-lokal','LIVE host: '+ifs.length+' NIC');}catch(e){}
 }
 function simAdd(clean){
 const lo=parseInt(clean.split('.').pop(),10);
