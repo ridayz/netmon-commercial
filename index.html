@@ -12,16 +12,16 @@
 *{box-sizing:border-box;font-family:'Plus Jakarta Sans','Inter','Segoe UI',system-ui,sans-serif}
 body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .app{display:flex;min-height:100vh}
-.sidebar{width:230px;background:#171a26;border-right:0;padding:18px 14px;display:flex;flex-direction:column;gap:6px;color:#e6e9f2}
-.nm-brand{padding:4px 8px 12px;font-weight:800;color:#7c8aff;font-size:16px}
-.nm-mi{display:flex;gap:10px;align-items:center;padding:10px 12px;font-size:13.5px;font-weight:600;color:#aab0c5;border-radius:10px;cursor:pointer;border:0;background:transparent;width:100%;text-align:left}
-.nm-mi:hover{background:#20263a;color:#fff}
-.nm-mi.on{background:#232842;color:#fff;box-shadow:inset 3px 0 0 #8b7cf6}
+.sidebar{width:230px;background:#fff;border-right:1px solid #bae6fd;padding:18px 14px;display:flex;flex-direction:column;gap:6px;color:#0c4a6e}
+.nm-brand{padding:4px 8px 12px;font-weight:800;color:#0369a1;font-size:16px}
+.nm-mi{display:flex;gap:10px;align-items:center;padding:10px 12px;font-size:13.5px;font-weight:600;color:#475569;border-radius:10px;cursor:pointer;border:0;background:transparent;width:100%;text-align:left}
+.nm-mi:hover{background:#f0f9ff;color:#0369a1}
+.nm-mi.on{background:#e0f2fe;color:#0369a1;box-shadow:inset 3px 0 0 #0284c7}
 .nm-badge{margin-left:auto;background:#f2495c;color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:1px 8px;display:none}
-.nm-mini{margin-top:auto;background:#20263a;border:1px solid transparent;border-radius:10px;padding:10px 12px;font-size:11px;color:#aab0c5}
+.nm-mini{margin-top:auto;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;font-size:11px;color:#64748b}
 .nm-mini div{display:flex;justify-content:space-between;padding:2px 0}
-.nm-mini b{color:#fff}
-.nm-search{width:100%;background:#20263a;border:1px solid #2e3550;color:#e6e9f2;border-radius:8px;padding:8px 10px;font-size:12px}
+.nm-mini b{color:#0c4a6e}
+.nm-search{width:100%;background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e;border-radius:8px;padding:8px 10px;font-size:12px}
 .logo{background:linear-gradient(135deg,#bae6fd,#e0f2fe);border-radius:16px;padding:14px;text-align:center;font-weight:800;font-size:20px;color:#0369a1}
 .label{font-size:11px;font-weight:700;letter-spacing:.08em;color:#0284c7;text-transform:uppercase;margin-top:8px}
 .router-btn{border:2px solid #e0f2fe;background:#f0f9ff;border-radius:10px;padding:6px 8px;cursor:pointer;text-align:left;font-weight:600;color:#075985;font-size:13px}
@@ -58,13 +58,14 @@ body.dark #ratioBox{background:#141b36;border-color:#2b3763;color:#c7d0ee}
 .bar{height:8px;background:#e0f2fe;border-radius:99px;overflow:hidden;margin-top:4px}
 /* ===== DARK NAVY THEME (toggle 🌙, default terang) ===== */
 body.dark{background:#070b14;color:#e6eaf5}
-body.dark .sidebar{background:#0b1120;border-right:1px solid #1b2340}
+body.dark .sidebar{background:#0b1120;border-right:1px solid #1b2340;color:#e6e9f2}
 body.dark .nm-brand{color:#a78bfa}
 body.dark .nm-mi{color:#8b93b0}
 body.dark .nm-mi:hover{background:#1a2342;color:#fff}
 body.dark .nm-mi.on{background:#1a2342;color:#fff}
 body.dark .nm-mini{background:#111830;border-color:#232c4a;color:#8b93b0}
 body.dark .nm-mini b{color:#fff}
+body.dark .nm-search{background:#20263a;border-color:#2e3550;color:#e6e9f2}
 body.dark .panel{background:#111830;border-color:#232c4a;border-width:1px;border-radius:14px}
 body.dark .panel h3{color:#a78bfa;font-size:14px}
 body.dark .card{background:#111830;border-color:#232c4a;border-width:1px;border-radius:14px;padding:14px 16px}
