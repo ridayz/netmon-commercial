@@ -12,13 +12,13 @@
 *{box-sizing:border-box;font-family:'Inter','Segoe UI',system-ui,sans-serif}
 body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .app{display:flex;min-height:100vh}
-.sidebar{width:248px;background:#171a26;border-right:0;padding:18px 14px;display:flex;flex-direction:column;gap:10px;color:#e6e9f2}
-.nm-brand{padding:4px 6px 10px;font-weight:800;color:#7c8aff;font-size:15px}
+.sidebar{width:230px;background:#171a26;border-right:0;padding:18px 14px;display:flex;flex-direction:column;gap:6px;color:#e6e9f2}
+.nm-brand{padding:4px 8px 12px;font-weight:800;color:#7c8aff;font-size:16px}
 .nm-mi{display:flex;gap:10px;align-items:center;padding:10px 12px;font-size:13.5px;font-weight:600;color:#aab0c5;border-radius:10px;cursor:pointer;border:0;background:transparent;width:100%;text-align:left}
 .nm-mi:hover{background:#20263a;color:#fff}
-.nm-mi.on{background:#232842;color:#fff;box-shadow:inset 3px 0 0 #7c8aff}
+.nm-mi.on{background:#232842;color:#fff;box-shadow:inset 3px 0 0 #8b7cf6}
 .nm-badge{margin-left:auto;background:#f2495c;color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:1px 8px;display:none}
-.nm-mini{margin-top:auto;background:#20263a;border-radius:10px;padding:10px 12px;font-size:11px;color:#aab0c5}
+.nm-mini{margin-top:auto;background:#20263a;border:1px solid transparent;border-radius:10px;padding:10px 12px;font-size:11px;color:#aab0c5}
 .nm-mini div{display:flex;justify-content:space-between;padding:2px 0}
 .nm-mini b{color:#fff}
 .nm-search{width:100%;background:#20263a;border:1px solid #2e3550;color:#e6e9f2;border-radius:8px;padding:8px 10px;font-size:12px}
@@ -41,7 +41,7 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .card h2{margin:6px 0;font-size:24px;font-weight:800}
 .card h2 .u{font-size:12px;color:#64748b;font-weight:400;margin-left:4px}
 .card span{font-size:11.5px;color:#64748b}
-.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
 .panel{background:#fff;border:2px solid #bae6fd;border-radius:18px;padding:16px}
 .panel h3{margin:0 0 10px;color:#0369a1;font-size:15px;font-weight:800}
 .kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed #e0f2fe}
@@ -52,25 +52,26 @@ body{margin:0;background:#f0f9ff;color:#0c4a6e}
 .ai-btn{margin-top:8px;width:100%;background:#0284c7;color:#fff;border:0;border-radius:12px;padding:10px;font-weight:700;cursor:pointer}
 .ai-btn.ghost{background:#fff;color:#0284c7;border:2px solid #bae6fd}
 .log{background:#0c4a6e;color:#e0f2fe;border-radius:12px;padding:10px;font-family:monospace;font-size:12px;height:150px;overflow:auto;margin-top:8px}
+.log .g{color:#4ade80}.log .y{color:#fbbf24}.log .r{color:#f87171}
 .bar{height:8px;background:#e0f2fe;border-radius:99px;overflow:hidden;margin-top:4px}
 /* ===== DARK NAVY THEME (toggle 🌙, default terang) ===== */
 body.dark{background:#070b14;color:#e6eaf5}
-body.dark .sidebar{background:#0b1120}
+body.dark .sidebar{background:#0b1120;border-right:1px solid #1b2340}
 body.dark .nm-brand{color:#a78bfa}
 body.dark .nm-mi{color:#8b93b0}
 body.dark .nm-mi:hover{background:#1a2342;color:#fff}
 body.dark .nm-mi.on{background:#1a2342;color:#fff}
-body.dark .nm-mini{background:#111830;color:#8b93b0}
+body.dark .nm-mini{background:#111830;border-color:#232c4a;color:#8b93b0}
 body.dark .nm-mini b{color:#fff}
 body.dark .panel{background:#111830;border-color:#232c4a}
 body.dark .panel h3{color:#a78bfa}
 body.dark .card{background:#111830;border-color:#232c4a}
-body.dark .card small{color:#a78bfa}
+body.dark .card small{color:#8b93b0}
 body.dark .card h2{color:#fff}
-body.dark .card span{color:#8b93b0}
-body.dark .topbar{background:#111830;border-color:#232c4a}
+body.dark .card span{color:#4ade80}
+body.dark .topbar{background:transparent;border-color:transparent}
 body.dark .topbar h1{color:#e6eaf5}
-body.dark .pill{background:#0f2c1e;color:#4ade80}
+body.dark .pill{background:#0f2c1e;color:#4ade80;border:1px solid #1d4d33}
 body.dark .log{background:#0a0f1e;border:1px solid #232c4a;color:#8b93b0}
 body.dark .router-btn{background:#141b36;border-color:#232c4a;color:#c7d0ee}
 body.dark .router-btn.active{background:#0284c7;color:#fff;border-color:#0284c7}
@@ -134,7 +135,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 <div class="card"><small>PACKET LOSS</small><h2 id="loss">-</h2><span id="lossSub">-</span></div>
 </div>
 <div class="grid2">
-<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:380px;width:100%"><canvas id="chart"></canvas></div>
+<div class="panel"><h3>📈 Traffic Realtime</h3><div style="position:relative;height:240px;width:100%"><canvas id="chart"></canvas></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;color:#0369a1;font-weight:700">
 <span>🔍 Window grafik</span>
 <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">Geser <input id="cwStart" type="range" min="0" max="0" value="0" oninput="cwOnInput()" style="flex:1;accent-color:#0284c7"></label>
@@ -147,6 +148,7 @@ body.dark g[data-aid] > text{fill:#a78bfa;}
 </div>
 <div class="panel"><h3>🔌 Interfaces <span id="portDevName" style="color:#64748b;font-weight:400">belum ada device</span></h3>
 <div id="portStrip" style="font-size:13px;color:#64748b">Pilih device live dulu (sidebar kiri / topologi bawah).</div>
+<button onclick="aiTroubleshoot()" title="Diagnosa + benerin device ini (AI / lokal)" style="margin-top:10px;width:100%;border:0;background:linear-gradient(135deg,#7c5cf6,#5b8def);color:#fff;border-radius:10px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">⚡ AI Troubleshoot</button>
 </div>
 </div>
 <div class="panel"><h3>🧾 Log</h3>
@@ -393,9 +395,9 @@ const lb=document.getElementById('cwLab');if(lb)lb.textContent='tampil '+cwLen+'
 }catch(e){}}
 function cwOnInput(){const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');if(s2)cwLen=+s2.value||30;if(s1)cwStart=+s1.value||0;chartView();}
 function cwReset(){cwLen=30;cwStart=0;chartView();}
-function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){const sim=c.oper!=='down'?simTick(c.n):{dl:0,ul:0};dl.push(sim.dl);dl.shift();ul.push(sim.ul);ul.shift();try{chartView();}catch(e){}if(c.oper!=='down'&&sim.dl>0){document.getElementById('dl').textContent=sim.dl.toFixed(1)+' Mbps ~';document.getElementById('ul').textContent=sim.ul.toFixed(1)+' Mbps ~';}else{document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';}document.getElementById('ping').textContent=c.oper==='down'?'—':(3+Math.round(Math.random()*6));document.getElementById('loss').textContent=c.oper==='down'?'—':(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0');try{setCardSubs(sim.dl,sim.ul);}catch(_){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';try{setCardSubs();}catch(_){}}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
+function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){const sim=c.oper!=='down'?simTick(c.n):{dl:0,ul:0};dl.push(sim.dl);dl.shift();ul.push(sim.ul);ul.shift();try{chartView();}catch(e){}if(c.oper!=='down'&&sim.dl>0){try{setCards(sim.dl,sim.ul,true);}catch(_){}}else{try{setCards(null,null);}catch(_){}}if(c.oper==='down'){try{setPingLoss(null,null);}catch(_){}}else{try{setPingLoss((3+Math.round(Math.random()*6))+' <span class="u">ms</span>',(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0')+' <span class="u">%</span>');}catch(_){}}try{setCardSubs(sim.dl,sim.ul);}catch(_){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';try{setCardSubs();}catch(_){}}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
 try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+r.toFixed(1)+' : 1 — '+(timpang?'<span style="color:#f87171">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#4ade80">✅ seimbang</span>');}}}catch(e){}}
-function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
+function log(m){const el=document.getElementById('log');if(!el)return;try{const t=String(m);const esc=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');let cls='g';if(/DOWN|gagal|putus|TIMPANG|🔧|redam|flap/i.test(t))cls='r';else if(/⚠|cek|Cek|tunggu|menunggu|kecil|hampir/i.test(t))cls='y';let body=esc;if(body.indexOf('&gt;')===0)body=body.slice(4);const d=document.createElement('div');d.innerHTML='<span class="'+cls+'">&gt;</span> '+body;el.appendChild(d);el.scrollTop=el.scrollHeight;}catch(_){try{el.textContent+=String(m)+'\n';el.scrollTop=el.scrollHeight;}catch(__){}}}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
 function uiModal(opts){
 // opts: {title, msg?, fields:[{label, type:'text'|'choice', value?, choices:[{v,label}]}], confirm?, onOk(fn(fields)}]
@@ -721,8 +723,18 @@ if(Math.random()<0.03){dl=Math.min(dl,0.2);ul=Math.min(ul,0.2);} // dropout sesa
 dl=Math.max(0,dl);ul=Math.max(0,ul);
 return{dl,ul};
 }
-function setCardSubs(dlVal,ulVal){
-try{
+// nilai kartu ala mock: angka + unit kecil (134.2 Mbps) — tanpa emoji
+function setCards(d,u,sim){try{
+const de=document.getElementById('dl'),ue=document.getElementById('ul');
+if(de)de.innerHTML=(d===null||d===undefined||isNaN(+d))?'—':(+d).toFixed(1)+' <span class="u">Mbps</span>'+(sim?' ~':'');
+if(ue)ue.innerHTML=(u===null||u===undefined||isNaN(+u))?'—':(+u).toFixed(1)+' <span class="u">Mbps</span>'+(sim?' ~':'');
+}catch(_){}}
+function setPingLoss(p,l){try{
+const pe=document.getElementById('ping'),le=document.getElementById('loss');
+if(pe)pe.innerHTML=(p===null||p===undefined)?'—':p;
+if(le)le.innerHTML=(l===null||l===undefined)?'—':l;
+}catch(_){}}
+function setCardSubs(dlVal,ulVal){try{
 const cc=cur();if(!cc)return;
 const live=!!(LIVE[curR]&&cc.live);
 const isDown=cc.oper==='down';
@@ -763,8 +775,7 @@ if(!j.ok)throw new Error(j.error||'host-traffic gagal');
 const dMb=j.rxMbps,uMb=j.txMbps;
 try{const _pp=DB[curR]&&DB[curR].find(x=>x.n===c.n);if(_pp)_pp.rate=(dMb||0).toFixed(1);}catch(_){}
 dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){}
-document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
-document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
+try{setCards(dMb,uMb,false);}catch(_){}
 try{setCardSubs(dMb,uMb);}catch(_){}
 try{renderPortStrip();}catch(_){}
 L._err=0;
@@ -776,8 +787,7 @@ const sw=(L.swap||{})[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n
 const dMb=sw?j.txMbps:j.rxMbps, uMb=sw?j.rxMbps:j.txMbps;
 try{const _pp=DB[curR]&&DB[curR].find(x=>x.n===c.n);if(_pp)_pp.rate=(dMb||0).toFixed(1);}catch(_){}
 dl.push(dMb||0);dl.shift();ul.push(uMb||0);ul.shift();try{chartView();}catch(e){}
-document.getElementById('dl').textContent=(dMb||0).toFixed(1)+' Mbps 🟢';
-document.getElementById('ul').textContent=(uMb||0).toFixed(1)+' Mbps 🟢';
+try{setCards(dMb,uMb,false);}catch(_){}
 try{setCardSubs(dMb,uMb);}catch(_){}
 try{renderPortStrip();}catch(_){}
 L._err=0;
@@ -930,7 +940,7 @@ for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.down
 renderIfaces();setInterval(tick,1000);
 function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');if(chart.options.plugins&&chart.options.plugins.legend)chart.options.plugins.legend.display=false;chart.options.scales.y.ticks.color=dark?'#8b93b0':'#64748b';chart.options.scales.y.grid.display=false;if(chart.options.scales.x&&chart.options.scales.x.grid)chart.options.scales.x.grid.display=false;chart.options.scales.y.ticks.maxTicksLimit=6;chart.data.datasets[0].borderColor='#8b7cf6';chart.data.datasets[0].backgroundColor=dark?'rgba(139,124,246,.28)':'rgba(139,124,246,.28)';chart.data.datasets[1].borderColor='#4ade80';chart.update();}catch(e){}}
 function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);try{localStorage.setItem('netmon-theme',dark?'dark':'light');}catch(e){}const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'☀️':'🌙';applyChartTheme();try{if(window.onDarkToggle)window.onDarkToggle();}catch(_){}}
-(function(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b=document.getElementById('themeBtn');if(b)b.textContent='☀️';}}catch(e){}try{applyChartTheme();}catch(e){}})();
+(function(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b=document.getElementById('themeBtn');if(b)b.textContent='☀️';}}catch(e){}try{applyChartTheme();}catch(e){}try{const ps=document.getElementById('portStrip');if(ps)ps._sig=null;renderPortStrip();}catch(e){}})();
 window.addEventListener('beforeunload',()=>{try{window._leaving=true;}catch(e){}});
 try{syncTopo();}catch(e){}
 try{setTimeout(pingIpNodes,4000);}catch(e){}
