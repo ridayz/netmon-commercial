@@ -260,6 +260,7 @@ function devDot(r){const ps=DB[r]||[];if(ps.some(p=>p.oper==='down'))return 'gre
 function topoDevs(){const out=[];Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db&&DB[n.db]&&!out.find(o=>o.db===n.db))out.push({layer:LAYERS[k].label||k,layerKey:k,db:n.db});});});return out;}
 function ensureNodeDb(n,links){
 if(n.db&&DB[n.db]&&DB[n.db].length)return n.db;
+if(n.db==='SERVER-LOKAL')return n.db; // binding host: tunggu auto-adopt isi NIC asli — jangan bikin port mgmt karangan / timpa n.db
 const key=n.label||n.id;
 if(!DB[key])DB[key]=[];
 (links||[]).forEach(([a,b,med,pa,pb])=>{
@@ -942,6 +943,8 @@ try{Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(!n.db||
 let need=false;Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db==='SERVER-LOKAL'&&!(DB['SERVER-LOKAL']&&DB['SERVER-LOKAL'].length))need=true;});});
 if(!need)return;
 await ensureServerLokalDb(true);
+// reparasi binding nyasar (mis. pernah ketimpa jadi label): node IP 127.0.0.1 wajib ke SERVER-LOKAL
+try{Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.ip==='127.0.0.1'&&n.db!=='SERVER-LOKAL'){n.db='SERVER-LOKAL';try{saveTopo();}catch(_){}}});});}catch(_){}
 try{renderRouters();renderIfaces();drawTopo();}catch(e){}
 log('✔ SERVER LOKAL auto-aktif — klik node-nya di layer Server Lokal → speed tampil di dashboard 🟢');
 }catch(e){}})();
