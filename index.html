@@ -370,7 +370,7 @@ document.getElementById('statusPill').style.background=down?'#fecaca':(c.fault.s
 // (Panel TDR dihapus dari dashboard — character copper/fiber tetap di AI diagnosa)
 }
 const ctx=document.getElementById('chart');
-const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#8b7cf6',backgroundColor:'rgba(139,124,246,.25)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0},{label:'Upload',data:ul,borderColor:'#4ade80',borderDash:[6,4],fill:false,tension:.4,borderWidth:1.5,pointRadius:0}]},options:{animation:false,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#0369a1'}}},scales:{y:{beginAtZero:true,grid:{color:'#e0f2fe'},ticks:{color:'#64748b'}},x:{display:false}}}}):{update(){}};
+const chart=(typeof Chart!=='undefined')?new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Download',data:dl,borderColor:'#8b7cf6',backgroundColor:'rgba(139,124,246,.28)',fill:true,tension:.15,borderWidth:2.5,pointRadius:0,pointHoverRadius:3},{label:'Upload',data:ul,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.06)',borderDash:[5,4],fill:true,tension:.15,borderWidth:1.8,pointRadius:0,pointHoverRadius:3}]},options:{animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>' '+c.dataset.label+': '+(+c.parsed.y).toFixed(1)+' Mbps'}}},scales:{y:{beginAtZero:true,suggestedMax:10,grid:{color:'#e0f2fe'},ticks:{color:'#64748b',maxTicksLimit:6}},x:{display:false,grid:{display:false}}}}}):{update(){}};
 // ---- WINDOW SLIDER grafik: geser + atur lebar tampil tanpa gerakkan data ----
 let cwLen=30, cwStart=0;
 function chartView(){try{
@@ -390,7 +390,7 @@ const lb=document.getElementById('cwLab');if(lb)lb.textContent='tampil '+cwLen+'
 function cwOnInput(){const s1=document.getElementById('cwStart'),s2=document.getElementById('cwLen');if(s2)cwLen=+s2.value||30;if(s1)cwStart=+s1.value||0;chartView();}
 function cwReset(){cwLen=30;cwStart=0;chartView();}
 function tick(){const c=cur();if(!c)return;const down=c.oper==='down';const isLive=!!(LIVE[curR]&&c.live);if(!isLive){const sim=c.oper!=='down'?simTick(c.n):{dl:0,ul:0};dl.push(sim.dl);dl.shift();ul.push(sim.ul);ul.shift();try{chartView();}catch(e){}if(c.oper!=='down'&&sim.dl>0){document.getElementById('dl').textContent=sim.dl.toFixed(1)+' Mbps ~';document.getElementById('ul').textContent=sim.ul.toFixed(1)+' Mbps ~';}else{document.getElementById('dl').textContent='—';document.getElementById('ul').textContent='—';}document.getElementById('ping').textContent=c.oper==='down'?'—':(3+Math.round(Math.random()*6));document.getElementById('loss').textContent=c.oper==='down'?'—':(Math.random()<0.08?(Math.random()*2).toFixed(1):'0.0');try{setCardSubs(sim.dl,sim.ul);}catch(_){}}else{document.getElementById('ping').textContent='live';document.getElementById('loss').textContent='live';try{setCardSubs();}catch(_){}}try{refreshDurations();try{renderMiniStats();}catch(e){}const pill=document.getElementById('statusPill');if(pill){if(down&&c.downSince)pill.textContent='● DOWN '+fmtDur(Date.now()-c.downSince);else if(isLive)pill.textContent='● LIVE 🟢';}}catch(e){}
-try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+ad.toFixed(1)+' : '+au.toFixed(1)+' ('+r.toFixed(1)+':1) — '+(timpang?'<span style="color:#b91c1c">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#15803d">✅ seimbang</span>');}}}catch(e){}}
+try{const ad=dl.reduce((a,b)=>a+b,0)/dl.length, au=ul.reduce((a,b)=>a+b,0)/ul.length;const rb=document.getElementById('ratioBox');if(rb){if(down){rb.textContent='Rasio Download : Upload — device DOWN';}else{const r=au>0.05?(ad/au):99;const timpang=(au<2&&ad>15)||r>8;rb.innerHTML='Rasio Download : Upload ≈ '+r.toFixed(1)+' : 1 — '+(timpang?'<span style="color:#f87171">⚠ TIMPANG, upload kekecilan</span>':'<span style="color:#4ade80">✅ seimbang</span>');}}}catch(e){}}
 function log(m){const el=document.getElementById('log');el.textContent+=m+'\n';el.scrollTop=el.scrollHeight;}
 // ---- UI modal (ganti prompt() bawaan browser — tampil stylish & konsisten) ----
 function uiModal(opts){
@@ -707,9 +707,12 @@ if(st.dlT===undefined){st.dlT=st.dl;st.ulT=st.ul;}
 st.dl+=(st.dlT-st.dl)*0.35+((Math.random()-0.5)*Math.max(0.4,(st.dlT-st.dl)*0.1));
 st.ul+=(st.ulT-st.ul)*0.35+((Math.random()-0.5)*Math.max(0.1,(st.ulT-st.ul)*0.1));
 }
-// spike & dropout sesaat
+// spike & lembah tajam ala mock (burst 30%): download burst 2-3.8x, kadang lembah 0.3x; upload tetap datar
 let dl=st.dl,ul=st.ul;
-if(Math.random()<0.05){dl*=1.8+Math.random();} // spike download
+const _br=Math.random();
+if(_br<0.30){dl*=2+Math.random()*1.8;} // burst tajam kayak mock
+else if(_br<0.42){dl*=0.3+Math.random()*0.2;} // lembah tajam antar spike
+ul+=(Math.random()-0.5)*0.25; // upload jitter kecil, tetap datar
 if(Math.random()<0.03){dl=Math.min(dl,0.2);ul=Math.min(ul,0.2);} // dropout sesaat
 dl=Math.max(0,dl);ul=Math.max(0,ul);
 return{dl,ul};
@@ -907,7 +910,7 @@ renderRouters();
 // catat awal DOWN untuk interface yang mulai dalam keadaan down (biar durasinya jalan dari load)
 for(const r in DB){for(const p of DB[r]){if(p.oper==='down'&&!p.downSince)p.downSince=Date.now();}}
 renderIfaces();setInterval(tick,1000);
-function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');chart.options.plugins.legend.labels.color=dark?'#a78bfa':'#0369a1';chart.options.scales.y.ticks.color=dark?'#8b93b0':'#64748b';chart.options.scales.y.grid.color=dark?'#232c4a':'#e0f2fe';chart.data.datasets[0].borderColor=dark?'#8b7cf6':'#8b7cf6';chart.data.datasets[0].backgroundColor=dark?'rgba(139,124,246,.25)':'rgba(139,124,246,.25)';chart.data.datasets[1].borderColor='#4ade80';chart.update();}catch(e){}}
+function applyChartTheme(){try{if(typeof chart==='undefined'||!chart.options||!chart.options.scales)return;const dark=document.body.classList.contains('dark');if(chart.options.plugins&&chart.options.plugins.legend)chart.options.plugins.legend.display=false;chart.options.scales.y.ticks.color=dark?'#8b93b0':'#64748b';chart.options.scales.y.grid.color=dark?'rgba(35,44,74,.7)':'#e0f2fe';chart.options.scales.y.ticks.maxTicksLimit=6;chart.data.datasets[0].borderColor='#8b7cf6';chart.data.datasets[0].backgroundColor=dark?'rgba(139,124,246,.28)':'rgba(139,124,246,.28)';chart.data.datasets[1].borderColor='#4ade80';chart.update();}catch(e){}}
 function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);try{localStorage.setItem('netmon-theme',dark?'dark':'light');}catch(e){}const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'☀️':'🌙';applyChartTheme();try{if(window.onDarkToggle)window.onDarkToggle();}catch(_){}}
 (function(){try{if(localStorage.getItem('netmon-theme')==='dark'){document.body.classList.add('dark');const b=document.getElementById('themeBtn');if(b)b.textContent='☀️';}}catch(e){}try{applyChartTheme();}catch(e){}})();
 window.addEventListener('beforeunload',()=>{try{window._leaving=true;}catch(e){}});
