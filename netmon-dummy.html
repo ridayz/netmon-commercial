@@ -940,11 +940,16 @@ restoreLive();
 try{Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(!n.db||!DB[n.db])ensureNodeDb(n,LAYERS[k].links||[]);});});}catch(e){}
 // auto-adopt SERVER-LOKAL: tiap browser (termasuk Firefox) langsung pantau mesin ini tanpa klik apa-apa
 (async function(){try{
+// reparasi dulu (jalan selalu, tanpa nunggu need): node IP 127.0.0.1 wajib binding SERVER-LOKAL — sembuhkan cache lama yang ketimpa label
+let fixed=false;
+Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.ip==='127.0.0.1'&&n.db!=='SERVER-LOKAL'){n.db='SERVER-LOKAL';fixed=true;}});});
+if(fixed){try{if(DB['INDONET-RIDWAN'])delete DB['INDONET-RIDWAN'];}catch(_){}try{saveTopo();}catch(_){}log('> binding Server Lokal diperbaiki (mgmt karangan dibuang)');}
 let need=false;Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.db==='SERVER-LOKAL'&&!(DB['SERVER-LOKAL']&&DB['SERVER-LOKAL'].length))need=true;});});
 if(!need)return;
 await ensureServerLokalDb(true);
 // reparasi binding nyasar (mis. pernah ketimpa jadi label): node IP 127.0.0.1 wajib ke SERVER-LOKAL
 try{Object.keys(LAYERS).forEach(k=>{(LAYERS[k].nodes||[]).forEach(n=>{if(n.ip==='127.0.0.1'&&n.db!=='SERVER-LOKAL'){n.db='SERVER-LOKAL';try{saveTopo();}catch(_){}}});});}catch(_){}
+if(!DB[curR]||!DB[curR].length){curR='SERVER-LOKAL';if(DB[curR]&&DB[curR].length)curI=DB[curR][0].n;}
 try{renderRouters();renderIfaces();drawTopo();}catch(e){}
 log('✔ SERVER LOKAL auto-aktif — klik node-nya di layer Server Lokal → speed tampil di dashboard 🟢');
 }catch(e){}})();
