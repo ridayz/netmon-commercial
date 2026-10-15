@@ -773,8 +773,8 @@ else lossSub.textContent=(window._simTraffic===false?'simulasi off':(Math.random
 }
 function toggleSwap(){const L=LIVE[curR];if(!L)return;const c=cur();L.swap=L.swap||{};const curSw=L.swap[c.n]===undefined?(!/isp|wan|uplink|bgp|internet/i.test(c.n)):!!L.swap[c.n];L.swap[c.n]=!curSw;persistLive();log('> Download/Upload '+curR+'/'+c.n+' dibalik manual ('+(L.swap[c.n]?'Tx=Download':'Rx=Download')+')');}
 // tampilkan tombol swap hanya saat device live
-setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=LIVE[curR]?'inline-block':'none';}catch(e){}},1000);
-setInterval(async()=>{try{
+setInterval(()=>{try{const b=document.getElementById('swapBtn');if(b)b.style.display=(LIVE[curR]&&LIVE[curR].via!=='host')?'inline-block':'none';}catch(e){}},1000);
+setInterval(async()=>{if(window._tBusy)return;window._tBusy=true;try{
 const L=LIVE[curR];if(!L)return;const c=cur();if(!c||!c.live)return;
 if(L.via==='host'){
 const j=await collGet(`/api/host-traffic?iface=${encodeURIComponent(c.n)}`,15000);
@@ -798,7 +798,7 @@ try{setCards(dMb,uMb,false);}catch(_){}
 try{setCardSubs(dMb,uMb);}catch(_){}
 try{renderPortStrip();}catch(_){}
 L._err=0;
-}catch(e){try{if(window._leaving)return;const L=LIVE[curR];if(L){const em=String((e&&e.message)||e);const abort=/abort/i.test(em);L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+(abort?'request timeout/dibatalkan (cek collector kalau berulang)':em)+' (cek collector)');}}catch(_){}}},3000);
+}catch(e){try{if(window._leaving)return;const L=LIVE[curR];if(L){const em=String((e&&e.message)||e);const abort=/abort/i.test(em);L._err=(L._err||0)+1;if(L._err===4)log('> live '+curR+' putus: '+(abort?'request timeout/dibatalkan (cek collector kalau berulang)':em)+' (cek collector)');}}catch(_){}}finally{window._tBusy=false;}},3000);
 // ---- REALTIME CONFIG SYNC: tiap 5 dtk tarik ulang interface semua device LIVE ----
 // Perubahan (port up/down, interface baru/hilang, nama) langsung masuk DB, lalu dashboard + topologi di-redraw.
 let _rtBusy=false;
